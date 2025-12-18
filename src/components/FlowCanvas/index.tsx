@@ -577,7 +577,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
 
   // 分组属性更新回调
   const handleGroupChange = useCallback(
-    (id: string, updates: { label?: string; color?: string }) => {
+    (id: string, updates: { label?: string; color?: string; relatedNodeIds?: string[] }) => {
       setNodes((nds) =>
         nds.map((node) => {
           if (node.id === id && node.type === 'group') {
@@ -589,6 +589,10 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
             if (updates.color !== undefined) {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (newData as any).color = updates.color;
+            }
+            if (updates.relatedNodeIds !== undefined) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (newData as any).relatedNodeIds = updates.relatedNodeIds;
             }
             return { ...node, data: newData };
           }

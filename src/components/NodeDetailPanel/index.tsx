@@ -155,6 +155,7 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
               onGroupChange={onGroupChange}
               onUngroup={onUngroup}
               onRemoveFromGroup={onRemoveFromGroup}
+              allNodes={allNodes}
             />
           )}
 

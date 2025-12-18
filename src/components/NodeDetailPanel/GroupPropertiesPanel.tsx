@@ -2,6 +2,7 @@ import { memo, useState, useEffect, useCallback } from 'react';
 import { Node } from '@xyflow/react';
 import { FlowNodeData, GroupNodeData } from '../../types/flow';
 import { BufferedInput } from '../common/BufferedInput';
+import { NodeSelector } from './NodeSelector';
 
 // 预设颜色选项
 const COLOR_PRESETS = [
@@ -18,6 +19,7 @@ const COLOR_PRESETS = [
 export interface GroupUpdateParams {
     label?: string;
     color?: string;
+    relatedNodeIds?: string[];
 }
 
 interface GroupPropertiesPanelProps {
@@ -27,6 +29,7 @@ interface GroupPropertiesPanelProps {
     onGroupChange: (id: string, updates: GroupUpdateParams) => void;
     onUngroup: (groupId: string) => void;
     onRemoveFromGroup: (nodeId: string) => void;
+    allNodes?: Node<FlowNodeData>[];
 }
 
 export const GroupPropertiesPanel = memo(function GroupPropertiesPanel({
@@ -36,14 +39,17 @@ export const GroupPropertiesPanel = memo(function GroupPropertiesPanel({
     onGroupChange,
     onUngroup,
     onRemoveFromGroup,
+    allNodes = [],
 }: GroupPropertiesPanelProps) {
     const [groupLabel, setGroupLabel] = useState(groupData.label || '新分组');
     const [groupColor, setGroupColor] = useState(groupData.color || '#3b82f6');
+    const [relatedNodeIds, setRelatedNodeIds] = useState<string[]>([]);
 
     // 同步外部数据
     useEffect(() => {
         setGroupLabel(groupData.label || '新分组');
         setGroupColor(groupData.color || '#3b82f6');
+        setRelatedNodeIds(groupData.relatedNodeIds || []);
     }, [groupData]);
 
     const handleLabelCommit = useCallback((value: string) => {
@@ -67,6 +73,20 @@ export const GroupPropertiesPanel = memo(function GroupPropertiesPanel({
             onRemoveFromGroup(nodeId);
         }
     }, [onRemoveFromGroup]);
+
+    const handleAddRelatedNode = useCallback((targetId: string) => {
+        if (!relatedNodeIds.includes(targetId)) {
+            const newIds = [...relatedNodeIds, targetId];
+            setRelatedNodeIds(newIds);
+            onGroupChange(groupData.id, { relatedNodeIds: newIds });
+        }
+    }, [relatedNodeIds, groupData.id, onGroupChange]);
+
+    const handleRemoveRelatedNode = useCallback((targetId: string) => {
+        const newIds = relatedNodeIds.filter(id => id !== targetId);
+        setRelatedNodeIds(newIds);
+        onGroupChange(groupData.id, { relatedNodeIds: newIds });
+    }, [relatedNodeIds, groupData.id, onGroupChange]);
 
     return (
         <>
@@ -144,6 +164,41 @@ export const GroupPropertiesPanel = memo(function GroupPropertiesPanel({
                     }}>
                         {childNodes.length} 个节点
                     </span>
+                </div>
+            </div>
+
+            {/* 关联节点 */}
+            <div className="info-section">
+                <div className="info-item">
+                    <span className="info-label">关联节点</span>
+                    <div className="related-nodes-container">
+                        {relatedNodeIds.length > 0 && (
+                            <div className="related-list">
+                                {relatedNodeIds.map(id => {
+                                    const node = allNodes.find(n => n.id === id);
+                                    return (
+                                        <div key={id} className="related-tag">
+                                            <span className="related-tag-text" title={String(node?.data?.label || node?.data?.name || id)}>
+                                                {node?.type === 'group' && '📁 '}
+                                                {String(node?.data?.label || node?.data?.name || id)}
+                                            </span>
+                                            <span
+                                                className="related-tag-remove"
+                                                onClick={() => handleRemoveRelatedNode(id)}
+                                                title="移除关联"
+                                            >×</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                        <NodeSelector
+                            currentNodeId={groupData.id}
+                            allNodes={allNodes}
+                            onSelect={handleAddRelatedNode}
+                            excludeIds={relatedNodeIds}
+                        />
+                    </div>
                 </div>
             </div>
 
