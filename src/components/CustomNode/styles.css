@@ -1,0 +1,512 @@
+/* ==========================================================================
+   全局强制覆盖 (Critical Fixes)
+   ========================================================================== */
+
+/* 1. 覆盖 React Flow 节点外层容器样式 */
+/* 提高选择器优先级,避免使用 !important */
+.react-flow__node.react-flow__node-custom,
+.react-flow__node.react-flow__node-custom.react-flow__node-default {
+  box-shadow: none;
+  border: none;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* 2. 移除 React Flow 默认的选中状态外框 */
+.react-flow__node.react-flow__node-custom.selected,
+.react-flow__node.react-flow__node-custom:focus {
+  outline: none;
+  box-shadow: none;
+  border: none;
+  background: transparent;
+  background-color: transparent;
+}
+
+/* ==========================================================================
+   自定义节点基础样式
+   ========================================================================== */
+
+/* 1. 基础容器：默认无背景、无阴影、无边框，完全透明 */
+.custom-flow-node {
+  width: 100%;
+  height: 100%;
+  min-width: 20px;
+  min-height: 20px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+
+  /* 核心修正：确保默认状态干净，具体样式由子类型定义 */
+  /* background-color 可以通过 style prop 设置，不在这里强制 */
+  box-shadow: none;
+  border: none;
+  /* 移除边框，让内部形状的边框直接作为节点边框 */
+}
+
+/* 内容区域布局 */
+.node-content {
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* 缩略图标识图标 */
+.node-screenshot-icon {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 16px;
+  z-index: 15;
+  pointer-events: none;
+  opacity: 0.9;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+  line-height: 1;
+  /* 确保图标在所有节点类型中都能看到 */
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* 文本标签 */
+.node-label {
+  font-size: 14px;
+  color: #000000;
+  text-align: center;
+  font-weight: 400;
+  /* 默认值，会被inline style覆盖 */
+  font-family: '微软雅黑', 'Microsoft YaHei', sans-serif;
+  pointer-events: none;
+  line-height: 1.4;
+  /* 支持多行文本显示 */
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* 有缩略图的节点标签样式 */
+.node-label.has-screenshots-label {
+  font-weight: 600;
+  color: #1890ff;
+  text-shadow: 0 1px 2px rgba(24, 144, 255, 0.2);
+}
+
+/* 输入框 */
+.node-label-input {
+  width: 100%;
+  max-width: 180px;
+  border: none;
+  border-bottom: 2px solid #3b82f6;
+  background: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  text-align: center;
+  color: #000000;
+  font-family: '微软雅黑', 'Microsoft YaHei', sans-serif;
+  padding: 2px 4px;
+  outline: none;
+  font-weight: 400;
+  /* 默认值，会被inline style覆盖 */
+  /* 支持多行文本 */
+  resize: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  vertical-align: top;
+  min-height: 20px;
+  max-height: 200px;
+  overflow-y: auto;
+  line-height: 1.4;
+}
+
+/* 展开指示器 */
+.expandable-indicator {
+  margin-left: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.expandable-indicator:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* Handle (连接点) 样式 */
+.react-flow__handle {
+  background: #fff;
+  border: 2px solid #64748b;
+  width: 8px;
+  height: 8px;
+  transition: all 0.2s ease;
+  opacity: 0.6;
+}
+
+/* Source handle 的 z-index 更高，确保在拖拽时优先被识别 */
+.react-flow__handle[data-handleid]:not([data-handleid$='-target']) {
+  z-index: 11 !important;
+}
+
+/* Target handle 的 z-index 稍低 */
+.react-flow__handle[data-handleid$='-target'] {
+  z-index: 10 !important;
+}
+
+.custom-flow-node:hover .react-flow__handle,
+.react-flow__handle:hover {
+  opacity: 1;
+  background: #fff;
+  border-color: #3b82f6;
+  width: 10px;
+  height: 10px;
+}
+
+.react-flow__handle.react-flow__handle-connecting {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+/* 判断节点的Handle定位到菱形顶点 */
+/* React Flow会根据position属性添加类名，如 react-flow__handle-top */
+/* Handle是绝对定位，相对于 .custom-flow-node (position: relative) */
+/* 对于菱形，需要将Handle定位到容器的四个顶点位置 */
+
+.custom-flow-node.node-decision .react-flow__handle.react-flow__handle-top {
+  /* 顶部顶点：水平居中，垂直在顶部边缘 */
+  left: 50%;
+  top: 0;
+  /* 使用transform将Handle中心点对齐到顶点 */
+  transform: translate(-50%, -50%);
+  /* 确保Handle在正确的层级 */
+  z-index: 10;
+}
+
+.custom-flow-node.node-decision .react-flow__handle.react-flow__handle-right {
+  /* 右侧顶点：水平在右边缘，垂直居中 */
+  left: 100%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+}
+
+.custom-flow-node.node-decision .react-flow__handle.react-flow__handle-bottom {
+  /* 底部顶点：水平居中，垂直在底部边缘 */
+  left: 50%;
+  top: 100%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+}
+
+.custom-flow-node.node-decision .react-flow__handle.react-flow__handle-left {
+  /* 左侧顶点：水平在左边缘，垂直居中 */
+  left: 0;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  /* 确保Handle不会被SVG遮挡 */
+  pointer-events: auto;
+}
+
+/* ==========================================================================
+   特定节点类型样式
+   ========================================================================== */
+
+/* ------------------------------------------------
+   1. 流程节点 (Process)
+   ------------------------------------------------ */
+.node-process {
+  /* 默认背景，但可以通过 style prop 的 backgroundColor 覆盖（内联样式优先级更高） */
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-width: 1px;
+  color: #1e293b;
+  /* 仅给流程节点添加阴影 - 已移除 */
+  box-shadow: none;
+}
+
+/* 当设置了自定义背景色时，移除默认背景渐变，让内联样式生效 */
+/* 注意：内联样式会通过 mergedStyle 应用到 .custom-flow-node 容器上 */
+/* 内联样式的优先级高于类选择器，所以不需要 !important */
+.node-process.has-custom-bg {
+  background-image: none;
+}
+
+/* 悬停效果：边框变蓝 + 背景微蓝 */
+.node-process:hover {
+  border-color: #3b82f6 !important;
+  background-color: #eff6ff !important;
+}
+
+.custom-flow-node.node-process.selected {
+  border-color: #3b82f6;
+  /* 移除选中时的阴影和位移 */
+  box-shadow: none;
+  transform: none;
+  z-index: 100;
+  color: #000000;
+}
+
+/* ------------------------------------------------
+   2. 终止节点 (Terminator)
+   ------------------------------------------------ */
+.node-terminator {
+  border-radius: 9999px;
+  padding: 0 8px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  box-shadow: none;
+  /* 使用 background-clip 确保背景不超出边框，同时不裁剪 handle */
+  background-clip: padding-box;
+}
+
+/* 悬停效果：边框变蓝 + 背景微变 */
+.node-terminator:hover {
+  border-color: #3b82f6 !important;
+}
+
+.node-terminator.start:hover {
+  background: #bbf7d0;
+}
+
+.node-terminator.end:hover {
+  background: #fecaca;
+}
+
+/* 自定义背景色的悬停效果 */
+.node-terminator.has-custom-bg:hover {
+  filter: brightness(0.95);
+}
+
+.custom-flow-node.node-terminator.selected {
+  border-color: #3b82f6;
+  box-shadow: none;
+  transform: none;
+  z-index: 100;
+}
+
+.node-terminator.start {
+  background: #dcfce7;
+  border: 1px solid #cbd5e1;
+  color: #000000;
+}
+
+.node-terminator.start .node-label {
+  color: #000000;
+}
+
+.node-terminator.end {
+  background: #fee2e2;
+  border: 1px solid #cbd5e1;
+  color: #000000;
+}
+
+.node-terminator.end .node-label {
+  color: #000000;
+}
+
+/* 当设置了自定义背景色时，移除默认背景渐变，让内联样式生效 */
+/* 注意：内联样式会通过 mergedStyle 应用到 .custom-flow-node 容器上 */
+.node-terminator.has-custom-bg.start,
+.node-terminator.has-custom-bg.end {
+  background-image: none;
+}
+
+/* ------------------------------------------------
+   3. 数据节点 (Data)
+   ------------------------------------------------ */
+/* 确保数据节点容器绝对透明，无任何边框和阴影 */
+div.custom-flow-node.node-data,
+.react-flow__node.react-flow__node-custom:has(.node-data) {
+  background: transparent;
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+  /* 确保容器完全填充，没有额外的空间 */
+  box-sizing: border-box;
+}
+
+/* 选中状态下也必须保持透明和无框 */
+div.custom-flow-node.node-data.selected,
+.react-flow__node.react-flow__node-custom.selected:has(.node-data) {
+  background: transparent;
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  outline: none;
+  transform: none;
+  /* 确保不位移 */
+}
+
+.node-data .data-shape {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  /* 确保没有padding或margin影响定位 */
+  padding: 0;
+  margin: 0;
+  /* 确保与父容器对齐 */
+  box-sizing: border-box;
+}
+
+.data-shape .node-label,
+.data-shape .node-label-input {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+/* 悬停效果：SVG 线条变蓝 + 填充微蓝 */
+.node-data:hover .data-shape svg rect {
+  stroke: #3b82f6 !important;
+  fill: #eff6ff !important;
+  transition: all 0.3s;
+}
+
+.node-data:hover .data-shape svg line {
+  stroke: #3b82f6 !important;
+  transition: all 0.3s;
+}
+
+/* 选中状态 - 通过 SVG 的 filter 实现外发光和阴影效果 */
+.node-data.selected .data-shape svg {
+  /* 移除选中时的滤镜阴影 */
+  filter: none;
+}
+
+.node-data.selected .data-shape svg rect {
+  stroke: #3b82f6;
+}
+
+.node-data.selected .data-shape svg line {
+  stroke: #3b82f6;
+}
+
+/* 确保数据节点的 SVG 线条使用与流程节点一致的颜色 */
+.node-data .data-shape svg line {
+  stroke: #cbd5e1;
+  stroke-width: 1;
+  transition: stroke 0.3s;
+}
+
+.node-data .data-shape svg rect {
+  stroke: #cbd5e1;
+  stroke-width: 1;
+  transition: stroke 0.3s;
+}
+
+/* ------------------------------------------------
+   4. 判断节点 (Decision) - 终极清除
+   ------------------------------------------------ */
+
+/* 确保 React Flow 外层容器（判断节点）绝对透明 */
+/* 使用属性选择器匹配包含 decision 的节点 */
+.react-flow__node.react-flow__node-custom[data-id*='decision']:not([data-id*='process']):not([data-id*='terminator']) {
+  background: transparent;
+  background-color: transparent;
+}
+
+/* 使用 :has() 选择器（如果浏览器支持） */
+@supports selector(:has(*)) {
+  .react-flow__node.react-flow__node-custom:has(.node-decision) {
+    background: transparent;
+    background-color: transparent;
+  }
+}
+
+/* 确保判断节点容器绝对透明，无任何边框和阴影 */
+div.custom-flow-node.node-decision,
+.react-flow__node.react-flow__node-custom:has(.node-decision) {
+  background: transparent;
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+  /* 确保容器完全填充，没有额外的空间 */
+  box-sizing: border-box;
+}
+
+/* 选中状态下也必须保持透明和无框 */
+div.custom-flow-node.node-decision.selected,
+.react-flow__node.react-flow__node-custom.selected:has(.node-decision) {
+  background: transparent;
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  outline: none;
+  transform: none;
+  /* 确保不位移 */
+}
+
+/* 菱形 SVG 容器 */
+.node-decision .diamond-shape {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  transform: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* 确保没有padding或margin影响定位 */
+  padding: 0;
+  margin: 0;
+  /* 确保与父容器对齐 */
+  box-sizing: border-box;
+}
+
+/* 悬停效果：SVG 线条变蓝 + 填充微蓝 */
+.node-decision:hover .diamond-shape svg polygon {
+  stroke: #3b82f6 !important;
+  fill: #eff6ff !important;
+  transition: all 0.3s;
+}
+
+/* 选中状态 - 通过 SVG 的 filter 实现外发光和阴影效果 */
+.node-decision.selected .diamond-shape svg {
+  /* 移除选中时的滤镜阴影 */
+  filter: none;
+}
+
+.node-decision.selected .diamond-shape svg polygon {
+  stroke: #3b82f6;
+}
+
+/* 内部文字 */
+.node-decision .diamond-shape .node-label,
+.node-decision .diamond-shape .node-label-input {
+  transform: none;
+  text-align: center;
+  display: block;
+  width: 80%;
+  color: #000000;
+  font-weight: 400;
+  /* 默认值，会被inline style覆盖 */
+  font-family: '微软雅黑', 'Microsoft YaHei', sans-serif;
+  z-index: 1;
+}

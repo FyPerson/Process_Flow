@@ -1,0 +1,1046 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>结算单申请</title>
+    <style>
+      /* --- 全局样式 --- */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family:
+          'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+          '微软雅黑', Arial, sans-serif;
+        background-color: #f0f2f5;
+        color: #606266;
+        font-size: 14px;
+        padding: 20px;
+      }
+
+      /* --- 顶部 Header --- */
+      .page-header {
+        background-color: #fff;
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #dcdfe6;
+        margin-bottom: 15px;
+        border-radius: 4px;
+        box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+      }
+
+      .header-left {
+        display: flex;
+        align-items: center;
+      }
+
+      .header-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #303133;
+        margin-right: 15px;
+      }
+
+      .status-tag {
+        display: inline-block;
+        height: 24px;
+        padding: 0 8px;
+        line-height: 22px;
+        font-size: 12px;
+        color: #409eff;
+        background-color: #ecf5ff;
+        border: 1px solid #d9ecff;
+        border-radius: 4px;
+        white-space: nowrap;
+      }
+
+      .header-actions button {
+        cursor: pointer;
+        padding: 9px 15px;
+        font-size: 12px;
+        border-radius: 3px;
+        border: 1px solid #dcdfe6;
+        margin-left: 10px;
+        outline: none;
+      }
+
+      .btn-primary {
+        background-color: #409eff;
+        color: #fff;
+        border-color: #409eff !important;
+      }
+
+      .btn-default {
+        background-color: #fff;
+        color: #606266;
+      }
+
+      .btn-default:hover {
+        color: #409eff;
+        border-color: #c6e2ff !important;
+        background-color: #ecf5ff;
+      }
+
+      /* --- 卡片容器 --- */
+      .card {
+        background-color: #fff;
+        border-radius: 4px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      .section-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #303133;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+      }
+
+      .red-text {
+        color: #f56c6c;
+        font-weight: normal;
+        margin-left: 5px;
+      }
+
+      /* --- 表单布局 --- */
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px 40px; /* 行间距 列间距 */
+      }
+
+      .form-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px 40px;
+      }
+
+      .form-item {
+        display: flex;
+        align-items: center;
+        min-height: 32px;
+      }
+
+      .label {
+        /* 核心逻辑：不换行，且右对齐 */
+        white-space: nowrap;
+        padding-right: 12px;
+        color: #606266;
+        font-weight: 700;
+        text-align: right;
+        min-width: 120px; /* 基础宽度 */
+        flex-shrink: 0;
+        font-size: 13px;
+      }
+
+      /* 针对特别长的标签增加宽度 */
+      .label-long {
+        min-width: 170px;
+      }
+
+      .content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        position: relative;
+        min-width: 0; /* 防止溢出 */
+      }
+
+      .required {
+        color: #f56c6c;
+        margin-right: 4px;
+      }
+
+      .help-icon {
+        color: #909399;
+        margin-left: 2px;
+        cursor: pointer;
+        font-size: 14px;
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        line-height: 14px;
+        text-align: center;
+        border: 1px solid #909399;
+        border-radius: 50%;
+        font-style: normal;
+      }
+      .help-icon::before {
+        content: '?';
+        font-size: 12px;
+      }
+
+      /* --- 输入控件 --- */
+      input[type='text'],
+      select {
+        width: 100%;
+        height: 32px;
+        line-height: 32px;
+        border: 1px solid #dcdfe6;
+        border-radius: 4px;
+        padding: 0 10px;
+        color: #606266;
+        outline: none;
+        background-color: #fff;
+        transition: border-color 0.2s;
+        font-size: 14px;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: #409eff;
+        box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
+      }
+
+      input:hover,
+      select:hover {
+        border-color: #c0c4cc;
+      }
+
+      /* Select 下拉框优化样式 */
+      select {
+        -webkit-appearance: none;
+        appearance: none;
+        padding-right: 30px;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23909399' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 12px;
+      }
+
+      select:focus {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23409eff' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      }
+
+      select option {
+        padding: 8px 10px;
+        color: #606266;
+        background-color: #fff;
+      }
+
+      select option:hover {
+        background-color: #f5f7fa;
+      }
+
+      select option:checked {
+        background-color: #ecf5ff;
+        color: #409eff;
+      }
+
+      /* Select 包装器（仅用于布局，不显示箭头） */
+      .select-wrapper {
+        position: relative;
+        width: 100%;
+      }
+
+      /* 自定义下拉选择框样式 */
+      .select-dropdown {
+        position: relative;
+        width: 100%;
+      }
+
+      .select-input {
+        width: 100%;
+        cursor: pointer;
+        padding-right: 30px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23909399' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 12px;
+      }
+
+      .select-input:focus {
+        border-color: #409eff;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23409eff' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      }
+
+      .select-options {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #fff;
+        border: 1px solid #e4e7ed;
+        border-top: none;
+        border-radius: 0 0 4px 4px;
+        box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+        margin-top: -1px;
+      }
+
+      .select-options.show {
+        display: block;
+      }
+
+      .select-option {
+        padding: 8px 15px;
+        cursor: pointer;
+        color: #606266;
+        font-size: 14px;
+        transition: background-color 0.2s;
+        border-bottom: 1px solid #f5f7fa;
+      }
+
+      .select-option:last-child {
+        border-bottom: none;
+      }
+
+      .select-option:hover {
+        background-color: #f5f7fa;
+      }
+
+      .select-option.selected {
+        background-color: #ecf5ff;
+        color: #409eff;
+        font-weight: 500;
+      }
+
+      /* 日期选择器图标 */
+      .date-icon {
+        position: absolute;
+        right: 10px;
+        color: #c0c4cc;
+        font-size: 14px;
+      }
+
+      /* 纯文本 */
+      .text-value {
+        color: #606266;
+        font-size: 14px;
+      }
+
+      /* 开关 Switch */
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 22px;
+      }
+      .switch input {
+        display: none;
+      }
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #dcdfe6;
+        transition: 0.4s;
+        border-radius: 22px;
+      }
+      .slider:before {
+        position: absolute;
+        content: '';
+        height: 18px;
+        width: 18px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+        z-index: 2;
+      }
+      /* 开关文字 */
+      .slider:after {
+        position: absolute;
+        content: '否';
+        right: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 500;
+        transition: 0.4s;
+        z-index: 1;
+      }
+      input:checked + .slider {
+        background-color: #409eff;
+      }
+      input:checked + .slider:before {
+        transform: translateX(28px);
+      }
+      input:checked + .slider:after {
+        content: '是';
+        left: 6px;
+        right: auto;
+      }
+
+      /* --- 表格区域 --- */
+      .info-table {
+        width: 100%;
+        background-color: #f5f7fa;
+        border-radius: 4px;
+        margin-top: 15px;
+        padding: 15px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+      .info-item {
+        display: flex;
+        flex-direction: column;
+      }
+      .info-label {
+        font-weight: bold;
+        color: #606266;
+        font-size: 13px;
+        margin-bottom: 5px;
+      }
+      .info-value {
+        color: #606266;
+        font-size: 13px;
+      }
+
+      /* 内部空表格 */
+      .inner-table-container {
+        border: 1px solid #ebeef5;
+        margin-top: 20px;
+        margin-bottom: 20px;
+      }
+      .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .custom-table th {
+        background-color: #f5f7fa;
+        color: #909399;
+        text-align: left;
+        padding: 10px 15px;
+        font-size: 13px;
+        border-bottom: 1px solid #ebeef5;
+        font-weight: bold;
+      }
+      .empty-state {
+        padding: 40px 0;
+        text-align: center;
+        color: #909399;
+        background: #fff;
+        font-size: 13px;
+      }
+      .empty-icon {
+        display: block;
+        width: 40px;
+        height: 30px;
+        margin: 0 auto 10px;
+        border: 1px solid #dcdfe6;
+        border-radius: 3px;
+        position: relative;
+      }
+      .add-btn-row {
+        text-align: center;
+        padding: 10px;
+        border-top: 1px solid #ebeef5;
+        background-color: #fff;
+      }
+      .btn-text-blue {
+        color: #409eff;
+        cursor: pointer;
+        font-size: 13px;
+      }
+
+      /* --- 支付信息折叠列表 --- */
+      .payment-list {
+        border: 1px solid #ebeef5;
+        border-radius: 4px;
+      }
+      .payment-item {
+        padding: 12px 15px;
+        border-bottom: 1px solid #ebeef5;
+        color: #909399; /* 浅灰色文字 */
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+      }
+      .payment-item:last-child {
+        border-bottom: none;
+      }
+      .arrow-icon {
+        margin-right: 10px;
+        font-size: 12px;
+        transform: rotate(-90deg); /* 向右箭头 */
+        display: inline-block;
+      }
+
+      /* --- 其他 --- */
+      textarea {
+        width: 100%;
+        border: 1px solid #dcdfe6;
+        border-radius: 4px;
+        padding: 8px;
+        resize: vertical;
+        min-height: 60px;
+        outline: none;
+      }
+
+      .upload-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 7px 15px;
+        background-color: #fff;
+        border: 1px solid #dcdfe6;
+        border-radius: 3px;
+        font-size: 12px;
+        cursor: pointer;
+        color: #606266;
+      }
+
+      .text-blue {
+        color: #409eff;
+      }
+
+      /* 解决grid最后一行未填满的对齐问题 */
+      .col-span-2 {
+        grid-column: span 2;
+      }
+
+      /* 冲销ID相关样式 */
+      .reversal-id-item {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 10px;
+      }
+
+      .add-reversal-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 7px 15px;
+        background-color: #fff;
+        border: 1px solid #409eff;
+        border-radius: 3px;
+        font-size: 12px;
+        cursor: pointer;
+        color: #409eff;
+        white-space: nowrap;
+        transition: all 0.2s;
+      }
+
+      .add-reversal-btn:hover {
+        background-color: #ecf5ff;
+      }
+
+      .add-reversal-btn .plus-icon {
+        margin-right: 4px;
+        font-weight: bold;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-header">
+      <div class="header-left">
+        <div class="header-title">结算单申请</div>
+        <div class="status-tag">票据额度</div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn-primary">提交</button>
+        <button type="button" class="btn-default">保存</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">基本信息</div>
+      <div class="form-grid">
+        <div class="form-item">
+          <label class="label"><span class="required">*</span>结算单类型：</label>
+          <div class="content">
+            <div class="select-dropdown">
+              <div class="select-wrapper">
+                <input
+                  type="text"
+                  class="input-inner select-input"
+                  id="settlementTypeInput"
+                  readonly
+                  placeholder=""
+                  value=""
+                />
+              </div>
+              <div class="select-options" id="settlementTypeOptions">
+                <div class="select-option" data-value="预付款结算单">预付款结算单</div>
+                <div class="select-option" data-value="开票结算单">开票结算单</div>
+                <div class="select-option" data-value="垫资结算单">垫资结算单</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="label"><span class="required">*</span>出款时间：</label>
+          <div class="content">
+            <input type="text" value="2025-12-04" />
+            <span class="date-icon">📅</span>
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="label"><span class="required">*</span>申请部门：</label>
+          <div class="content select-wrapper">
+            <select>
+              <option></option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-item">
+          <label class="label">项目名称 <i class="help-icon"></i>：</label>
+          <div class="content">
+            <span class="text-value">XXXX项目</span>
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="label">甲方经营部门：</label>
+          <div class="content">
+            <span class="text-value"></span>
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="label">申请人：</label>
+          <div class="content">
+            <span class="text-value">系统管理员</span>
+          </div>
+        </div>
+
+        <div class="form-item">
+          <label class="label">合同编号：</label>
+          <div class="content select-wrapper">
+            <select>
+              <option></option>
+            </select>
+          </div>
+        </div>
+        <div class="form-item"></div>
+        <div class="form-item"></div>
+
+        <!-- 负数结算单开关（仅在选择"开票结算单"或"预付款结算单"时显示） -->
+        <div class="form-item" id="negativeSettlementItem" style="display: none">
+          <label class="label">负数结算单：</label>
+          <div class="content">
+            <label class="switch" id="negativeSettlementSwitch">
+              <input type="checkbox" id="negativeSettlementCheckbox" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="form-item" id="reversalIdLabelItem" style="display: none">
+          <label class="label"><span class="required">*</span>冲销ID：</label>
+          <div class="content" style="flex-direction: row; align-items: center; gap: 10px">
+            <button type="button" class="add-reversal-btn" id="addReversalBtn">
+              <span class="plus-icon">+</span> 添加冲销ID
+            </button>
+          </div>
+        </div>
+        <div class="form-item" id="negativeSettlementPlaceholder1" style="display: none"></div>
+        <div class="form-item" id="negativeSettlementPlaceholder2" style="display: none"></div>
+
+        <div class="form-item">
+          <label class="label label-long">向客户收取管理费基准 <i class="help-icon"></i>：</label>
+          <div class="content">
+            <span class="text-value">开票金额 (含税)</span>
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="label label-long">向客户收取的管理费率：</label>
+          <div class="content">
+            <span class="text-value">2.00000%</span>
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="label label-long">向客户收取的管理费描述：</label>
+          <div class="content">
+            <span class="text-value">2</span>
+          </div>
+        </div>
+
+        <div class="form-item">
+          <label class="label label-long">向客户收取税金基准 <i class="help-icon"></i>：</label>
+          <div class="content">
+            <span class="text-value">开票金额 (含税)</span>
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="label">是否延迟支付：</label>
+          <div class="content">
+            <label class="switch"><input type="checkbox" /><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="form-item"></div>
+      </div>
+
+      <div class="info-table">
+        <div class="info-item">
+          <span class="info-label">税率</span>
+          <span class="info-value">9%</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">计划税负率</span>
+          <span class="info-value">9.28%</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">向客户收取的税率</span>
+          <span class="info-value">9.28%</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">向客户收取税金描述</span>
+          <span class="info-value">9</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">结算班组信息</div>
+      <div class="form-grid">
+        <div class="form-item col-span-2" style="grid-column: span 2">
+          <label class="label"><span class="required">*</span>施工班组：</label>
+          <div class="content select-wrapper" style="margin-right: 10px">
+            <select>
+              <option>杭州分公司xxxxxx-杭州通服</option>
+            </select>
+          </div>
+          <span style="color: #f56c6c; font-size: 12px; white-space: nowrap">(存积人数: 0人)</span>
+        </div>
+        <div class="form-item">
+          <label class="label">施工班组组长：</label>
+          <div class="content"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">收入信息 <span class="red-text">(回款总计: 0)</span></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">费用扣除 <span class="red-text">(扣除总计: 0)</span></div>
+
+      <div class="form-item" style="margin-bottom: 15px">
+        <label
+          class="label label-long"
+          style="text-align: left; width: auto; padding-right: 5px; min-width: auto"
+          ><span class="required">*</span>管理费扣除基准 <i class="help-icon"></i>：</label
+        >
+        <div class="content">
+          <span class="text-value">开票金额 (含税)</span>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-item">
+          <label class="label">扣除标准税金：</label>
+          <div class="content"><span class="text-value">0</span></div>
+        </div>
+        <div class="form-item">
+          <label class="label label-long"><span class="required">*</span>税金调整：</label>
+          <div class="content"><input type="text" value="0.00" /></div>
+        </div>
+        <div class="form-item">
+          <label class="label label-long">扣除税金合计 <i class="help-icon"></i>：</label>
+          <div class="content"><span class="text-value">0</span></div>
+        </div>
+
+        <div class="form-item">
+          <label class="label">扣除管理费 <i class="help-icon"></i>：</label>
+          <div class="content"><input type="text" value="0.00" /></div>
+        </div>
+        <div class="form-item">
+          <label class="label label-long">管理费调整(劳务公司) <i class="help-icon"></i>：</label>
+          <div class="content"><span class="text-value">0</span></div>
+        </div>
+        <div class="form-item"></div>
+
+        <div class="form-item">
+          <label class="label">扣除安全生产费：</label>
+          <div class="content"><input type="text" value="0.00" /></div>
+        </div>
+        <div class="form-item">
+          <label class="label label-long">暂留款 <i class="help-icon"></i>：</label>
+          <div class="content"><input type="text" value="0.00" /></div>
+        </div>
+        <div class="form-item">
+          <label class="label label-long">公共费用收支余额：</label>
+          <div class="content text-blue">3135.78</div>
+        </div>
+      </div>
+
+      <div class="inner-table-container">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th width="20%">扣除公共费用类型</th>
+              <th width="20%">扣除金额</th>
+              <th width="20%">扣除周期</th>
+              <th width="30%">扣除备注</th>
+              <th width="10%">操作</th>
+            </tr>
+          </thead>
+        </table>
+        <div class="empty-state">
+          <div class="empty-icon"></div>
+          暂无数据
+        </div>
+        <div class="add-btn-row">
+          <span class="btn-text-blue">+ 添加数据</span>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-item">
+          <label class="label label-long"
+            ><span class="required">*</span>扣除公共费用其他 <i class="help-icon"></i>：</label
+          >
+          <div class="content"><input type="text" value="0.00" /></div>
+        </div>
+        <div class="form-item">
+          <label class="label label-long">其他加收费用 <i class="help-icon"></i>：</label>
+          <div class="content"><input type="text" value="0.00" /></div>
+        </div>
+        <div class="form-item">
+          <label class="label label-long">本次剩余应付金额：</label>
+          <div class="content"><span class="text-value">0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">支付信息 <span class="red-text">(本次应付金额: 0)</span></div>
+      <div class="payment-list">
+        <div class="payment-item"><span class="arrow-icon">▼</span> 本次工资支付: 0</div>
+        <div class="payment-item">
+          <span class="arrow-icon">▼</span> 本次劳务公司支付(模式三): 0
+        </div>
+        <div class="payment-item"><span class="arrow-icon">▼</span> 本次报销支付: 0</div>
+        <div class="payment-item"><span class="arrow-icon">▼</span> 本次个体户支付: 0</div>
+        <div class="payment-item"><span class="arrow-icon">▼</span> 本次小法人支付: 0</div>
+        <div class="payment-item">
+          <span class="arrow-icon">▼</span> 本次劳务公司支付(模式一): 0
+        </div>
+        <div class="payment-item">
+          <span class="arrow-icon">▼</span> 施工班组往来工资款退回: 0 | 往来付款额度（含流程中）: 0
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">其他信息</div>
+      <div class="form-item" style="display: flex; align-items: flex-start; margin-bottom: 20px">
+        <label class="label" style="margin-top: 5px">结算单说明：</label>
+        <div class="content">
+          <textarea></textarea>
+        </div>
+      </div>
+      <div class="form-item">
+        <label class="label">附件：</label>
+        <div class="content">
+          <button type="button" class="upload-btn">⬆ 上传附件</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 页面加载时阻止页面刷新
+      document.addEventListener('DOMContentLoaded', function () {
+        // 阻止所有按钮的默认提交行为
+        const buttons = document.querySelectorAll('button');
+        buttons.forEach(function (button) {
+          button.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          });
+        });
+
+        // 阻止Enter键触发表单提交和页面刷新
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') {
+            const target = e.target;
+            // 如果是在textarea中，允许换行
+            if (target.tagName === 'TEXTAREA') {
+              return;
+            }
+            // 其他情况下阻止默认行为
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        });
+
+        // 阻止表单提交（如果有表单的话）
+        const forms = document.querySelectorAll('form');
+        forms.forEach(function (form) {
+          form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+          });
+        });
+
+        // 优化select下拉框的显示
+        const selects = document.querySelectorAll('select');
+        selects.forEach(function (select) {
+          // 添加空选项提示
+          if (select.options.length === 1 && select.options[0].value === '') {
+            select.options[0].text = '请选择';
+            select.style.color = '#c0c4cc';
+          }
+
+          // 监听change事件，更新文字颜色
+          select.addEventListener('change', function () {
+            if (this.value === '') {
+              this.style.color = '#c0c4cc';
+            } else {
+              this.style.color = '#606266';
+            }
+          });
+
+          // 监听focus事件
+          select.addEventListener('focus', function () {
+            this.style.borderColor = '#409eff';
+          });
+
+          // 监听blur事件
+          select.addEventListener('blur', function () {
+            if (this.value === '') {
+              this.style.borderColor = '#dcdfe6';
+            }
+          });
+        });
+
+        // 结算单类型下拉选择功能
+        const settlementTypeInput = document.getElementById('settlementTypeInput');
+        const settlementTypeOptions = document.getElementById('settlementTypeOptions');
+        const settlementOptions = settlementTypeOptions.querySelectorAll('.select-option');
+
+        // 点击输入框显示/隐藏下拉选项
+        settlementTypeInput.addEventListener('click', function (e) {
+          e.stopPropagation();
+          settlementTypeOptions.classList.toggle('show');
+        });
+
+        // 负数结算单开关和添加冲销ID按钮控制
+        const negativeSettlementItem = document.getElementById('negativeSettlementItem');
+        const negativeSettlementCheckbox = document.getElementById('negativeSettlementCheckbox');
+        const addReversalBtn = document.getElementById('addReversalBtn');
+        const reversalIdLabelItem = document.getElementById('reversalIdLabelItem');
+        const negativeSettlementPlaceholder1 = document.getElementById(
+          'negativeSettlementPlaceholder1',
+        );
+        const negativeSettlementPlaceholder2 = document.getElementById(
+          'negativeSettlementPlaceholder2',
+        );
+
+        // 更新占位符显示状态的函数
+        function updatePlaceholders(showReversalId) {
+          if (showReversalId) {
+            // 显示冲销ID时：负数结算单 + 冲销ID + 占位符1 = 3列
+            negativeSettlementPlaceholder1.style.display = 'flex';
+            negativeSettlementPlaceholder2.style.display = 'none';
+          } else {
+            // 隐藏冲销ID时：负数结算单 + 占位符1 + 占位符2 = 3列
+            negativeSettlementPlaceholder1.style.display = 'flex';
+            negativeSettlementPlaceholder2.style.display = 'flex';
+          }
+        }
+
+        // 选择选项（合并逻辑）
+        settlementOptions.forEach(function (option) {
+          option.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const value = this.getAttribute('data-value');
+            settlementTypeInput.value = value;
+
+            // 更新选中状态
+            settlementOptions.forEach(function (opt) {
+              opt.classList.remove('selected');
+            });
+            this.classList.add('selected');
+
+            // 隐藏下拉选项
+            settlementTypeOptions.classList.remove('show');
+
+            // 检查是否选择了"开票结算单"或"预付款结算单"
+            if (value === '开票结算单' || value === '预付款结算单') {
+              negativeSettlementItem.style.display = 'flex';
+              // 根据开关状态决定是否显示冲销ID
+              if (negativeSettlementCheckbox.checked) {
+                reversalIdLabelItem.style.display = 'flex';
+                updatePlaceholders(true);
+              } else {
+                reversalIdLabelItem.style.display = 'none';
+                updatePlaceholders(false);
+              }
+            } else {
+              negativeSettlementItem.style.display = 'none';
+              reversalIdLabelItem.style.display = 'none';
+              negativeSettlementPlaceholder1.style.display = 'none';
+              negativeSettlementPlaceholder2.style.display = 'none';
+              negativeSettlementCheckbox.checked = false;
+            }
+          });
+        });
+
+        // 点击页面其他地方关闭下拉选项
+        const settlementTypeDropdown = settlementTypeInput.closest('.select-dropdown');
+        document.addEventListener('click', function (e) {
+          if (!settlementTypeDropdown.contains(e.target)) {
+            settlementTypeOptions.classList.remove('show');
+          }
+        });
+
+        // 监听负数结算单开关变化
+        negativeSettlementCheckbox.addEventListener('change', function () {
+          const currentSettlementType = settlementTypeInput.value;
+          if (currentSettlementType === '开票结算单' || currentSettlementType === '预付款结算单') {
+            if (this.checked) {
+              // 开关为"是"时，显示冲销ID
+              reversalIdLabelItem.style.display = 'flex';
+              updatePlaceholders(true);
+            } else {
+              // 开关为"否"时，隐藏冲销ID
+              reversalIdLabelItem.style.display = 'none';
+              updatePlaceholders(false);
+            }
+          }
+        });
+
+        // 添加冲销ID按钮点击事件
+        addReversalBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          // 这里可以添加添加冲销ID的逻辑
+          console.log('添加冲销ID');
+        });
+
+        // 初始化显示状态
+        const currentSettlementType = settlementTypeInput.value;
+        if (currentSettlementType === '开票结算单' || currentSettlementType === '预付款结算单') {
+          negativeSettlementItem.style.display = 'flex';
+          // 根据开关状态决定是否显示冲销ID
+          if (negativeSettlementCheckbox.checked) {
+            reversalIdLabelItem.style.display = 'flex';
+            updatePlaceholders(true);
+          } else {
+            reversalIdLabelItem.style.display = 'none';
+            updatePlaceholders(false);
+          }
+        } else {
+          negativeSettlementItem.style.display = 'none';
+          reversalIdLabelItem.style.display = 'none';
+          negativeSettlementPlaceholder1.style.display = 'none';
+          negativeSettlementPlaceholder2.style.display = 'none';
+        }
+      });
+    </script>
+  </body>
+</html>

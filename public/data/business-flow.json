@@ -1,0 +1,739 @@
+{
+  "id": "business-flow-001",
+  "name": "紧密型业务流程全景图",
+  "description": "包含线索管理、客户管理、商机跟踪、投标管理、合同管理、项目执行等完整业务流程",
+  "groups": [
+    {
+      "id": "group_opportunity",
+      "name": "商机管理",
+      "color": "#3b82f6",
+      "nodeIds": [
+        "node_start",
+        "node_001",
+        "node_002",
+        "node_003",
+        "node_004",
+        "node_005",
+        "node_006",
+        "node_006b",
+        "node_006c",
+        "node_007",
+        "node_008",
+        "node_009",
+        "node_010",
+        "node_010b",
+        "node_011",
+        "node_lost",
+        "node_end2"
+      ]
+    },
+    {
+      "id": "group_bid",
+      "name": "招投标管理",
+      "color": "#8b5cf6",
+      "nodeIds": [
+        "node_bid_project",
+        "node_bid_01",
+        "node_bid_02",
+        "node_bid_03",
+        "node_bid_04",
+        "node_bid_05",
+        "node_bid_06",
+        "node_end3"
+      ]
+    },
+    {
+      "id": "group_contract",
+      "name": "合同管理",
+      "color": "#10b981",
+      "nodeIds": [
+        "node_contract_01",
+        "node_contract_02",
+        "node_contract_03",
+        "node_contract_04",
+        "node_contract_05",
+        "node_contract_06",
+        "node_project_01",
+        "node_project_02",
+        "node_project_03",
+        "node_project_04",
+        "node_end"
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node_start",
+      "name": "开始",
+      "type": "terminator",
+      "position": { "x": 400, "y": 0 },
+      "expandable": false,
+      "groupId": "group_opportunity"
+    },
+    {
+      "id": "node_001",
+      "name": "市场活动/渠道触点",
+      "type": "process",
+      "position": { "x": 350, "y": 80 },
+      "expandable": true,
+      "groupId": "group_opportunity",
+      "detailConfig": {
+        "description": "通过市场活动或渠道获取潜在客户信息",
+        "databaseTables": [
+          {
+            "tableName": "marketing_activity",
+            "description": "市场活动表",
+            "keyFields": ["activity_id", "activity_name", "activity_type", "start_date", "end_date"]
+          },
+          {
+            "tableName": "channel_contact",
+            "description": "渠道触点表",
+            "keyFields": ["contact_id", "channel_name", "contact_info", "create_time"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_002",
+      "name": "线索收集",
+      "type": "process",
+      "position": { "x": 365, "y": 160 },
+      "expandable": true,
+      "groupId": "group_opportunity",
+      "detailConfig": {
+        "description": "收集和整理潜在客户线索信息",
+        "databaseTables": [
+          {
+            "tableName": "lead_info",
+            "description": "线索信息表",
+            "keyFields": ["lead_id", "lead_name", "contact_phone", "source", "status"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_003",
+      "name": "线索登记",
+      "type": "process",
+      "position": { "x": 365, "y": 240 },
+      "expandable": true,
+      "groupId": "group_opportunity",
+      "detailConfig": {
+        "description": "将收集的线索信息录入系统",
+        "databaseTables": [
+          {
+            "tableName": "lead_register",
+            "description": "线索登记表",
+            "keyFields": ["register_id", "lead_id", "register_user", "register_time"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_004",
+      "name": "是否有效线索",
+      "type": "decision",
+      "position": { "x": 360, "y": 320 },
+      "expandable": false,
+      "groupId": "group_opportunity"
+    },
+    {
+      "id": "node_005",
+      "name": "客户拜访",
+      "type": "process",
+      "position": { "x": 365, "y": 460 },
+      "expandable": true,
+      "groupId": "group_opportunity",
+      "detailConfig": {
+        "description": "对有效线索进行客户拜访",
+        "databaseTables": [
+          {
+            "tableName": "customer_visit",
+            "description": "客户拜访记录表",
+            "keyFields": [
+              "visit_id",
+              "customer_id",
+              "visit_user",
+              "visit_date",
+              "visit_result",
+              "next_plan"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_006",
+      "name": "客户意向确认",
+      "type": "process",
+      "position": { "x": 365, "y": 540 },
+      "expandable": true,
+      "groupId": "group_opportunity",
+      "detailConfig": {
+        "description": "确认客户的合作意向",
+        "databaseTables": [
+          {
+            "tableName": "customer_intention",
+            "description": "客户意向表",
+            "keyFields": ["intention_id", "customer_id", "intention_level", "confirm_date"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_006b",
+      "name": "客户准入检查",
+      "type": "process",
+      "position": { "x": 365, "y": 620 },
+      "expandable": true,
+      "groupId": "group_opportunity",
+      "detailConfig": {
+        "description": "检查客户资质是否符合准入要求",
+        "databaseTables": [
+          {
+            "tableName": "customer_check",
+            "description": "客户准入检查表",
+            "keyFields": ["check_id", "customer_id", "check_item", "check_result", "check_user"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_006c",
+      "name": "是否符合要求",
+      "type": "decision",
+      "position": { "x": 360, "y": 700 },
+      "expandable": false,
+      "groupId": "group_opportunity"
+    },
+    {
+      "id": "node_007",
+      "name": "客户录入",
+      "type": "process",
+      "position": { "x": 365, "y": 840 },
+      "expandable": true,
+      "groupId": "group_opportunity",
+      "detailConfig": {
+        "description": "将符合要求的客户信息录入系统",
+        "databaseTables": [
+          {
+            "tableName": "customer_info",
+            "description": "客户信息表",
+            "keyFields": ["customer_id", "customer_name", "contact_phone", "email", "address"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_008",
+      "name": "是否存在商机",
+      "type": "decision",
+      "position": { "x": 360, "y": 920 },
+      "expandable": false,
+      "groupId": "group_opportunity"
+    },
+    {
+      "id": "node_009",
+      "name": "商机录入",
+      "type": "process",
+      "position": { "x": 365, "y": 1060 },
+      "expandable": true,
+      "groupId": "group_opportunity",
+      "detailConfig": {
+        "description": "录入商机信息",
+        "databaseTables": [
+          {
+            "tableName": "opportunity_info",
+            "description": "商机信息表",
+            "keyFields": [
+              "opportunity_id",
+              "customer_id",
+              "opportunity_name",
+              "amount",
+              "probability"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_010",
+      "name": "商机跟踪",
+      "type": "process",
+      "position": { "x": 365, "y": 1140 },
+      "expandable": true,
+      "groupId": "group_opportunity",
+      "detailConfig": {
+        "description": "跟踪商机的进展情况",
+        "databaseTables": [
+          {
+            "tableName": "opportunity_track",
+            "description": "商机跟踪记录表",
+            "keyFields": ["track_id", "opportunity_id", "track_date", "track_content", "next_plan"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_010b",
+      "name": "是否参与投标",
+      "type": "decision",
+      "position": { "x": 360, "y": 1220 },
+      "expandable": false,
+      "groupId": "group_opportunity"
+    },
+    {
+      "id": "node_bid_01",
+      "name": "投标项目立项",
+      "type": "process",
+      "position": { "x": 120, "y": 1295 },
+      "expandable": true,
+      "groupId": "group_bid",
+      "detailConfig": {
+        "description": "创建投标项目并进行立项审批",
+        "databaseTables": [
+          {
+            "tableName": "bid_project",
+            "description": "投标项目表",
+            "keyFields": ["bid_id", "project_name", "bid_amount", "bid_date", "status"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_bid_02",
+      "name": "支付投标费用",
+      "type": "process",
+      "position": { "x": 120, "y": 1375 },
+      "expandable": true,
+      "groupId": "group_bid",
+      "detailConfig": {
+        "description": "支付投标文件费和投标保证金",
+        "databaseTables": [
+          {
+            "tableName": "bid_payment",
+            "description": "投标费用支付表",
+            "keyFields": ["payment_id", "bid_id", "payment_type", "amount", "payment_date"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_bid_03",
+      "name": "等待投标结果",
+      "type": "process",
+      "position": { "x": 120, "y": 1455 },
+      "expandable": false,
+      "groupId": "group_bid"
+    },
+    {
+      "id": "node_bid_04",
+      "name": "是否中标",
+      "type": "decision",
+      "position": { "x": 115, "y": 1535 },
+      "expandable": false,
+      "groupId": "group_bid"
+    },
+    {
+      "id": "node_bid_05",
+      "name": "返还投标保证金",
+      "type": "process",
+      "position": { "x": 280, "y": 1610 },
+      "expandable": true,
+      "groupId": "group_bid",
+      "detailConfig": {
+        "description": "未中标时返还投标保证金",
+        "databaseTables": [
+          {
+            "tableName": "bid_refund",
+            "description": "保证金返还表",
+            "keyFields": ["refund_id", "bid_id", "refund_amount", "refund_date"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_bid_06",
+      "name": "投标项目关闭",
+      "type": "process",
+      "position": { "x": 280, "y": 1690 },
+      "expandable": false,
+      "groupId": "group_bid"
+    },
+    {
+      "id": "node_011",
+      "name": "是否达成合作",
+      "type": "decision",
+      "position": { "x": 360, "y": 1380 },
+      "expandable": false,
+      "groupId": "group_opportunity"
+    },
+    {
+      "id": "node_contract_01",
+      "name": "收入合同起拟",
+      "type": "process",
+      "position": { "x": 365, "y": 1520 },
+      "expandable": true,
+      "groupId": "group_contract",
+      "detailConfig": {
+        "description": "起草收入合同文本",
+        "databaseTables": [
+          {
+            "tableName": "contract_draft",
+            "description": "合同草稿表",
+            "keyFields": [
+              "draft_id",
+              "contract_name",
+              "customer_id",
+              "amount",
+              "draft_user",
+              "draft_date"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_contract_02",
+      "name": "合同审批",
+      "type": "process",
+      "position": { "x": 365, "y": 1600 },
+      "expandable": true,
+      "groupId": "group_contract",
+      "detailConfig": {
+        "description": "合同内容审批流程",
+        "databaseTables": [
+          {
+            "tableName": "contract_approval",
+            "description": "合同审批表",
+            "keyFields": [
+              "approval_id",
+              "contract_id",
+              "approver",
+              "approval_result",
+              "approval_date"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_contract_03",
+      "name": "是否通过审批",
+      "type": "decision",
+      "position": { "x": 360, "y": 1680 },
+      "expandable": false,
+      "groupId": "group_contract"
+    },
+    {
+      "id": "node_contract_04",
+      "name": "合同修改",
+      "type": "process",
+      "position": { "x": 550, "y": 1600 },
+      "expandable": false,
+      "groupId": "group_contract"
+    },
+    {
+      "id": "node_contract_05",
+      "name": "合同签订",
+      "type": "process",
+      "position": { "x": 365, "y": 1820 },
+      "expandable": true,
+      "groupId": "group_contract",
+      "detailConfig": {
+        "description": "签订业务合同",
+        "databaseTables": [
+          {
+            "tableName": "contract_info",
+            "description": "合同信息表",
+            "keyFields": [
+              "contract_id",
+              "contract_no",
+              "customer_id",
+              "amount",
+              "sign_date",
+              "status"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_contract_06",
+      "name": "合同归档",
+      "type": "process",
+      "position": { "x": 365, "y": 1900 },
+      "expandable": true,
+      "groupId": "group_contract",
+      "detailConfig": {
+        "description": "合同原件归档管理",
+        "databaseTables": [
+          {
+            "tableName": "contract_archive",
+            "description": "合同归档表",
+            "keyFields": ["archive_id", "contract_id", "archive_location", "archive_date"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_project_01",
+      "name": "合同项目立项",
+      "type": "process",
+      "position": { "x": 365, "y": 1980 },
+      "expandable": true,
+      "groupId": "group_contract",
+      "detailConfig": {
+        "description": "基于合同创建项目并立项",
+        "databaseTables": [
+          {
+            "tableName": "project_info",
+            "description": "项目信息表",
+            "keyFields": [
+              "project_id",
+              "project_name",
+              "contract_id",
+              "project_manager",
+              "start_date"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_project_02",
+      "name": "项目执行",
+      "type": "process",
+      "position": { "x": 365, "y": 2060 },
+      "expandable": true,
+      "groupId": "group_contract",
+      "detailConfig": {
+        "description": "项目实施执行阶段",
+        "databaseTables": [
+          {
+            "tableName": "project_execution",
+            "description": "项目执行记录表",
+            "keyFields": ["execution_id", "project_id", "milestone", "progress", "update_date"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_project_03",
+      "name": "项目完结",
+      "type": "process",
+      "position": { "x": 365, "y": 2140 },
+      "expandable": true,
+      "groupId": "group_contract",
+      "detailConfig": {
+        "description": "项目完成并结算",
+        "databaseTables": [
+          {
+            "tableName": "project_completion",
+            "description": "项目完结表",
+            "keyFields": [
+              "completion_id",
+              "project_id",
+              "completion_date",
+              "final_amount",
+              "evaluation"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_project_04",
+      "name": "管理费结算",
+      "type": "process",
+      "position": { "x": 365, "y": 2220 },
+      "expandable": true,
+      "groupId": "group_contract",
+      "detailConfig": {
+        "description": "紧密型项目的管理费收取结算",
+        "databaseTables": [
+          {
+            "tableName": "management_fee",
+            "description": "管理费结算表",
+            "keyFields": ["fee_id", "project_id", "fee_amount", "fee_rate", "settle_date", "status"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_end",
+      "name": "结束",
+      "type": "terminator",
+      "position": { "x": 400, "y": 2320 },
+      "expandable": false,
+      "groupId": "group_contract"
+    },
+    {
+      "id": "node_end2",
+      "name": "流程终止",
+      "type": "terminator",
+      "position": { "x": 620, "y": 920 },
+      "expandable": false,
+      "groupId": "group_opportunity"
+    },
+    {
+      "id": "node_lost",
+      "name": "商机失单",
+      "type": "process",
+      "position": { "x": 580, "y": 1380 },
+      "expandable": true,
+      "groupId": "group_opportunity",
+      "detailConfig": {
+        "description": "标记商机为失单状态，记录失单原因",
+        "databaseTables": [
+          {
+            "tableName": "opportunity_lost",
+            "description": "商机失单表",
+            "keyFields": ["lost_id", "opportunity_id", "lost_reason", "lost_date", "competitor"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_bid_project",
+      "name": "独立发起投标",
+      "type": "process",
+      "position": { "x": 120, "y": 995 },
+      "expandable": true,
+      "groupId": "group_bid",
+      "detailConfig": {
+        "description": "不依赖商机，独立发起投标项目",
+        "databaseTables": [
+          {
+            "tableName": "independent_bid",
+            "description": "独立投标表",
+            "keyFields": ["bid_id", "project_name", "source", "create_date"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_end3",
+      "name": "投标结束",
+      "type": "terminator",
+      "position": { "x": 315, "y": 1770 },
+      "expandable": false,
+      "groupId": "group_bid"
+    }
+  ],
+  "connectors": [
+    { "id": "conn_001", "sourceID": "node_start", "targetID": "node_001" },
+    { "id": "conn_002", "sourceID": "node_001", "targetID": "node_002" },
+    { "id": "conn_003", "sourceID": "node_002", "targetID": "node_003" },
+    { "id": "conn_004", "sourceID": "node_003", "targetID": "node_004" },
+    { "id": "conn_005", "sourceID": "node_004", "targetID": "node_005", "label": "是" },
+    {
+      "id": "conn_006",
+      "sourceID": "node_004",
+      "targetID": "node_end2",
+      "label": "否",
+      "sourceHandle": "right",
+      "targetHandle": "left"
+    },
+    { "id": "conn_007", "sourceID": "node_005", "targetID": "node_006" },
+    { "id": "conn_008", "sourceID": "node_006", "targetID": "node_006b" },
+    { "id": "conn_008b", "sourceID": "node_006b", "targetID": "node_006c" },
+    { "id": "conn_008c", "sourceID": "node_006c", "targetID": "node_007", "label": "是" },
+    {
+      "id": "conn_008d",
+      "sourceID": "node_006c",
+      "targetID": "node_end2",
+      "label": "否",
+      "sourceHandle": "right",
+      "targetHandle": "bottom"
+    },
+    { "id": "conn_009", "sourceID": "node_007", "targetID": "node_008" },
+    { "id": "conn_010", "sourceID": "node_008", "targetID": "node_009", "label": "是" },
+    {
+      "id": "conn_010b",
+      "sourceID": "node_008",
+      "targetID": "node_bid_project",
+      "label": "否",
+      "sourceHandle": "left",
+      "targetHandle": "right"
+    },
+    { "id": "conn_011", "sourceID": "node_009", "targetID": "node_010" },
+    { "id": "conn_012", "sourceID": "node_010", "targetID": "node_010b" },
+    {
+      "id": "conn_012b",
+      "sourceID": "node_010b",
+      "targetID": "node_bid_01",
+      "label": "是",
+      "sourceHandle": "left",
+      "targetHandle": "right"
+    },
+    { "id": "conn_012c", "sourceID": "node_010b", "targetID": "node_011", "label": "否" },
+    { "id": "conn_bid_01", "sourceID": "node_bid_project", "targetID": "node_bid_01" },
+    { "id": "conn_bid_02", "sourceID": "node_bid_01", "targetID": "node_bid_02" },
+    { "id": "conn_bid_03", "sourceID": "node_bid_02", "targetID": "node_bid_03" },
+    { "id": "conn_bid_04", "sourceID": "node_bid_03", "targetID": "node_bid_04" },
+    {
+      "id": "conn_bid_05",
+      "sourceID": "node_bid_04",
+      "targetID": "node_contract_01",
+      "label": "是",
+      "sourceHandle": "left",
+      "targetHandle": "left"
+    },
+    { "id": "conn_bid_06", "sourceID": "node_bid_04", "targetID": "node_bid_05", "label": "否" },
+    { "id": "conn_bid_07", "sourceID": "node_bid_05", "targetID": "node_bid_06" },
+    { "id": "conn_bid_08", "sourceID": "node_bid_06", "targetID": "node_end3" },
+    {
+      "id": "conn_013",
+      "sourceID": "node_011",
+      "targetID": "node_contract_01",
+      "label": "是",
+      "sourceHandle": "bottom",
+      "targetHandle": "right"
+    },
+    {
+      "id": "conn_014",
+      "sourceID": "node_011",
+      "targetID": "node_lost",
+      "label": "否",
+      "sourceHandle": "right",
+      "targetHandle": "left"
+    },
+    {
+      "id": "conn_015",
+      "sourceID": "node_lost",
+      "targetID": "node_end",
+      "sourceHandle": "right",
+      "targetHandle": "right"
+    },
+    { "id": "conn_contract_01", "sourceID": "node_contract_01", "targetID": "node_contract_02" },
+    { "id": "conn_contract_02", "sourceID": "node_contract_02", "targetID": "node_contract_03" },
+    {
+      "id": "conn_contract_03",
+      "sourceID": "node_contract_03",
+      "targetID": "node_contract_05",
+      "label": "是"
+    },
+    {
+      "id": "conn_contract_04",
+      "sourceID": "node_contract_03",
+      "targetID": "node_contract_04",
+      "label": "否",
+      "sourceHandle": "left",
+      "targetHandle": "bottom"
+    },
+    {
+      "id": "conn_contract_05",
+      "sourceID": "node_contract_04",
+      "targetID": "node_contract_01",
+      "sourceHandle": "top",
+      "targetHandle": "right"
+    },
+    { "id": "conn_contract_06", "sourceID": "node_contract_05", "targetID": "node_contract_06" },
+    { "id": "conn_project_01", "sourceID": "node_contract_06", "targetID": "node_project_01" },
+    { "id": "conn_project_02", "sourceID": "node_project_01", "targetID": "node_project_02" },
+    { "id": "conn_project_03", "sourceID": "node_project_02", "targetID": "node_project_03" },
+    { "id": "conn_project_04", "sourceID": "node_project_03", "targetID": "node_project_04" },
+    { "id": "conn_project_05", "sourceID": "node_project_04", "targetID": "node_end" }
+  ]
+}

@@ -1,0 +1,1094 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>新增紧密型交接清单</title>
+    <style>
+      /* --- 全局样式重置 --- */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family:
+          'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+          '微软雅黑', Arial, sans-serif;
+        background-color: #f0f2f5;
+        color: #606266;
+        font-size: 14px;
+        padding-bottom: 40px;
+        white-space: nowrap;
+      }
+
+      /* --- 顶部导航栏 --- */
+      .navbar {
+        background-color: #fff;
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #dcdfe6;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+      }
+
+      .page-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #303133;
+      }
+
+      .nav-buttons button {
+        cursor: pointer;
+        padding: 8px 15px;
+        border-radius: 3px;
+        font-size: 12px;
+        border: 1px solid #dcdfe6;
+        margin-left: 10px;
+        outline: none;
+      }
+
+      .btn-primary {
+        background-color: #409eff;
+        color: #fff;
+        border-color: #409eff !important;
+      }
+
+      .btn-default {
+        background-color: #fff;
+        color: #606266;
+      }
+      .btn-default:hover {
+        color: #409eff;
+        border-color: #c6e2ff !important;
+        background-color: #ecf5ff;
+      }
+
+      /* --- 主容器 --- */
+      .main-container {
+        width: 100%;
+        max-width: 1200px;
+        margin: 15px auto;
+        padding: 0 10px;
+      }
+
+      /* --- 卡片通用样式 --- */
+      .card {
+        background-color: #fff;
+        border-radius: 4px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      .section-header {
+        font-size: 15px;
+        font-weight: bold;
+        color: #303133;
+        margin-bottom: 20px;
+        border-left: 4px solid #409eff;
+        padding-left: 10px;
+        line-height: 1;
+      }
+
+      /* --- 表单网格系统 --- */
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* 默认3列 */
+        gap: 15px 40px; /* 行距 列距 */
+      }
+
+      .form-grid.cols-2 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .form-item {
+        display: flex;
+        align-items: center;
+        min-height: 32px;
+      }
+
+      .form-label {
+        width: 160px; /* 标签宽度 */
+        text-align: right;
+        padding-right: 12px;
+        color: #606266;
+        font-weight: 500;
+        flex-shrink: 0;
+        font-size: 13px;
+      }
+
+      .form-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        position: relative;
+      }
+
+      .required {
+        color: #f56c6c;
+        margin-right: 4px;
+      }
+
+      /* --- 输入控件样式 --- */
+      input[type='text'],
+      select,
+      .date-range {
+        width: 100%;
+        height: 32px;
+        line-height: 32px;
+        border: 1px solid #dcdfe6;
+        border-radius: 4px;
+        padding: 0 10px;
+        color: #606266;
+        outline: none;
+        transition: border-color 0.2s;
+        background-color: #fff;
+        font-size: 13px;
+      }
+
+      input::placeholder {
+        color: #c0c4cc;
+      }
+
+      select {
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'%3E%3Cpath fill='%23C0C4CC' d='M831.872 340.864 512 652.672 192.128 340.864a30.592 30.592 0 0 0-42.752 0 29.12 29.12 0 0 0 0 41.6L489.664 714.24a32 32 0 0 0 44.672 0l340.288-331.712a29.12 29.12 0 0 0 0-41.728 30.592 30.592 0 0 0-42.752 0z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 12px;
+        cursor: pointer;
+      }
+
+      /* 模拟日期范围选择器 */
+      .date-range {
+        display: flex;
+        align-items: center;
+        padding: 0;
+        border: 1px solid #dcdfe6;
+      }
+      .date-range input {
+        border: none;
+        text-align: center;
+        height: 30px;
+      }
+      .date-range span {
+        color: #dcdfe6;
+        padding: 0 5px;
+      }
+
+      input:focus,
+      select:focus {
+        border-color: #409eff;
+      }
+      input:disabled,
+      select:disabled {
+        background-color: #f5f7fa;
+        color: #c0c4cc;
+        cursor: not-allowed;
+      }
+
+      /* --- Switch 开关 --- */
+      .el-switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 20px;
+        vertical-align: middle;
+      }
+      .el-switch input {
+        display: none;
+      }
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #dcdfe6;
+        transition: 0.4s;
+        border-radius: 20px;
+      }
+      .slider:before {
+        position: absolute;
+        content: '';
+        height: 16px;
+        width: 16px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
+      .el-switch input:checked + .slider {
+        background-color: #409eff;
+      }
+      .el-switch input:checked + .slider:before {
+        transform: translateX(20px);
+      }
+
+      /* --- 带文字的 Switch 开关 --- */
+      .el-switch-text {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        width: 50px;
+        height: 22px;
+        vertical-align: middle;
+        cursor: pointer;
+      }
+      .el-switch-text input {
+        display: none;
+      }
+      .slider-text {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #dcdfe6;
+        transition: 0.4s;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        padding: 0 6px;
+      }
+      .slider-text:before {
+        position: absolute;
+        content: '';
+        height: 18px;
+        width: 18px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+        z-index: 2;
+      }
+      .slider-text .switch-text-label {
+        position: absolute;
+        right: 6px;
+        font-size: 12px;
+        color: #fff;
+        z-index: 1;
+      }
+      .el-switch-text input:checked + .slider-text {
+        background-color: #409eff;
+      }
+      .el-switch-text input:checked + .slider-text:before {
+        transform: translateX(28px);
+      }
+      .el-switch-text input:checked + .slider-text .switch-text-label {
+        right: auto;
+        left: 6px;
+      }
+
+      /* --- 宽版带文字的 Switch 开关（适用于长文字如"需要/不需要"） --- */
+      .el-switch-text.wide {
+        width: 70px;
+      }
+      .el-switch-text.wide .slider-text:before {
+        height: 18px;
+        width: 18px;
+      }
+      .el-switch-text.wide input:checked + .slider-text:before {
+        transform: translateX(48px);
+      }
+
+      /* 条件显示区域 */
+      .conditional-section {
+        display: none;
+        margin-top: 15px;
+      }
+      .conditional-section.show {
+        display: block;
+      }
+
+      /* --- 链接/按钮文字 --- */
+      .text-btn {
+        color: #409eff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+      }
+      .text-btn:hover {
+        text-decoration: underline;
+      }
+
+      /* --- 表格相关 --- */
+      .table-container {
+        border: 1px solid #ebeef5;
+        margin-bottom: 10px;
+      }
+      .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .custom-table th {
+        background-color: #f5f7fa;
+        color: #909399;
+        text-align: left;
+        padding: 8px 10px;
+        font-size: 12px;
+        border-bottom: 1px solid #ebeef5;
+        font-weight: 600;
+      }
+
+      /* 空状态模拟 */
+      .empty-state {
+        padding: 30px 0;
+        text-align: center;
+        color: #909399;
+        background: #fff;
+      }
+      .empty-icon {
+        display: block;
+        width: 40px;
+        height: 40px;
+        margin: 0 auto 10px;
+        background: #f0f2f5; /* 简单模拟图标占位 */
+        border-radius: 4px;
+        position: relative;
+      }
+      /* 简单用CSS画个盒子icon */
+      .empty-icon::after {
+        content: '';
+        position: absolute;
+        top: 10px;
+        left: 5px;
+        right: 5px;
+        height: 1px;
+        background: #dcdfe6;
+        box-shadow: 0 5px 0 #dcdfe6;
+      }
+
+      /* 虚线按钮 */
+      .dashed-btn {
+        width: 100%;
+        border: 1px dashed #dcdfe6;
+        background-color: #fff;
+        color: #409eff;
+        text-align: center;
+        padding: 8px 0;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 13px;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+      }
+      .dashed-btn:hover {
+        border-color: #409eff;
+        background-color: #ecf5ff;
+      }
+
+      /* --- 底部特殊区域 --- */
+      textarea {
+        width: 100%;
+        border: 1px solid #dcdfe6;
+        border-radius: 4px;
+        padding: 8px;
+        resize: vertical;
+        min-height: 60px;
+        outline: none;
+        white-space: pre-wrap; /* textarea 允许换行 */
+      }
+      textarea:focus {
+        border-color: #409eff;
+      }
+
+      .upload-wrapper {
+        display: flex;
+        align-items: center;
+      }
+      .upload-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        background: #fff;
+        border: 1px solid #dcdfe6;
+        border-radius: 3px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="navbar">
+      <div class="page-title">新增紧密型交接清单</div>
+      <div class="nav-buttons">
+        <button type="button" class="btn-primary">提交</button>
+        <button type="button" class="btn-default">保存</button>
+      </div>
+    </div>
+
+    <div class="main-container">
+      <div class="card">
+        <div class="section-header">项目概览</div>
+        <div class="form-grid">
+          <div class="form-item" style="grid-column: span 3">
+            <label class="form-label">关联收入合同：</label>
+            <div class="form-content">
+              <span class="text-btn">+ 添加合同</span>
+            </div>
+          </div>
+
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>申请部门：</label>
+            <div class="form-content">
+              <select>
+                <option>请选择</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label">申请人：</label>
+            <div class="form-content">张三</div>
+          </div>
+          <div class="form-item"></div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>客户名称：</label>
+            <div class="form-content">
+              <select>
+                <option>请选择</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-item"></div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>行业域：</label>
+            <div class="form-content"><input type="text" /></div>
+          </div>
+
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>合同主体：</label>
+            <div class="form-content">
+              <select>
+                <option>请选择</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>合同期限：</label>
+            <div class="form-content date-range">
+              <input type="text" placeholder="开始日期" /> <span>-</span>
+              <input type="text" placeholder="结束日期" />
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>续签方式：</label>
+            <div class="form-content">
+              <select>
+                <option>请选择</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>业务类型：</label>
+            <div class="form-content"><input type="text" placeholder="请选择" /></div>
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>驻点服务：</label>
+            <div class="form-content">
+              <label class="el-switch-text wide" id="stationed-service-switch">
+                <input type="checkbox" id="stationed-service-checkbox" />
+                <span class="slider-text"><span class="switch-text-label">不需要</span></span>
+              </label>
+            </div>
+          </div>
+          <div class="form-item"></div>
+
+          <div class="form-item">
+            <label class="form-label">是否确定客户交付对接人：</label>
+            <div class="form-content">
+              <label class="el-switch-text" id="customer-contact-switch">
+                <input type="checkbox" id="customer-contact-checkbox" />
+                <span class="slider-text"><span class="switch-text-label">否</span></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 客户交付对接人表格（条件显示） -->
+          <div
+            class="form-item"
+            id="customer-contact-section"
+            style="display: none; grid-column: span 3"
+          >
+            <label class="form-label" style="align-self: flex-start; padding-top: 8px"
+              >客户交付对接人：</label
+            >
+            <div class="form-content" style="display: block; width: 100%">
+              <div class="table-container">
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th>姓名</th>
+                      <th>部门及职务</th>
+                      <th>主要对接内容</th>
+                      <th>联系电话</th>
+                      <th>微信或钉钉</th>
+                      <th>邮箱</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                </table>
+                <div class="empty-state">
+                  <span class="empty-icon"></span>
+                  暂无数据
+                </div>
+              </div>
+              <div class="dashed-btn">+ 添加客户交付对接人</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">费用结算</div>
+
+        <div class="form-item">
+          <label class="form-label" style="align-self: flex-start; padding-top: 5px"
+            >发票类型：</label
+          >
+          <div class="form-content" style="display: block; width: 100%">
+            <div class="table-container">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>发票类型</th>
+                    <th>发票形式</th>
+                    <th>税金收取基准</th>
+                    <th>税费计税税率（收取税率）</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+              </table>
+              <div class="empty-state">
+                <span class="empty-icon"></span>
+                暂无数据
+              </div>
+            </div>
+            <div class="dashed-btn">+ 购方_开票类型</div>
+          </div>
+        </div>
+
+        <div class="form-item">
+          <label class="form-label">是否确定开票信息：</label>
+          <div class="form-content">
+            <label class="el-switch-text" id="invoice-info-switch">
+              <input type="checkbox" id="invoice-info-checkbox" />
+              <span class="slider-text"><span class="switch-text-label">否</span></span>
+            </label>
+          </div>
+        </div>
+        <!-- 开票信息表格（条件显示） -->
+        <div class="form-item conditional-section" id="invoice-info-section" style="display: none">
+          <label class="form-label" style="align-self: flex-start; padding-top: 5px"
+            >开票信息：</label
+          >
+          <div class="form-content" style="display: block; width: 100%">
+            <div class="table-container">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>是否为新客户 <span style="cursor: help">②</span></th>
+                    <th>开票名称</th>
+                    <th>开票内容</th>
+                    <th>地址电话</th>
+                    <th>纳税人识别号</th>
+                    <th>开户行及账号</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px; color: #999">
+                      <div style="font-size: 40px; margin-bottom: 10px">📁</div>
+                      暂无数据
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <button
+              class="add-btn"
+              style="
+                margin-top: 10px;
+                color: #409eff;
+                background: none;
+                border: none;
+                cursor: pointer;
+              "
+            >
+              + 添加开票信息
+            </button>
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="form-label" style="align-self: flex-start; padding-top: 5px"
+            >管理费标准：</label
+          >
+          <div class="form-content" style="display: block; width: 100%">
+            <div class="table-container">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>管理费收取主体</th>
+                    <th>管理费管理费率</th>
+                    <th>管理费收取依据</th>
+                    <th>管理费具体内容</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+              </table>
+              <div class="empty-state">
+                <span class="empty-icon"></span>
+                暂无数据
+              </div>
+            </div>
+            <div class="dashed-btn">+ 新增记录</div>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>结算方式：</label>
+            <div class="form-content"><input type="text" placeholder="请选择" /></div>
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>结算周期：</label>
+            <div class="form-content"><input type="text" placeholder="请选择" /></div>
+          </div>
+          <div class="form-item"></div>
+
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>外经证税费结算：</label>
+            <div class="form-content"><input type="text" /></div>
+          </div>
+          <div class="form-item"></div>
+          <div class="form-item"></div>
+
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>农名工工资发放专户：</label>
+            <div class="form-content">
+              <label class="el-switch"><input type="checkbox" /><span class="slider"></span></label>
+              <span style="margin-left: 8px; font-size: 12px">涉及</span>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>是否涉及垫资：</label>
+            <div class="form-content">
+              <label class="el-switch"><input type="checkbox" /><span class="slider"></span></label>
+            </div>
+          </div>
+          <div class="form-item"></div>
+
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>员工报销：</label>
+            <div class="form-content">
+              <label class="el-switch"><input type="checkbox" /><span class="slider"></span></label>
+              <span style="margin-left: 8px; font-size: 12px">不涉及/自理</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">保险缴纳</div>
+        <div class="form-grid">
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>保险缴纳形式：</label>
+            <div class="form-content">
+              <select>
+                <option>请选择</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">班组合同</div>
+        <div class="form-grid">
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>班组协议签订：</label>
+            <div class="form-content">
+              <select>
+                <option>请选择</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">劳动合同</div>
+        <div class="form-grid">
+          <div class="form-item">
+            <label class="form-label">是否涉及劳动合同：</label>
+            <div class="form-content">
+              <label class="el-switch"
+                ><input type="checkbox" checked /><span class="slider"></span
+              ></label>
+              <span style="margin-left: 8px; font-size: 12px; color: #409eff">涉及</span>
+            </div>
+          </div>
+          <div class="form-item"></div>
+          <div class="form-item"></div>
+
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>劳动合同是否我认：</label>
+            <div class="form-content">
+              <label class="el-switch"><input type="checkbox" /><span class="slider"></span></label>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label">合同类型：</label>
+            <div class="form-content"><input type="text" placeholder="请选择" /></div>
+          </div>
+          <div class="form-item">
+            <label class="form-label">合同工资：</label>
+            <div class="form-content"><input type="text" /></div>
+          </div>
+
+          <div class="form-item">
+            <label class="form-label">每月工资发放日：</label>
+            <div class="form-content"><input type="text" /></div>
+          </div>
+          <div class="form-item">
+            <label class="form-label">工时制：</label>
+            <div class="form-content"><input type="text" placeholder="请选择" /></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">社保公积金</div>
+        <div class="form-grid">
+          <div class="form-item">
+            <label class="form-label">是否涉及社保公积金：</label>
+            <div class="form-content">
+              <label class="el-switch"
+                ><input type="checkbox" checked /><span class="slider"></span
+              ></label>
+              <span style="margin-left: 8px; font-size: 12px; color: #409eff">涉及</span>
+            </div>
+          </div>
+          <div class="form-item"></div>
+          <div class="form-item"></div>
+
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>残保金企向收取：</label>
+            <div class="form-content">
+              <label class="el-switch"><input type="checkbox" /><span class="slider"></span></label>
+              <span style="margin-left: 8px; font-size: 12px">无</span>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>残疾人足额安置：</label>
+            <div class="form-content">
+              <label class="el-switch"><input type="checkbox" /><span class="slider"></span></label>
+              <span style="margin-left: 8px; font-size: 12px">无</span>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>残保金收取标准：</label>
+            <div class="form-content">
+              <select>
+                <option></option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>残保金收取周期：</label>
+            <div class="form-content">
+              <select>
+                <option></option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">安全管理约定</div>
+        <div class="form-grid">
+          <div class="form-item">
+            <label class="form-label">是否涉及安全管理：</label>
+            <div class="form-content">
+              <label class="el-switch"
+                ><input type="checkbox" checked /><span class="slider"></span
+              ></label>
+              <span style="margin-left: 8px; font-size: 12px; color: #409eff">涉及</span>
+            </div>
+          </div>
+          <div class="form-item"></div>
+          <div class="form-item"></div>
+
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>残保金企向收取：</label>
+            <div class="form-content">
+              <label class="el-switch"><input type="checkbox" /><span class="slider"></span></label>
+              <span style="margin-left: 8px; font-size: 12px">否</span>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>残疾人足额安置：</label>
+            <div class="form-content">
+              <label class="el-switch"><input type="checkbox" /><span class="slider"></span></label>
+              <span style="margin-left: 8px; font-size: 12px">无</span>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>残保金收取标准：</label>
+            <div class="form-content">
+              <select>
+                <option></option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>残保金收取周期：</label>
+            <div class="form-content">
+              <select>
+                <option></option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">安全管理约定</div>
+        <div class="form-grid">
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>安全管理责任主体：</label>
+            <div class="form-content">
+              <select>
+                <option></option>
+              </select>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>安全管理责任承担：</label>
+            <div class="form-content">
+              <select>
+                <option></option>
+              </select>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>安全管理责任约定方式：</label>
+            <div class="form-content">
+              <select>
+                <option></option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">纠纷处理约定</div>
+        <div class="form-grid">
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>纠纷处理：</label>
+            <div class="form-content">
+              <select>
+                <option></option>
+              </select>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>纠纷责任承担：</label>
+            <div class="form-content">
+              <select>
+                <option></option>
+              </select>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>纠纷责任约定方式：</label>
+            <div class="form-content">
+              <select>
+                <option></option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">工伤/工亡处理约定事项</div>
+        <div class="form-grid">
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>工伤/工亡处理：</label>
+            <div class="form-content">
+              <select>
+                <option></option>
+              </select>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>工伤/工亡责任承担：</label>
+            <div class="form-content">
+              <select>
+                <option></option>
+              </select>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>工伤/工亡责任约定方式：</label>
+            <div class="form-content">
+              <select>
+                <option></option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">其他特殊约定</div>
+        <div class="form-item" style="display: block">
+          <div style="display: flex; margin-bottom: 10px">
+            <label class="form-label" style="margin-top: 5px">其他特殊约定事项：</label>
+            <div class="form-content">
+              <textarea></textarea>
+            </div>
+          </div>
+          <div style="display: flex">
+            <label class="form-label">附件：</label>
+            <div class="form-content upload-wrapper">
+              <button class="upload-btn">⬆ 上传附件</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 客户交付对接人开关处理
+      var customerContactCheckbox = document.getElementById('customer-contact-checkbox');
+      var customerContactSection = document.getElementById('customer-contact-section');
+      var customerContactLabel = customerContactCheckbox
+        .closest('.el-switch-text')
+        .querySelector('.switch-text-label');
+
+      function updateCustomerContactSwitch() {
+        if (customerContactCheckbox.checked) {
+          customerContactLabel.textContent = '是';
+          customerContactSection.style.display = 'flex';
+        } else {
+          customerContactLabel.textContent = '否';
+          customerContactSection.style.display = 'none';
+        }
+      }
+
+      // 初始化
+      updateCustomerContactSwitch();
+
+      // 监听变化
+      customerContactCheckbox.addEventListener('change', updateCustomerContactSwitch);
+
+      // 驻点服务开关处理（需要/不需要）
+      var stationedServiceCheckbox = document.getElementById('stationed-service-checkbox');
+      var stationedServiceLabel = stationedServiceCheckbox
+        .closest('.el-switch-text')
+        .querySelector('.switch-text-label');
+
+      function updateStationedServiceSwitch() {
+        stationedServiceLabel.textContent = stationedServiceCheckbox.checked ? '需要' : '不需要';
+      }
+
+      // 初始化
+      updateStationedServiceSwitch();
+
+      // 监听变化
+      stationedServiceCheckbox.addEventListener('change', updateStationedServiceSwitch);
+
+      // 开票信息开关处理
+      var invoiceInfoCheckbox = document.getElementById('invoice-info-checkbox');
+      var invoiceInfoSection = document.getElementById('invoice-info-section');
+      var invoiceInfoLabel = invoiceInfoCheckbox
+        .closest('.el-switch-text')
+        .querySelector('.switch-text-label');
+
+      function updateInvoiceInfoSwitch() {
+        if (invoiceInfoCheckbox.checked) {
+          invoiceInfoLabel.textContent = '是';
+          invoiceInfoSection.style.display = 'flex';
+        } else {
+          invoiceInfoLabel.textContent = '否';
+          invoiceInfoSection.style.display = 'none';
+        }
+      }
+
+      // 初始化
+      updateInvoiceInfoSwitch();
+
+      // 监听变化
+      invoiceInfoCheckbox.addEventListener('change', updateInvoiceInfoSwitch);
+
+      // 为其他带文字的开关添加状态切换功能
+      document
+        .querySelectorAll('.el-switch-text input[type="checkbox"]')
+        .forEach(function (checkbox) {
+          if (
+            checkbox.id === 'customer-contact-checkbox' ||
+            checkbox.id === 'stationed-service-checkbox' ||
+            checkbox.id === 'invoice-info-checkbox'
+          )
+            return; // 跳过已处理的
+          var label = checkbox.closest('.el-switch-text').querySelector('.switch-text-label');
+          if (label) {
+            checkbox.addEventListener('change', function () {
+              label.textContent = this.checked ? '是' : '否';
+            });
+          }
+
+          // 阻止所有按钮的默认提交行为
+          const buttons = document.querySelectorAll('button');
+          buttons.forEach(function (button) {
+            button.addEventListener('click', function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+            });
+          });
+
+          // 阻止Enter键触发表单提交和页面刷新
+          document.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+              const target = e.target;
+              // 如果是在textarea中，允许换行
+              if (target.tagName === 'TEXTAREA') {
+                return;
+              }
+              // 其他情况下阻止默认行为
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          });
+
+          // 阻止表单提交（如果有表单的话）
+          const forms = document.querySelectorAll('form');
+          forms.forEach(function (form) {
+            form.addEventListener('submit', function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              return false;
+            });
+          });
+        });
+    </script>
+  </body>
+</html>

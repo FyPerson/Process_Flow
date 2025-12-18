@@ -1,0 +1,65 @@
+.alignment-toolbar {
+    position: absolute;
+    top: 60px;
+    /* Below the header controls */
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    background: rgba(30, 41, 59, 0.95);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 8px;
+    padding: 4px;
+    gap: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+.alignment-group {
+    display: flex;
+    gap: 2px;
+}
+
+.alignment-divider {
+    width: 1px;
+    background: rgba(148, 163, 184, 0.2);
+    margin: 2px 4px;
+}
+
+.alignment-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 4px;
+}
+
+.alignment-btn:hover {
+    background: rgba(148, 163, 184, 0.1);
+    color: #f8fafc;
+}
+
+.alignment-btn:active {
+    background: rgba(148, 163, 184, 0.2);
+    transform: translateY(1px);
+}

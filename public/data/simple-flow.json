@@ -1,0 +1,156 @@
+{
+  "id": "simple-flow-001",
+  "name": "线索管理流程",
+  "description": "从市场活动到线索登记的完整流程",
+  "nodes": [
+    {
+      "id": "node_start",
+      "name": "开始",
+      "type": "terminator",
+      "position": { "x": 330, "y": 50 },
+      "style": { "width": 140 },
+      "expandable": false
+    },
+    {
+      "id": "node_market",
+      "name": "市场活动/渠道触点",
+      "type": "process",
+      "position": { "x": 280, "y": 210 },
+      "style": { "width": 240 },
+      "expandable": true,
+      "detailConfig": {
+        "description": "通过市场活动或渠道触点获取潜在客户信息",
+        "databaseTables": [
+          {
+            "tableName": "marketing_activity",
+            "description": "市场活动表",
+            "keyFields": [
+              "activity_id",
+              "activity_name",
+              "activity_type",
+              "start_date",
+              "end_date",
+              "budget"
+            ]
+          },
+          {
+            "tableName": "channel_touchpoint",
+            "description": "渠道触点表",
+            "keyFields": ["touchpoint_id", "channel_name", "channel_type", "contact_date", "source"]
+          }
+        ],
+        "screenshots": []
+      }
+    },
+    {
+      "id": "node_collect",
+      "name": "线索收集",
+      "type": "process",
+      "position": { "x": 280, "y": 370 },
+      "style": { "width": 240 },
+      "expandable": true,
+      "detailConfig": {
+        "description": "收集和整理潜在客户的基本信息",
+        "databaseTables": [
+          {
+            "tableName": "lead_collection",
+            "description": "线索收集表",
+            "keyFields": [
+              "collection_id",
+              "customer_name",
+              "contact_phone",
+              "contact_email",
+              "company_name",
+              "collection_date"
+            ]
+          },
+          {
+            "tableName": "lead_source",
+            "description": "线索来源表",
+            "keyFields": ["source_id", "source_type", "source_channel", "referrer"]
+          }
+        ],
+        "screenshots": []
+      }
+    },
+    {
+      "id": "node_register",
+      "name": "线索登记",
+      "type": "process",
+      "position": { "x": 280, "y": 530 },
+      "style": { "width": 240 },
+      "expandable": true,
+      "detailConfig": {
+        "description": "正式登记线索信息，录入系统进行后续跟进",
+        "databaseTables": [
+          {
+            "tableName": "lead_register",
+            "description": "线索登记表",
+            "keyFields": [
+              "lead_id",
+              "lead_no",
+              "customer_name",
+              "contact_info",
+              "register_date",
+              "register_user",
+              "status"
+            ]
+          },
+          {
+            "tableName": "lead_detail",
+            "description": "线索详情表",
+            "keyFields": [
+              "detail_id",
+              "lead_id",
+              "industry",
+              "company_size",
+              "budget_range",
+              "requirement_desc"
+            ]
+          },
+          {
+            "tableName": "lead_assignment",
+            "description": "线索分配表",
+            "keyFields": ["assignment_id", "lead_id", "assign_to", "assign_date", "assign_reason"]
+          }
+        ],
+        "screenshots": []
+      }
+    }
+  ],
+  "connectors": [
+    {
+      "id": "conn_001",
+      "sourceID": "node_start",
+      "targetID": "node_market",
+      "sourceHandle": "bottom",
+      "targetHandle": "top",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 3
+      }
+    },
+    {
+      "id": "conn_002",
+      "sourceID": "node_market",
+      "targetID": "node_collect",
+      "sourceHandle": "bottom",
+      "targetHandle": "top",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 3
+      }
+    },
+    {
+      "id": "conn_003",
+      "sourceID": "node_collect",
+      "targetID": "node_register",
+      "sourceHandle": "bottom",
+      "targetHandle": "top",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 3
+      }
+    }
+  ]
+}

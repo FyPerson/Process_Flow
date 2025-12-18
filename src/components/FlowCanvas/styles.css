@@ -1,0 +1,254 @@
+/* Main Container: Flex Column Layout */
+.flow-canvas-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  position: relative;
+}
+
+/* dedicated Canvas Area (below toolbar) */
+.canvas-area {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* New Top Toolbar Style */
+.flow-controls-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.8);
+  border-bottom: 1px solid #e2e8f0;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 10;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+}
+
+.flow-controls-panel {
+  display: none;
+  /* Hide original panel wrapper if it remains by accident */
+}
+
+/* Inner Controls Group - Reset floating styles */
+.flow-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+/* Base Button Style */
+.control-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #64748b;
+  /* Slate 500 */
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  outline: none;
+}
+
+/* Hover Effect for all buttons */
+.control-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: #0f172a;
+  /* Slate 900 */
+  transform: translateY(-1px);
+}
+
+.control-btn:active {
+  transform: translateY(0);
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Specific variants (Subtle Tints) */
+.control-btn.btn-save {
+  color: #2563eb;
+  /* Blue 600 */
+  background: rgba(37, 99, 235, 0.08);
+  font-weight: 600;
+}
+
+.control-btn.btn-save:hover {
+  background: rgba(37, 99, 235, 0.15);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+}
+
+.control-btn.btn-export,
+.control-btn.btn-import {
+  color: #059669;
+  /* Emerald 600 */
+}
+
+.control-btn.btn-export:hover,
+.control-btn.btn-import:hover {
+  background: rgba(16, 185, 129, 0.1);
+  color: #047857;
+}
+
+.control-btn.btn-node {
+  color: #4f46e5;
+  /* Indigo 600 */
+  font-weight: 500;
+}
+
+.control-btn.btn-node:hover {
+  background: rgba(79, 70, 229, 0.1);
+  color: #4338ca;
+}
+
+.control-btn.btn-group {
+  color: #7c3aed;
+  /* Violet 600 */
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.control-btn.btn-group:hover {
+  background: rgba(124, 58, 237, 0.15);
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.15);
+}
+
+/* Divider override */
+.flow-controls .divider {
+  background: #cbd5e1 !important;
+  /* Slate 300 */
+  margin: 0 4px !important;
+}
+
+/* React Flow 样式覆盖 */
+.flow-canvas-container .react-flow .react-flow__background {
+  background-color: transparent;
+}
+
+.flow-canvas-container .react-flow__controls {
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.flow-canvas-container .react-flow__controls-button {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  width: 28px;
+  height: 28px;
+}
+
+.flow-canvas-container .react-flow__controls-button:hover {
+  background: rgba(100, 116, 139, 0.3);
+  color: #f8fafc;
+}
+
+.flow-canvas-container .react-flow__controls-button svg {
+  fill: currentColor;
+}
+
+/* Node Highlight Style for Related Nodes */
+/* Node Highlight Style for Related Nodes - Color + Glow */
+/* Process and Terminator Nodes */
+.related-node-highlight .node-process,
+.related-node-highlight .node-terminator {
+  border-color: #f97316 !important;
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.6) !important;
+  transition: all 0.3s ease;
+}
+
+/* Decision Nodes (SVG Polygon) */
+.related-node-highlight .node-decision .diamond-shape svg polygon {
+  stroke: #f97316 !important;
+  filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.6)) !important;
+  transition: all 0.3s ease;
+}
+
+/* Data Nodes (SVG Rect & Lines) */
+.related-node-highlight .node-data .data-shape svg rect,
+.related-node-highlight .node-data .data-shape svg line {
+  stroke: #f97316 !important;
+  filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.6)) !important;
+  transition: all 0.3s ease;
+}
+
+/* Removed the badge (::after) for cleaner look */
+.related-node-highlight::after {
+  content: none;
+}
+
+/* Edge Highlight Style for Related Edges */
+.related-edge-highlight .react-flow__edge-path {
+  stroke: #f97316 !important;
+  /* Orange-500 */
+  stroke-width: 2 !important;
+  /* Soft glow for edges too */
+  filter: drop-shadow(0 0 3px rgba(249, 115, 22, 0.5)) !important;
+  opacity: 1;
+}
+
+.related-edge-highlight {
+  z-index: 999;
+}
+
+/* Source Node Highlight (Reverse Trace) - Color + Glow */
+/* Process and Terminator Nodes */
+.source-node-highlight .node-process,
+.source-node-highlight .node-terminator {
+  border-color: #22c55e !important;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.6) !important;
+  transition: all 0.3s ease;
+}
+
+/* Decision Nodes (SVG Polygon) */
+.source-node-highlight .node-decision .diamond-shape svg polygon {
+  stroke: #22c55e !important;
+  filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.6)) !important;
+  transition: all 0.3s ease;
+}
+
+/* Data Nodes (SVG Rect & Lines) */
+.source-node-highlight .node-data .data-shape svg rect,
+.source-node-highlight .node-data .data-shape svg line {
+  stroke: #22c55e !important;
+  filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.6)) !important;
+  transition: all 0.3s ease;
+}
+
+/* Removed the badge (::after) */
+.source-node-highlight::after {
+  content: none;
+}
+
+/* Source Edge Highlight */
+.source-edge-highlight .react-flow__edge-path {
+  stroke: #22c55e !important;
+  /* Green-500 */
+  stroke-width: 2 !important;
+  /* Soft glow for edges too */
+  filter: drop-shadow(0 0 3px rgba(34, 197, 94, 0.5)) !important;
+  opacity: 1;
+}
+
+.source-edge-highlight {
+  z-index: 999;
+}

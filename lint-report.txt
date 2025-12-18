@@ -1,0 +1,194 @@
+
+e:\业务全景图_google\src\components\CustomNode\index.tsx
+   94:5   warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+  115:36  warning  'e' is defined but never used. Allowed unused args must match /^_/u                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+  130:7   warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+  132:49  warning  The ref value 'edgeUpdateFrameRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'edgeUpdateFrameRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+e:\业务全景图_google\src\components\DraggableEdge\index.tsx
+  268:10  warning  'isDragging' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+e:\业务全景图_google\src\components\GroupNode\index.tsx
+  15:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+e:\业务全景图_google\src\components\GroupNode\index.tsx:15:5
+  13 |   // 同步外部数据变化
+  14 |   useEffect(() => {
+> 15 |     setEditValue(groupData.label || '新分组');
+     |     ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  16 |   }, [groupData.label]);
+  17 |
+  18 |   // 双击进入编辑模式  react-hooks/set-state-in-effect
+
+e:\业务全景图_google\src\components\NodeDetailPanel\EdgeStyleEditor.tsx
+  105:3  warning  'editingInputRef' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+e:\业务全景图_google\src\components\NodeDetailPanel\GroupPropertiesPanel.tsx
+  34:5  warning  'groupNode' is defined but never used. Allowed unused args must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+  45:9  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+e:\业务全景图_google\src\components\NodeDetailPanel\GroupPropertiesPanel.tsx:45:9
+  43 |     // 同步外部数据
+  44 |     useEffect(() => {
+> 45 |         setGroupLabel(groupData.label || '新分组');
+     |         ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  46 |         setGroupColor(groupData.color || '#3b82f6');
+  47 |     }, [groupData]);
+  48 |  react-hooks/set-state-in-effect
+
+e:\业务全景图_google\src\components\NodeDetailPanel\HexColorInput.tsx
+  27:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+e:\业务全景图_google\src\components\NodeDetailPanel\HexColorInput.tsx:27:9
+  25 |     // 当外部 value 改变时同步
+  26 |     useEffect(() => {
+> 27 |         setInputValue(getColorValue(value));
+     |         ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  28 |     }, [value]);
+  29 |
+  30 |     // 验证并格式化颜色值  react-hooks/set-state-in-effect
+
+e:\业务全景图_google\src\components\NodeDetailPanel\NodePropertiesPanel.tsx
+   64:9   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+e:\业务全景图_google\src\components\NodeDetailPanel\NodePropertiesPanel.tsx:64:9
+  62 |         const node = selectedElement.node;
+  63 |
+> 64 |         setNodeName(data.name || (typeof data.label === 'string' ? data.label : '') || '');
+     |         ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  65 |         setNodeDescription((typeof data.description === 'string' ? data.description : '') || '');
+  66 |         setRelatedNodeIds(data.relatedNodeIds || []);
+  67 |  react-hooks/set-state-in-effect
+  160:22  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+
+e:\业务全景图_google\src\components\NodeDetailPanel\NodeStyleEditor.tsx
+  46:3  warning  'nodeType' is defined but never used. Allowed unused args must match /^_/u         @typescript-eslint/no-unused-vars
+  47:3  warning  'nodeSubType' is defined but never used. Allowed unused args must match /^_/u      @typescript-eslint/no-unused-vars
+  75:3  warning  'editingInputRef' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+e:\业务全景图_google\src\components\NodeDetailPanel\ScreenshotManager.tsx
+  53:82  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+e:\业务全景图_google\src\components\NodeDetailPanel\index.tsx
+  55:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+e:\业务全景图_google\src\components\NodeDetailPanel\index.tsx:55:5
+  53 |     const screenshots = data.detailConfig?.screenshots ||
+  54 |       (Array.isArray(data.screenshots) ? data.screenshots as Screenshot[] : []);
+> 55 |     setScreenshots(screenshots);
+     |     ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  56 |   }, [selectedElement]);
+  57 |
+  58 |   // ---------------- UI Helpers ----------------  react-hooks/set-state-in-effect
+
+e:\业务全景图_google\src\components\PageSelector\index.tsx
+  15:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+e:\业务全景图_google\src\components\common\BufferedInput.tsx
+  28:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+e:\业务全景图_google\src\components\common\BufferedInput.tsx:28:9
+  26 |         // However, if the user switches tables, we MUST update.
+  27 |         // Let's assume controlled component behavior: sync on prop change.
+> 28 |         setValue(initialValue);
+     |         ^^^^^^^^ Avoid calling setState() directly within an effect
+  29 |         isDirty.current = false;
+  30 |     }, [initialValue]);
+  31 |  react-hooks/set-state-in-effect
+
+e:\业务全景图_google\src\hooks\useAutoSave.ts
+   2:22  warning  'EdgeMarkerType' is defined but never used  @typescript-eslint/no-unused-vars
+  51:40  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+
+e:\业务全景图_google\src\hooks\useFlowOperations.ts
+  150:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  195:79  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  247:75  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+e:\业务全景图_google\src\hooks\useNodeAlignment.ts
+  28:23  warning  'nodeMap' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+e:\业务全景图_google\src\pages\BusinessFlowVisualization\index.tsx
+  47:5   error    Error: Cannot access variable before it is declared
+
+`loadFlowData` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+e:\业务全景图_google\src\pages\BusinessFlowVisualization\index.tsx:47:5
+  45 |   // 加载流程数据
+  46 |   useEffect(() => {
+> 47 |     loadFlowData();
+     |     ^^^^^^^^^^^^ `loadFlowData` accessed before it is declared
+  48 |   }, []);
+  49 |
+  50 |   // 处理流程数据
+
+e:\业务全景图_google\src\pages\BusinessFlowVisualization\index.tsx:205:3
+  203 |   };
+  204 |
+> 205 |   const loadFlowData = async () => {
+      |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 206 |     try {
+      | ^^^^^^^^^
+> 207 |       // 1. 尝试从 LocalStorage 加载
+      …
+      | ^^^^^^^^^
+> 233 |     }
+      | ^^^^^^^^^
+> 234 |   };
+      | ^^^^^ `loadFlowData` is declared here
+  235 |
+  236 |   const toggleSubflows = () => {
+  237 |     setShowSubflows(!showSubflows);  react-hooks/immutability
+  48:6   warning  React Hook useEffect has a missing dependency: 'loadFlowData'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            react-hooks/exhaustive-deps
+  68:16  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  84:33  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+
+e:\业务全景图_google\src\utils\deepCopy.ts
+   6:6   warning  'SerializableValue' is defined but never used  @typescript-eslint/no-unused-vars
+  82:14  warning  'e' is defined but never used                  @typescript-eslint/no-unused-vars
+
+e:\业务全景图_google\src\utils\flowVersionStorage.ts
+  255:18  warning  'error' is defined but never used                    @typescript-eslint/no-unused-vars
+  274:7   warning  'DIR_HANDLE_KEY' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  307:19  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  402:19  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+
+✖ 35 problems (7 errors, 28 warnings)
+  0 errors and 2 warnings potentially fixable with the `--fix` option.
+

@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>项目开票申请</title>
+    <style>
+      /* --- 全局样式 --- */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family:
+          'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+          '微软雅黑', Arial, sans-serif;
+        background-color: #fff;
+        color: #606266;
+        font-size: 14px;
+        padding: 20px;
+      }
+
+      /* --- 顶部 Header --- */
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #ebeef5; /* 模拟可能的头部底部分隔，图片顶部有留白 */
+      }
+
+      .header-title {
+        font-size: 18px;
+        color: #303133;
+        font-weight: 500;
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+      }
+
+      .btn {
+        display: inline-block;
+        white-space: nowrap;
+        cursor: pointer;
+        background: #fff;
+        border: 1px solid #dcdfe6;
+        color: #606266;
+        text-align: center;
+        box-sizing: border-box;
+        outline: none;
+        margin: 0;
+        transition: 0.1s;
+        font-weight: 500;
+        padding: 9px 15px;
+        font-size: 12px;
+        border-radius: 3px;
+      }
+
+      .btn-primary {
+        color: #fff;
+        background-color: #409eff;
+        border-color: #409eff;
+        margin-right: 10px;
+      }
+
+      .btn-primary:hover {
+        background-color: #66b1ff;
+        border-color: #66b1ff;
+      }
+
+      .btn-default:hover {
+        color: #409eff;
+        border-color: #c6e2ff;
+        background-color: #ecf5ff;
+      }
+
+      .close-icon {
+        font-size: 20px;
+        color: #909399;
+        margin-left: 20px;
+        cursor: pointer;
+      }
+
+      /* --- 表单通用布局 --- */
+      .form-section {
+        padding: 0 10px;
+      }
+
+      .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin-bottom: 0px; /* 由内部 item 控制 margin */
+      }
+
+      .form-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 18px;
+        padding-right: 20px;
+        /* 默认宽度，根据 grid 系统调整 */
+      }
+
+      /* 3列布局宽度 */
+      .col-3 {
+        width: 33.33%;
+      }
+      .col-2 {
+        width: 50%;
+      } /* 虽然主要看起来是3列，但有些长条是1列或2列 */
+      .col-1 {
+        width: 100%;
+      }
+
+      .label {
+        width: 130px; /* 固定宽度，防止换行，根据最长标签“要求开票时间”设定 */
+        text-align: right;
+        padding-right: 12px;
+        color: #606266;
+        font-weight: 700;
+        flex-shrink: 0;
+        white-space: nowrap; /* 核心：禁止文字换行 */
+      }
+
+      .content {
+        flex: 1;
+        position: relative;
+        display: flex;
+        align-items: center;
+        min-width: 0; /* 防止 flex 子项溢出 */
+      }
+
+      .required {
+        color: #f56c6c;
+        margin-right: 4px;
+      }
+
+      /* --- 控件样式 --- */
+      .input-inner,
+      .select-inner,
+      .textarea-inner {
+        -webkit-appearance: none;
+        appearance: none;
+        background-color: #fff;
+        background-image: none;
+        border-radius: 4px;
+        border: 1px solid #dcdfe6;
+        box-sizing: border-box;
+        color: #606266;
+        display: inline-block;
+        font-size: 14px;
+        height: 32px;
+        line-height: 32px;
+        outline: none;
+        padding: 0 15px;
+        transition: border-color 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+        width: 100%;
+      }
+
+      .input-inner:focus,
+      .select-inner:focus,
+      .textarea-inner:focus {
+        border-color: #409eff;
+      }
+
+      .textarea-inner {
+        height: 50px;
+        padding: 5px 15px;
+        line-height: 1.5;
+        resize: vertical;
+      }
+
+      /* 模拟 Select 下拉箭头 */
+      .select-wrapper {
+        width: 100%;
+        position: relative;
+      }
+      .select-wrapper::after {
+        content: '⌄';
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #c0c4cc;
+        pointer-events: none;
+        font-size: 16px;
+        z-index: 1;
+      }
+
+      /* 下拉选择框样式 */
+      .select-dropdown {
+        position: relative;
+        width: 100%;
+      }
+
+      .select-input {
+        width: 100%;
+        cursor: pointer;
+      }
+
+      .select-input:focus {
+        border-color: #409eff;
+      }
+
+      .select-options {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #fff;
+        border: 1px solid #e4e7ed;
+        border-top: none;
+        border-radius: 0 0 4px 4px;
+        box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+        margin-top: -1px;
+      }
+
+      .select-options.show {
+        display: block;
+      }
+
+      .select-option {
+        padding: 8px 15px;
+        cursor: pointer;
+        color: #606266;
+        font-size: 14px;
+        transition: background-color 0.2s;
+      }
+
+      .select-option:hover {
+        background-color: #f5f7fa;
+      }
+
+      .select-option.selected {
+        background-color: #ecf5ff;
+        color: #409eff;
+        font-weight: 500;
+      }
+
+      /* 模拟 Date Picker 图标 */
+      .date-wrapper {
+        width: 100%;
+        position: relative;
+      }
+      .date-wrapper::after {
+        content: '📅'; /* 简单模拟 */
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #c0c4cc;
+        pointer-events: none;
+        font-size: 14px;
+        filter: grayscale(100%) opacity(0.5);
+      }
+
+      /* 纯文本值样式 */
+      .text-value {
+        color: #606266;
+        font-size: 14px;
+        line-height: 32px;
+      }
+
+      /* 上传按钮 */
+      .upload-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #dcdfe6;
+        background-color: #fff;
+        color: #606266;
+        padding: 7px 15px;
+        border-radius: 3px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .upload-btn:hover {
+        color: #409eff;
+        border-color: #c6e2ff;
+        background-color: #ecf5ff;
+      }
+
+      /* 右对齐下拉按钮 */
+      .dropdown-btn-right {
+        float: right;
+        margin-bottom: 10px;
+        background: #fff;
+        border: 1px solid #dcdfe6;
+        padding: 7px 15px;
+        border-radius: 3px;
+        font-size: 12px;
+        color: #606266;
+        cursor: pointer;
+      }
+      .dropdown-btn-right:after {
+        content: ' ⌄';
+      }
+
+      /* --- 灰色发票卡片区域 --- */
+      .invoice-card {
+        background-color: #f5f7fa; /* 浅灰背景 */
+        border: 1px solid #e4e7ed;
+        padding: 20px;
+        margin-top: 10px; /* 间距 */
+        position: relative;
+      }
+
+      .invoice-header {
+        margin-bottom: 15px;
+      }
+      .invoice-title-small {
+        font-size: 12px;
+        color: #909399;
+        margin-bottom: 5px;
+      }
+      .invoice-title-large {
+        font-size: 16px;
+        font-weight: bold;
+        color: #303133;
+      }
+      .expand-icon {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        color: #909399;
+        cursor: pointer;
+      }
+
+      /* Switch 开关 */
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 20px;
+      }
+      .switch input {
+        display: none;
+      }
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #dcdfe6;
+        transition: 0.4s;
+        border-radius: 20px;
+      }
+      .slider:before {
+        position: absolute;
+        content: '';
+        height: 16px;
+        width: 16px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
+      input:checked + .slider {
+        background-color: #409eff;
+      }
+      input:checked + .slider:before {
+        transform: translateX(20px);
+      }
+
+      .help-icon {
+        color: #409eff;
+        border: 1px solid #409eff;
+        border-radius: 50%;
+        width: 14px;
+        height: 14px;
+        display: inline-block;
+        text-align: center;
+        line-height: 12px;
+        font-size: 12px;
+        margin-right: 5px;
+        cursor: pointer;
+      }
+
+      /* --- 明细卡片（白色） --- */
+      .detail-card {
+        background-color: #fff;
+        border: 1px solid #ebeef5;
+        padding: 20px;
+        margin-top: 10px;
+        box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+      }
+      .detail-title {
+        font-size: 14px;
+        font-weight: bold;
+        color: #303133;
+        margin-bottom: 15px;
+      }
+
+      /* --- 虚线按钮 --- */
+      .dashed-btn {
+        width: 100%;
+        border: 1px dashed #dcdfe6;
+        background-color: #fff;
+        color: #409eff;
+        text-align: center;
+        padding: 10px 0;
+        margin-top: 15px;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 13px;
+        transition: all 0.3s;
+      }
+      .dashed-btn:hover {
+        border-color: #409eff;
+        background-color: #ecf5ff;
+      }
+
+      /* 清除浮动 */
+      .clearfix::after {
+        content: '';
+        clear: both;
+        display: table;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="header-title">项目开票申请</div>
+      <div class="header-actions">
+        <button type="button" class="btn btn-primary">提交</button>
+        <button type="button" class="btn btn-default">保存</button>
+        <span class="close-icon">&times;</span>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-row">
+        <div class="form-item col-3">
+          <label class="label"><span class="required">*</span>发票类型：</label>
+          <div class="content">
+            <div class="select-dropdown">
+              <div class="select-wrapper">
+                <input
+                  type="text"
+                  class="input-inner select-input"
+                  id="invoiceTypeInput"
+                  readonly
+                  placeholder="请选择发票类型"
+                  value=""
+                />
+              </div>
+              <div class="select-options" id="invoiceTypeOptions">
+                <div class="select-option" data-value="数电普票6%">数电普票6%</div>
+                <div class="select-option" data-value="普票6%">普票6%</div>
+                <div class="select-option" data-value="专票6%">专票6%</div>
+                <div class="select-option" data-value="电子普票6%">电子普票6%</div>
+                <div class="select-option" data-value="电子专票6%">电子专票6%</div>
+                <div class="select-option" data-value="数电专票6%">数电专票6%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-item col-3">
+          <label class="label">核算主体：</label>
+          <div class="content">
+            <span class="text-value">中通文博</span>
+          </div>
+        </div>
+        <div class="form-item col-3">
+          <label class="label">客户单位：</label>
+          <div class="content">
+            <span class="text-value">浙江省通信产业服务有限公司杭州市分公司</span>
+          </div>
+        </div>
+
+        <div class="form-item col-3">
+          <label class="label"><span class="required">*</span>申请部门：</label>
+          <div class="content select-wrapper">
+            <input type="text" class="input-inner" value="杭州区域_交付四部" readonly />
+          </div>
+        </div>
+        <div class="form-item col-3">
+          <label class="label"><span class="required">*</span>要求开票时间：</label>
+          <div class="content date-wrapper">
+            <input type="text" class="input-inner" value="2025-12-04" />
+          </div>
+        </div>
+        <div class="form-item col-3">
+          <label class="label"><span class="required">*</span>预计回款时间：</label>
+          <div class="content date-wrapper">
+            <input type="text" class="input-inner" value="2025-12-04" />
+          </div>
+        </div>
+
+        <div class="form-item col-3">
+          <label class="label">开票申请总金额：</label>
+          <div class="content">
+            <span class="text-value">0</span>
+          </div>
+        </div>
+        <div class="form-item col-3"></div>
+        <div class="form-item col-3"></div>
+        <div class="form-item col-3">
+          <label class="label"><span class="required">*</span>行业线：</label>
+          <div class="content">
+            <span class="text-value">通服</span>
+          </div>
+        </div>
+        <div class="form-item col-3">
+          <label class="label"><span class="required">*</span>行客线：</label>
+          <div class="content">
+            <span class="text-value">行客-通通广</span>
+          </div>
+        </div>
+        <div class="form-item col-3"></div>
+
+        <div class="form-item col-1">
+          <label class="label">开票说明：</label>
+          <div class="content">
+            <textarea class="textarea-inner"></textarea>
+          </div>
+        </div>
+
+        <div class="form-item col-1">
+          <label class="label">发票收件人：</label>
+          <div class="content">
+            <input type="text" class="input-inner" />
+          </div>
+        </div>
+
+        <div class="form-item col-1">
+          <label class="label">附件：</label>
+          <div class="content">
+            <button type="button" class="upload-btn">⬆ 上传附件</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="clearfix">
+      <button type="button" class="dropdown-btn-right">开票信息导入</button>
+    </div>
+
+    <div class="invoice-card">
+      <div class="expand-icon">⤢</div>
+      <div class="invoice-header">
+        <div class="invoice-title-large">发票1</div>
+        <div class="invoice-title-small">发票上的客户单位</div>
+        <div class="invoice-title-large" style="margin-top: 5px">
+          浙江省通信产业服务有限公司杭州市分公司
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-item col-2">
+          <label class="label"><span class="required">*</span>发票上的客户单位：</label>
+          <div class="content select-wrapper">
+            <input
+              type="text"
+              class="input-inner"
+              value="浙江省通信产业服务有限公司杭州市分公司"
+              readonly
+            />
+          </div>
+        </div>
+        <div class="form-item col-2"></div>
+        <div class="form-item col-2">
+          <label class="label">销售方开户行：</label>
+          <div class="content">
+            <span class="text-value">中信银行延安支行</span>
+          </div>
+        </div>
+        <div class="form-item col-2">
+          <label class="label">销售方银行账号：</label>
+          <div class="content">
+            <span class="text-value">8110801013302040162</span>
+          </div>
+        </div>
+        <div class="form-item col-2" style="position: absolute; right: 0; top: 125px; width: auto">
+          <label class="label" style="width: auto"
+            >是否在电票平台展示 <span class="help-icon">?</span>：</label
+          >
+          <div class="content" style="display: inline-block">
+            <label class="switch">
+              <input type="checkbox" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-item col-1">
+          <label class="label">发票备注：</label>
+          <div class="content">
+            <textarea class="textarea-inner"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <div class="detail-title">明细1-1</div>
+
+        <div class="form-row">
+          <div class="form-item col-2">
+            <label class="label"><span class="required">*</span>项目名称：</label>
+            <div class="content select-wrapper">
+              <input type="text" class="input-inner" />
+            </div>
+          </div>
+          <div class="form-item col-2">
+            <label class="label"><span class="required">*</span>开票内容：</label>
+            <div class="content select-wrapper">
+              <input type="text" class="input-inner" />
+            </div>
+          </div>
+
+          <div class="form-item col-2">
+            <label class="label">项目部：</label>
+            <div class="content select-wrapper">
+              <input type="text" class="input-inner" />
+            </div>
+          </div>
+          <div class="form-item col-2"></div>
+
+          <div class="form-item col-2">
+            <label class="label"><span class="required">*</span>开票金额(含税)：</label>
+            <div class="content">
+              <input type="text" class="input-inner" value="0.00" />
+            </div>
+          </div>
+          <div class="form-item col-2" style="display: flex">
+            <div style="flex: 1; display: flex; align-items: center">
+              <label class="label" style="width: 140px">开票金额(不含税)：</label>
+              <span class="text-value">0.00</span>
+            </div>
+            <div style="flex: 1; display: flex; align-items: center">
+              <label class="label" style="width: 60px">税金：</label>
+              <span class="text-value">0.00</span>
+            </div>
+          </div>
+
+          <div class="form-item col-2">
+            <label class="label">规格型号：</label>
+            <div class="content">
+              <input type="text" class="input-inner" />
+            </div>
+          </div>
+          <div class="form-item col-2" style="display: flex">
+            <div style="flex: 1; display: flex; align-items: center; margin-right: 10px">
+              <label class="label" style="width: 60px">单位：</label>
+              <input type="text" class="input-inner" />
+            </div>
+            <div style="flex: 1; display: flex; align-items: center">
+              <label class="label" style="width: 60px">数量：</label>
+              <input type="text" class="input-inner" />
+            </div>
+          </div>
+
+          <div class="form-item col-2">
+            <label class="label">交付手机：</label>
+            <div class="content">
+              <input type="text" class="input-inner" />
+            </div>
+          </div>
+          <div class="form-item col-2">
+            <label class="label">交付邮箱：</label>
+            <div class="content">
+              <input type="text" class="input-inner" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashed-btn" style="background-color: #fff">+ 添加项目明细</div>
+    </div>
+
+    <div class="dashed-btn" style="margin-bottom: 40px">+ 添加发票</div>
+
+    <script>
+      // 页面加载时阻止页面刷新
+      document.addEventListener('DOMContentLoaded', function () {
+        // 阻止所有按钮的默认提交行为
+        const buttons = document.querySelectorAll('button');
+        buttons.forEach(function (button) {
+          button.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          });
+        });
+
+        // 阻止Enter键触发表单提交和页面刷新
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') {
+            const target = e.target;
+            // 如果是在textarea中，允许换行
+            if (target.tagName === 'TEXTAREA') {
+              return;
+            }
+            // 其他情况下阻止默认行为
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        });
+
+        // 阻止表单提交（如果有表单的话）
+        const forms = document.querySelectorAll('form');
+        forms.forEach(function (form) {
+          form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+          });
+        });
+
+        // 发票类型下拉选择功能
+        const invoiceTypeInput = document.getElementById('invoiceTypeInput');
+        const invoiceTypeOptions = document.getElementById('invoiceTypeOptions');
+        const options = invoiceTypeOptions.querySelectorAll('.select-option');
+
+        // 点击输入框显示/隐藏下拉选项
+        invoiceTypeInput.addEventListener('click', function (e) {
+          e.stopPropagation();
+          invoiceTypeOptions.classList.toggle('show');
+        });
+
+        // 选择选项
+        options.forEach(function (option) {
+          option.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const value = this.getAttribute('data-value');
+            invoiceTypeInput.value = value;
+
+            // 更新选中状态
+            options.forEach(function (opt) {
+              opt.classList.remove('selected');
+            });
+            this.classList.add('selected');
+
+            // 隐藏下拉选项
+            invoiceTypeOptions.classList.remove('show');
+          });
+        });
+
+        // 点击页面其他地方关闭下拉选项
+        document.addEventListener('click', function (e) {
+          if (!invoiceTypeInput.contains(e.target) && !invoiceTypeOptions.contains(e.target)) {
+            invoiceTypeOptions.classList.remove('show');
+          }
+        });
+
+        // 默认选中第一个选项
+        if (options.length > 0) {
+          const firstOption = options[0];
+          invoiceTypeInput.value = firstOption.getAttribute('data-value');
+          firstOption.classList.add('selected');
+        }
+      });
+    </script>
+  </body>
+</html>

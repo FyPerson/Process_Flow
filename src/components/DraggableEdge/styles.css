@@ -1,0 +1,88 @@
+.edge-drag-handle {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  opacity: 1;
+  /* 始终保持交互性，但视觉不可见 */
+  pointer-events: all;
+  /* 增大可点击区域 */
+  min-width: 40px;
+  min-height: 40px;
+}
+
+.edge-drag-handle.visible {
+  opacity: 1;
+}
+
+.edge-drag-handle:hover {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  transform: translate(-50%, -50%);
+}
+
+.edge-drag-handle:active {
+  background: transparent;
+  transform: translate(-50%, -50%);
+  box-shadow: none;
+}
+
+/* 选中时也不显示视觉效果，只保留交互 */
+.react-flow__edge.selected .edge-drag-handle {
+  opacity: 1;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* 移除图标样式 */
+.handle-icon {
+  display: none;
+}
+
+.edge-label {
+  /* 移除字体相关样式，让内联样式控制 */
+  pointer-events: all;
+  transition: all 0.2s;
+  /* 不设置字体相关属性，完全由内联样式控制 */
+}
+
+/* 修复动画方向：当只有 markerStart（反向箭头）时，反转动画方向 */
+.edge-reverse-animation path {
+  animation-direction: reverse;
+}
+
+/* 选中状态的 edge 样式 */
+.react-flow__edge.selected {
+  filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.5));
+}
+
+/* 未实现状态的连线样式增强 */
+.react-flow__edge[data-not-implemented='true'] {
+  animation: edgePulse 2s ease-in-out infinite;
+}
+
+@keyframes edgePulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* 未实现图标的悬停效果 */
+.react-flow__edge[data-not-implemented='true']:hover circle {
+  stroke-width: 2.5;
+  filter: drop-shadow(0 2px 6px rgba(239, 68, 68, 0.4));
+}

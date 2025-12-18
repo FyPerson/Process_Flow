@@ -1,0 +1,3688 @@
+{
+  "id": "business-flow-v1",
+  "name": "业务流程图",
+  "description": "自动保存时间: 2025/12/5 14:26:13",
+  "nodes": [
+    {
+      "id": "new_node_1764570075528",
+      "name": "开始",
+      "type": "terminator",
+      "position": {
+        "x": 987.6430669320539,
+        "y": -1065.8100661648898
+      },
+      "style": {
+        "width": 100,
+        "height": 40,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 400,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      }
+    },
+    {
+      "id": "new_node_1764570117576",
+      "name": "时长活动/渠道触点",
+      "type": "process",
+      "position": {
+        "x": 978.0110396664529,
+        "y": -987.3186033439015
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764571353040",
+      "name": "线索收集",
+      "type": "process",
+      "position": {
+        "x": 977.4237917919079,
+        "y": -888.6127469313769
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764571431847",
+      "name": "是否有效线索",
+      "type": "decision",
+      "position": {
+        "x": 966.6279416429927,
+        "y": -691.6602922484387
+      },
+      "style": {
+        "width": 140,
+        "height": 80,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      },
+      "backgroundColor": "#ffffff"
+    },
+    {
+      "id": "new_node_1764571468688",
+      "name": "结束",
+      "type": "terminator",
+      "position": {
+        "x": 1199.8842502039465,
+        "y": -148.59209432448205
+      },
+      "style": {
+        "width": 100,
+        "height": 40,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      }
+    },
+    {
+      "id": "new_node_1764573312765",
+      "name": "客户拜访",
+      "type": "process",
+      "position": {
+        "x": 977.5609775189622,
+        "y": -561.0344433465306
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764575454559",
+      "name": "线索登记",
+      "type": "process",
+      "position": {
+        "x": 977.2738629820024,
+        "y": -793.6581605368343
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764576210496",
+      "name": "客户意向确认",
+      "type": "process",
+      "position": {
+        "x": 977.8597115017409,
+        "y": -465.4974675416165
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764576245336",
+      "name": "系统自动查重",
+      "type": "process",
+      "position": {
+        "x": 978.4470226485905,
+        "y": -368.9461299319054
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 400,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764576260510",
+      "name": "客户准入检查",
+      "type": "process",
+      "position": {
+        "x": 977.9925811991452,
+        "y": -272.35974556513173
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      }
+    },
+    {
+      "id": "new_node_1764576302576",
+      "name": "是否符合要求",
+      "type": "decision",
+      "position": {
+        "x": 967.7318630221437,
+        "y": -170.0025163335617
+      },
+      "style": {
+        "width": 140,
+        "height": 80,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      },
+      "backgroundColor": "#ffffff"
+    },
+    {
+      "id": "new_node_1764576844628",
+      "name": "客户录入",
+      "type": "process",
+      "position": {
+        "x": 977.4963130422344,
+        "y": -34.08514881478868
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      }
+    },
+    {
+      "id": "new_node_1764577108112",
+      "name": "是否存在商机",
+      "type": "decision",
+      "position": {
+        "x": 966.2283523491137,
+        "y": 79.11465420918103
+      },
+      "style": {
+        "width": 140,
+        "height": 80,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      },
+      "backgroundColor": "#ffffff"
+    },
+    {
+      "id": "new_node_1764577524993",
+      "name": "商机录入",
+      "type": "process",
+      "position": {
+        "x": 975.9207907228072,
+        "y": 210.82283028183764
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764577553419",
+      "name": "独立发起投标项目",
+      "type": "process",
+      "position": {
+        "x": 790.0297765772539,
+        "y": 215.69952585379798
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764577763063",
+      "name": "商机跟踪",
+      "type": "process",
+      "position": {
+        "x": 976.0461451404183,
+        "y": 303.22969469177855
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      }
+    },
+    {
+      "id": "new_node_1764577780355",
+      "name": "是否参与投标",
+      "type": "decision",
+      "position": {
+        "x": 965.7847405614693,
+        "y": 400.78014706491933
+      },
+      "style": {
+        "width": 140,
+        "height": 80,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      },
+      "backgroundColor": "#ffffff"
+    },
+    {
+      "id": "new_node_1764577808748",
+      "name": "是否达成合作",
+      "type": "decision",
+      "position": {
+        "x": 968.0738728421395,
+        "y": 560.7127858886766
+      },
+      "style": {
+        "width": 140,
+        "height": 80,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      },
+      "backgroundColor": "#ffffff"
+    },
+    {
+      "id": "new_node_1764577870802",
+      "name": "标记商机失单",
+      "type": "process",
+      "position": {
+        "x": 1189.6458354009178,
+        "y": 568.3650019662813
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764578401148",
+      "name": "投标项目立项",
+      "type": "process",
+      "position": {
+        "x": 789.6996147185805,
+        "y": 412.75917601916876
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764578662109",
+      "name": "支付投标文件费",
+      "type": "process",
+      "position": {
+        "x": 789.4824894410162,
+        "y": 514.4959822411981
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764578677148",
+      "name": "支付投标保证金",
+      "type": "process",
+      "position": {
+        "x": 789.0744783725756,
+        "y": 613.1200275753786
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764578861994",
+      "name": "等待投标结果",
+      "type": "terminator",
+      "position": {
+        "x": 809.0648768861586,
+        "y": 708.0249401688337
+      },
+      "style": {
+        "width": 80,
+        "height": 40,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1,
+        "backgroundColor": "#ffffff",
+        "background": "#ffffff"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      }
+    },
+    {
+      "id": "new_node_1764579016861",
+      "name": "是否中标",
+      "type": "decision",
+      "position": {
+        "x": 789.9578714487202,
+        "y": 782.9187077112516
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      },
+      "backgroundColor": "#ffffff"
+    },
+    {
+      "id": "new_node_1764579141932",
+      "name": "返还投标保证金",
+      "type": "process",
+      "position": {
+        "x": 790.9010418736749,
+        "y": 893.2091038252759
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764579167253",
+      "name": "投标项目关闭",
+      "type": "process",
+      "position": {
+        "x": 790.2592000004125,
+        "y": 986.871200932168
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764579206458",
+      "name": "结束",
+      "type": "terminator",
+      "position": {
+        "x": 800.1826594151466,
+        "y": 1081.7001948165384
+      },
+      "style": {
+        "width": 100,
+        "height": 40,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      }
+    },
+    {
+      "id": "new_node_1764661330750",
+      "name": "投标项目关闭",
+      "type": "process",
+      "position": {
+        "x": 573.8874579023629,
+        "y": 893.4618094210023
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "copied_new_node_1764661330750_1764662693371_0",
+      "name": "业务项目立项",
+      "type": "process",
+      "position": {
+        "x": 573.7387595046534,
+        "y": 993.2647938702493
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764663516455",
+      "name": "合同商务沟通",
+      "type": "process",
+      "position": {
+        "x": 573.9760713445796,
+        "y": 1093.2853794526472
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "copied_new_node_1764663516455_1764663531096_0",
+      "name": "收入合同起拟",
+      "type": "process",
+      "position": {
+        "x": 574.6099130041341,
+        "y": 1192.1329341163591
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 400,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": [
+          {
+            "id": "screenshot_1764745822036",
+            "title": "（紧密型单项）收入合同起拟",
+            "url": "component:ContractTightPage",
+            "componentType": "page",
+            "description": "紧密型单项收入合同起拟页面，包含合同信息、客户信息、合同内容、交付信息等",
+            "order": 0,
+            "locked": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "new_node_1764663550821",
+      "name": "收入合同审批",
+      "type": "data",
+      "position": {
+        "x": 574.3892071733777,
+        "y": 1285.5685102255375
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764663991571",
+      "name": "是否通过审批",
+      "type": "decision",
+      "position": {
+        "x": 574.1870612149403,
+        "y": 1389.5530290005802
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      },
+      "backgroundColor": "#ffffff"
+    },
+    {
+      "id": "new_node_1764664496576",
+      "name": "是否签署合同",
+      "type": "decision",
+      "position": {
+        "x": 574.0186953603587,
+        "y": 1488.0241065815915
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 400
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      },
+      "backgroundColor": "#ffffff"
+    },
+    {
+      "id": "new_node_1764664508481",
+      "name": "合同作废",
+      "type": "process",
+      "position": {
+        "x": 856.1038884985426,
+        "y": 1488.6451544861086
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "copied_new_node_1764664508481_1764665088931_0",
+      "name": "合同签署反馈\n(业务录入/上传扫描件)",
+      "type": "process",
+      "position": {
+        "x": 572.9693295921238,
+        "y": 1602.1802459189653
+      },
+      "style": {
+        "width": 120,
+        "height": 61,
+        "fontSize": 8,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      }
+    },
+    {
+      "id": "copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0",
+      "name": "合同原件回传",
+      "type": "process",
+      "position": {
+        "x": 408.46932959212387,
+        "y": 1602.1802459189653
+      },
+      "style": {
+        "width": 120,
+        "height": 61,
+        "fontSize": 8,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      }
+    },
+    {
+      "id": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724490232_0",
+      "name": "合同原件验收",
+      "type": "process",
+      "position": {
+        "x": 251.79033231592376,
+        "y": 1601.9074109900357
+      },
+      "style": {
+        "width": 120,
+        "height": 61,
+        "fontSize": 8,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      }
+    },
+    {
+      "id": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0",
+      "name": "合同归档",
+      "type": "process",
+      "position": {
+        "x": 82.45279313836085,
+        "y": 1602.9968498123926
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 8,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      }
+    },
+    {
+      "id": "copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0",
+      "name": "合同借阅登记",
+      "type": "process",
+      "position": {
+        "x": -80.14410987968336,
+        "y": 1602.1342032873806
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 8,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      }
+    },
+    {
+      "id": "copied_copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0_1764724543337_0",
+      "name": "合同归还",
+      "type": "process",
+      "position": {
+        "x": -277.24777282673153,
+        "y": 1608.0823743189032
+      },
+      "style": {
+        "width": 123,
+        "height": 60,
+        "fontSize": 8,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      }
+    },
+    {
+      "id": "new_node_1764732925456",
+      "name": "施工班组\n建立审批",
+      "type": "data",
+      "position": {
+        "x": 573.1757478133476,
+        "y": 1812.5592345334262
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764740447090",
+      "name": "建立施工班组\n是否通过审批",
+      "type": "decision",
+      "position": {
+        "x": 573.2640604464941,
+        "y": 1928.6427569577766
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "background": "#FFFFFF",
+        "backgroundColor": "#FFFFFF"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      },
+      "backgroundColor": "#FFFFFF"
+    },
+    {
+      "id": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0",
+      "name": "施工班组信息修改",
+      "type": "process",
+      "position": {
+        "x": 359.80141437780225,
+        "y": 1812.0646737161076
+      },
+      "style": {
+        "width": 120,
+        "height": 61,
+        "fontSize": 8,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      }
+    },
+    {
+      "id": "copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0_1764741131513_0",
+      "name": "施工班组成立",
+      "type": "process",
+      "position": {
+        "x": 573.2387881184023,
+        "y": 2045.425513114682
+      },
+      "style": {
+        "width": 120,
+        "height": 61,
+        "fontSize": 8,
+        "borderColor": "#cbd5e1",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 300,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": []
+      }
+    },
+    {
+      "id": "new_node_1764741166080",
+      "name": "合同项目\n立项申请",
+      "type": "process",
+      "position": {
+        "x": 573.4462133911802,
+        "y": 2143.0437517336486
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "background": "#FFFFFF",
+        "backgroundColor": "#FFFFFF",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 400,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": [
+          {
+            "id": "screenshot_1764832547724",
+            "title": "紧密型项目申请",
+            "url": "component:TightProjectApplyPage",
+            "componentType": "page",
+            "description": "紧密型项目申请页面，包含基本信息、结算信息、施工班组等",
+            "order": 0,
+            "locked": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "new_node_1764741189020",
+      "name": "合同项目\n立项审批",
+      "type": "data",
+      "position": {
+        "x": 573.316039938668,
+        "y": 2244.608313395373
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764741211062",
+      "name": "合同项目\n是否通过审批",
+      "type": "decision",
+      "position": {
+        "x": 573.3811915533138,
+        "y": 2355.8175154015844
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "background": "#FFFFFF",
+        "backgroundColor": "#FFFFFF"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      },
+      "backgroundColor": "#FFFFFF"
+    },
+    {
+      "id": "copied_new_node_1764741166080_1764741234386_0",
+      "name": "合同项目\n修改(补稿)",
+      "type": "process",
+      "position": {
+        "x": 366.23999426418,
+        "y": 2143.7519425920577
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "background": "#FFFFFF",
+        "backgroundColor": "#FFFFFF"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "copied_copied_new_node_1764741166080_1764741234386_0_1764741288703_0",
+      "name": "建立(生成)\n项目信息",
+      "type": "process",
+      "position": {
+        "x": 574.2882459091437,
+        "y": 2487.3466051667356
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "background": "#FFFFFF",
+        "backgroundColor": "#FFFFFF"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764746972085",
+      "name": "新增施工班组",
+      "type": "process",
+      "position": {
+        "x": 573.7683471766984,
+        "y": 1704.0928193701816
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "background": "#FFFFFF",
+        "backgroundColor": "#FFFFFF",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 400,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": [
+          {
+            "id": "screenshot_1764747101560",
+            "title": "施工班组申请",
+            "url": "component:ConstructionTeamAddPage",
+            "componentType": "page",
+            "description": "施工班组申请页面，包含基本信息、交付人员、启用状态等",
+            "order": 0,
+            "locked": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "copied_new_node_1764663516455_1764747042603_0",
+      "name": "合同修改(补稿)",
+      "type": "process",
+      "position": {
+        "x": 372.405350867256,
+        "y": 1285.0652966013442
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1"
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": []
+      }
+    },
+    {
+      "id": "new_node_1764828493774",
+      "name": "外经证税金报销申请",
+      "type": "process",
+      "position": {
+        "x": 1011.0039538995895,
+        "y": 1765.4705796150317
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "background": "#FFFFFF",
+        "backgroundColor": "#FFFFFF",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 400,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": [
+          {
+            "id": "screenshot_1764828562351",
+            "title": "外经证税金报销申请",
+            "url": "component:ForeignTaxReimbursementPage",
+            "componentType": "page",
+            "description": "外经证税金报销申请页面，包含基本信息、账号清单、申请明细等",
+            "order": 0,
+            "locked": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "new_node_1764831467220",
+      "name": "紧密型交接清单申请",
+      "type": "process",
+      "position": {
+        "x": 1007.831666644269,
+        "y": 1865.9969338627789
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "background": "#FFFFFF",
+        "backgroundColor": "#FFFFFF",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 400,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": [
+          {
+            "id": "screenshot_1764832538681",
+            "title": "新增紧密型交接清单",
+            "url": "component:TightHandoverListPage",
+            "componentType": "page",
+            "description": "新增紧密型交接清单页面，包含项目概览、费用结算、保险缴纳、班组合同等",
+            "order": 0,
+            "locked": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "new_node_1764834975919",
+      "name": "项目开票申请",
+      "type": "process",
+      "position": {
+        "x": 1011.266752971067,
+        "y": 1962.1228493693284
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "background": "#FFFFFF",
+        "backgroundColor": "#FFFFFF",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 400,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": [
+          {
+            "id": "screenshot_1764836191531",
+            "title": "项目开票申请",
+            "url": "component:InvoiceApplyPage",
+            "componentType": "page",
+            "description": "项目开票申请页面，包含发票信息、明细信息等",
+            "order": 0,
+            "locked": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "new_node_1764899260854",
+      "name": "结算单申请",
+      "type": "process",
+      "position": {
+        "x": 1008.6293760548836,
+        "y": 2052.0228085621548
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "background": "#FFFFFF",
+        "backgroundColor": "#FFFFFF",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 400,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": [
+          {
+            "id": "screenshot_1764899272619",
+            "title": "结算单申请",
+            "url": "component:SettlementApplyPage",
+            "componentType": "page",
+            "description": "结算单申请页面，包含基本信息、结算班组信息、收入信息、费用扣除、支付信息等",
+            "order": 0,
+            "locked": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "copied_new_node_1764899260854_1764899288604_0",
+      "name": "回款冲销\n结算单申请",
+      "type": "process",
+      "position": {
+        "x": 1014.5067097029851,
+        "y": 2148.6473156293023
+      },
+      "style": {
+        "width": 120,
+        "height": 60,
+        "fontSize": 9,
+        "borderColor": "#cbd5e1",
+        "background": "#FFFFFF",
+        "backgroundColor": "#FFFFFF",
+        "color": "#000000",
+        "fontFamily": "微软雅黑",
+        "fontWeight": 400,
+        "borderWidth": 1
+      },
+      "expandable": true,
+      "detailConfig": {
+        "description": "请点击此处编辑描述...",
+        "databaseTables": [],
+        "screenshots": [
+          {
+            "id": "screenshot_1764899298029",
+            "title": "回款冲销结算单申请",
+            "url": "component:PaymentOffsetSettlementPage",
+            "componentType": "page",
+            "description": "回款冲销结算单申请页面，包含基本信息、结算班组信息、收入信息、费用扣除、支付信息等",
+            "order": 0,
+            "locked": false
+          }
+        ]
+      }
+    }
+  ],
+  "connectors": [
+    {
+      "id": "edge-new_node_1764571468688-new_node_1764571431847-1764571497502",
+      "sourceID": "new_node_1764571468688",
+      "targetID": "new_node_1764571431847",
+      "sourceHandle": "top-source",
+      "targetHandle": "right-target",
+      "label": "否",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 0.8,
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764573312765-new_node_1764571431847-1764573322213",
+      "sourceID": "new_node_1764573312765",
+      "targetID": "new_node_1764571431847",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "是",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 0.95,
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764571431847-new_node_1764575454559-1764575464220",
+      "sourceID": "new_node_1764571431847",
+      "targetID": "new_node_1764575454559",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#f8fafc",
+        "color": "#f8fafc",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#1e293b",
+        "fillOpacity": 0.95,
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764576210496-new_node_1764573312765-1764576272950",
+      "sourceID": "new_node_1764576210496",
+      "targetID": "new_node_1764573312765",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#f8fafc",
+        "color": "#f8fafc",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#1e293b",
+        "fillOpacity": 0.95,
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764576245336-new_node_1764576210496-1764576280669",
+      "sourceID": "new_node_1764576245336",
+      "targetID": "new_node_1764576210496",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#f8fafc",
+        "color": "#f8fafc",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#1e293b",
+        "fillOpacity": 0.95,
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764576260510-new_node_1764576245336-1764576286208",
+      "sourceID": "new_node_1764576260510",
+      "targetID": "new_node_1764576245336",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#f8fafc",
+        "color": "#f8fafc",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#1e293b",
+        "fillOpacity": 0.95,
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764576302576-new_node_1764576260510-1764576314854",
+      "sourceID": "new_node_1764576302576",
+      "targetID": "new_node_1764576260510",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#f8fafc",
+        "color": "#f8fafc",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#1e293b",
+        "fillOpacity": 0.95,
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764571468688-new_node_1764576302576-1764576342863",
+      "sourceID": "new_node_1764571468688",
+      "targetID": "new_node_1764576302576",
+      "sourceHandle": "left",
+      "targetHandle": "right-target",
+      "label": "否",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 0.95,
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764576844628-new_node_1764576302576-1764576852549",
+      "sourceID": "new_node_1764576844628",
+      "targetID": "new_node_1764576302576",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "是",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 0.95,
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764577108112-new_node_1764576844628-1764577153215",
+      "sourceID": "new_node_1764577108112",
+      "targetID": "new_node_1764576844628",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "是",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 0.95,
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764577780355-new_node_1764577763063-1764577823817",
+      "sourceID": "new_node_1764577780355",
+      "targetID": "new_node_1764577763063",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#f8fafc",
+        "color": "#f8fafc",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#1e293b",
+        "fillOpacity": 0.95,
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764577763063-new_node_1764577524993-1764578384673",
+      "sourceID": "new_node_1764577763063",
+      "targetID": "new_node_1764577524993",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#f8fafc",
+        "color": "#f8fafc",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#1e293b",
+        "fillOpacity": 0.95,
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "offset": 0,
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764578401148-new_node_1764577553419-1764578411345",
+      "sourceID": "new_node_1764578401148",
+      "targetID": "new_node_1764577553419",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#f8fafc",
+        "color": "#f8fafc",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#1e293b",
+        "fillOpacity": 0.95,
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764577780355-new_node_1764578401148-1764578470582",
+      "sourceID": "new_node_1764577780355",
+      "targetID": "new_node_1764578401148",
+      "sourceHandle": "left",
+      "targetHandle": "right-target",
+      "label": "是",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 0.8
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764578662109-new_node_1764578401148-1764578691411",
+      "sourceID": "new_node_1764578662109",
+      "targetID": "new_node_1764578401148",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#f8fafc",
+        "color": "#f8fafc",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#1e293b",
+        "fillOpacity": 0.95,
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764578677148-new_node_1764578662109-1764578705942",
+      "sourceID": "new_node_1764578677148",
+      "targetID": "new_node_1764578662109",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#f8fafc",
+        "color": "#f8fafc",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#1e293b",
+        "fillOpacity": 0.95,
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764578861994-new_node_1764578677148-1764578962070",
+      "sourceID": "new_node_1764578861994",
+      "targetID": "new_node_1764578677148",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#f8fafc",
+        "color": "#f8fafc",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#1e293b",
+        "fillOpacity": 0.95,
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764579016861-new_node_1764578861994-1764579035423",
+      "sourceID": "new_node_1764579016861",
+      "targetID": "new_node_1764578861994",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#f8fafc",
+        "color": "#f8fafc",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#1e293b",
+        "fillOpacity": 0.95,
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764579206458-new_node_1764579167253-1764579229943",
+      "sourceID": "new_node_1764579206458",
+      "targetID": "new_node_1764579167253",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#f8fafc",
+        "color": "#f8fafc",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#1e293b",
+        "fillOpacity": 0.95,
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764579167253-new_node_1764579141932-1764579238818",
+      "sourceID": "new_node_1764579167253",
+      "targetID": "new_node_1764579141932",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#f8fafc",
+        "color": "#f8fafc",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#1e293b",
+        "fillOpacity": 0.95,
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764579167253-new_node_1764579167253-1764636622381",
+      "sourceID": "new_node_1764579167253",
+      "targetID": "new_node_1764579167253",
+      "sourceHandle": "right",
+      "targetHandle": "right-target",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 0.95
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764579141932-new_node_1764579016861-1764636631916",
+      "sourceID": "new_node_1764579141932",
+      "targetID": "new_node_1764579016861",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "否",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 0.8,
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764577808748-new_node_1764577780355-1764636654186",
+      "sourceID": "new_node_1764577808748",
+      "targetID": "new_node_1764577780355",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "否",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 0.8,
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764577870802-new_node_1764577808748-1764636668394",
+      "sourceID": "new_node_1764577870802",
+      "targetID": "new_node_1764577808748",
+      "sourceHandle": "left",
+      "targetHandle": "right-target",
+      "label": "否",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 0.8,
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764577553419-new_node_1764577108112-1764636682470",
+      "sourceID": "new_node_1764577553419",
+      "targetID": "new_node_1764577108112",
+      "sourceHandle": "top-source",
+      "targetHandle": "left-target",
+      "label": "否",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 0.7,
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false,
+        "offset": 1.7230475965641654
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764577524993-new_node_1764577108112-1764636692451",
+      "sourceID": "new_node_1764577524993",
+      "targetID": "new_node_1764577108112",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "是",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 0.95,
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerStart": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764579016861-new_node_1764661330750-1764662676388",
+      "sourceID": "new_node_1764579016861",
+      "targetID": "new_node_1764661330750",
+      "sourceHandle": "left",
+      "targetHandle": "top-target",
+      "label": "是",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 1,
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764661330750-copied_new_node_1764661330750_1764662693371_0-1764662701348",
+      "sourceID": "new_node_1764661330750",
+      "targetID": "copied_new_node_1764661330750_1764662693371_0",
+      "sourceHandle": "bottom",
+      "targetHandle": "top-source",
+      "label": "",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 1,
+        "width": 24,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764570075528-new_node_1764570117576-1764662744646",
+      "sourceID": "new_node_1764570075528",
+      "targetID": "new_node_1764570117576",
+      "sourceHandle": "bottom",
+      "targetHandle": "top-source",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764570117576-new_node_1764571353040-1764662754972",
+      "sourceID": "new_node_1764570117576",
+      "targetID": "new_node_1764571353040",
+      "sourceHandle": "bottom",
+      "targetHandle": "top-target",
+      "label": "",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764571353040-new_node_1764575454559-1764662786780",
+      "sourceID": "new_node_1764571353040",
+      "targetID": "new_node_1764575454559",
+      "sourceHandle": "bottom",
+      "targetHandle": "top-source",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-copied_new_node_1764661330750_1764662693371_0-new_node_1764663516455-1764663519378",
+      "sourceID": "copied_new_node_1764661330750_1764662693371_0",
+      "targetID": "new_node_1764663516455",
+      "sourceHandle": "bottom",
+      "targetHandle": "top-source",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764663516455-copied_new_node_1764663516455_1764663531096_0-1764663542839",
+      "sourceID": "new_node_1764663516455",
+      "targetID": "copied_new_node_1764663516455_1764663531096_0",
+      "sourceHandle": "bottom",
+      "targetHandle": "top-source",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-copied_new_node_1764663516455_1764663531096_0-new_node_1764663550821-1764663556596",
+      "sourceID": "copied_new_node_1764663516455_1764663531096_0",
+      "targetID": "new_node_1764663550821",
+      "sourceHandle": "bottom",
+      "targetHandle": "top-target",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764663550821-new_node_1764663991571-1764664004412",
+      "sourceID": "new_node_1764663550821",
+      "targetID": "new_node_1764663991571",
+      "sourceHandle": "bottom",
+      "targetHandle": "top-source",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764663991571-new_node_1764664496576-1764664518664",
+      "sourceID": "new_node_1764663991571",
+      "targetID": "new_node_1764664496576",
+      "sourceHandle": "bottom",
+      "targetHandle": "top-target",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764664496576-new_node_1764664508481-1764664520405",
+      "sourceID": "new_node_1764664496576",
+      "targetID": "new_node_1764664508481",
+      "sourceHandle": "right",
+      "targetHandle": "left",
+      "label": "否",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 0.8,
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764664508481-new_node_1764571468688-1764664553217",
+      "sourceID": "new_node_1764664508481",
+      "targetID": "new_node_1764571468688",
+      "sourceHandle": "right",
+      "targetHandle": "right",
+      "label": "",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false,
+        "offset": 52.249846554650055
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764664496576-copied_new_node_1764664508481_1764665088931_0-1764665133823",
+      "sourceID": "new_node_1764664496576",
+      "targetID": "copied_new_node_1764664508481_1764665088931_0",
+      "sourceHandle": "bottom",
+      "targetHandle": "top-source",
+      "label": "是",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 0.8,
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764577808748-copied_new_node_1764663516455_1764663531096_0-1764665202745",
+      "sourceID": "new_node_1764577808748",
+      "targetID": "copied_new_node_1764663516455_1764663531096_0",
+      "sourceHandle": "bottom",
+      "targetHandle": "right-target",
+      "label": "是",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 1,
+        "width": 35,
+        "height": 26,
+        "widthAuto": false,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-copied_new_node_1764664508481_1764665088931_0-copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0-1764724082629",
+      "sourceID": "copied_new_node_1764664508481_1764665088931_0",
+      "targetID": "copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0",
+      "sourceHandle": "left",
+      "targetHandle": "right-target",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0-copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724490232_0-1764724515367",
+      "sourceID": "copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0",
+      "targetID": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724490232_0",
+      "sourceHandle": "left",
+      "targetHandle": "right-target",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724490232_0-copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0-1764724516968",
+      "sourceID": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724490232_0",
+      "targetID": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0",
+      "sourceHandle": "left",
+      "targetHandle": "right",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0-copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0-1764724552239",
+      "sourceID": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0",
+      "targetID": "copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0",
+      "sourceHandle": "left",
+      "targetHandle": "right",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0-copied_copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0_1764724543337_0-1764724561634",
+      "sourceID": "copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0",
+      "targetID": "copied_copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0_1764724543337_0",
+      "sourceHandle": "left",
+      "targetHandle": "right",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-copied_copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0_1764724543337_0-copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0-1764724568017",
+      "sourceID": "copied_copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0_1764724543337_0",
+      "targetID": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0",
+      "sourceHandle": "top-source",
+      "targetHandle": "top-target",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "offset": 33.312253533573795,
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764577870802-new_node_1764571468688-1764740100774",
+      "sourceID": "new_node_1764577870802",
+      "targetID": "new_node_1764571468688",
+      "sourceHandle": "top-source",
+      "targetHandle": "bottom-target",
+      "label": "",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764732925456-new_node_1764740447090-1764740458598",
+      "sourceID": "new_node_1764732925456",
+      "targetID": "new_node_1764740447090",
+      "sourceHandle": "bottom",
+      "targetHandle": "top-source",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764740447090-copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0-1764741101087",
+      "sourceID": "new_node_1764740447090",
+      "targetID": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0",
+      "sourceHandle": "left",
+      "targetHandle": "bottom",
+      "label": "否",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 0.8
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764740447090-copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0_1764741131513_0-1764741140230",
+      "sourceID": "new_node_1764740447090",
+      "targetID": "copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0_1764741131513_0",
+      "sourceHandle": "bottom",
+      "targetHandle": "top-source",
+      "label": "是",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 0.8
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0_1764741131513_0-new_node_1764741166080-1764741181059",
+      "sourceID": "copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0_1764741131513_0",
+      "targetID": "new_node_1764741166080",
+      "sourceHandle": "bottom",
+      "targetHandle": "top-target",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764741166080-new_node_1764741189020-1764741192579",
+      "sourceID": "new_node_1764741166080",
+      "targetID": "new_node_1764741189020",
+      "sourceHandle": "bottom",
+      "targetHandle": "top-source",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764741189020-new_node_1764741211062-1764741224399",
+      "sourceID": "new_node_1764741189020",
+      "targetID": "new_node_1764741211062",
+      "sourceHandle": "bottom",
+      "targetHandle": "top-target",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764741211062-copied_new_node_1764741166080_1764741234386_0-1764741260379",
+      "sourceID": "new_node_1764741211062",
+      "targetID": "copied_new_node_1764741166080_1764741234386_0",
+      "sourceHandle": "left",
+      "targetHandle": "bottom-target",
+      "label": "否",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 0.8,
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-copied_new_node_1764741166080_1764741234386_0-new_node_1764741166080-1764741271671",
+      "sourceID": "copied_new_node_1764741166080_1764741234386_0",
+      "targetID": "new_node_1764741166080",
+      "sourceHandle": "right",
+      "targetHandle": "left-target",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764741211062-copied_copied_new_node_1764741166080_1764741234386_0_1764741288703_0-1764741292829",
+      "sourceID": "new_node_1764741211062",
+      "targetID": "copied_copied_new_node_1764741166080_1764741234386_0_1764741288703_0",
+      "sourceHandle": "bottom",
+      "targetHandle": "top-source",
+      "label": "是",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-copied_new_node_1764664508481_1764665088931_0-new_node_1764746972085-1764746976659",
+      "sourceID": "copied_new_node_1764664508481_1764665088931_0",
+      "targetID": "new_node_1764746972085",
+      "sourceHandle": "bottom",
+      "targetHandle": "top-source",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764746972085-new_node_1764732925456-1764746986418",
+      "sourceID": "new_node_1764746972085",
+      "targetID": "new_node_1764732925456",
+      "sourceHandle": "bottom",
+      "targetHandle": "top-target",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-new_node_1764663991571-copied_new_node_1764663516455_1764747042603_0-1764747056193",
+      "sourceID": "new_node_1764663991571",
+      "targetID": "copied_new_node_1764663516455_1764747042603_0",
+      "sourceHandle": "left",
+      "targetHandle": "bottom",
+      "label": "否",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 1,
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-copied_new_node_1764663516455_1764747042603_0-new_node_1764663550821-1764747057671",
+      "sourceID": "copied_new_node_1764663516455_1764747042603_0",
+      "targetID": "new_node_1764663550821",
+      "sourceHandle": "right",
+      "targetHandle": "left-target",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "background": "#E0E0E0",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#E0E0E0",
+        "fillOpacity": 1
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "id": "edge-copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0-new_node_1764732925456-1764747081285",
+      "sourceID": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0",
+      "targetID": "new_node_1764732925456",
+      "sourceHandle": "right",
+      "targetHandle": "left",
+      "label": "",
+      "style": {
+        "stroke": "#64748b",
+        "strokeWidth": 1
+      },
+      "labelStyle": {
+        "fill": "#000000",
+        "color": "#000000",
+        "fontSize": 9,
+        "fontWeight": 300,
+        "fontFamily": "微软雅黑",
+        "padding": "6px 12px",
+        "borderRadius": "6px"
+      },
+      "labelBgStyle": {
+        "fill": "#e0e0e0",
+        "fillOpacity": 1,
+        "width": 24,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
+      },
+      "data": {
+        "notImplemented": false
+      },
+      "notImplemented": false,
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
+      }
+    }
+  ]
+}

@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>项目编辑</title>
+    <style>
+      /* 全局重置 */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        background-color: #f0f2f5; /* 页面灰色背景 */
+        color: #333;
+        font-size: 14px;
+        padding-bottom: 40px;
+      }
+
+      /* 顶部导航栏 */
+      .header {
+        background: #fff;
+        height: 56px;
+        padding: 0 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #e8e8e8;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .page-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+      }
+
+      .btn {
+        height: 32px;
+        padding: 0 15px;
+        border-radius: 2px;
+        border: 1px solid #d9d9d9;
+        cursor: pointer;
+        font-size: 14px;
+        margin-left: 8px;
+        outline: none;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .btn-primary {
+        background-color: #1890ff;
+        color: #fff;
+        border-color: #1890ff;
+      }
+
+      .btn-primary:hover {
+        background-color: #40a9ff;
+        border-color: #40a9ff;
+      }
+
+      .btn-default {
+        background-color: #fff;
+        color: #333;
+      }
+
+      .btn-default:hover {
+        color: #40a9ff;
+        border-color: #40a9ff;
+      }
+
+      .close-icon {
+        font-size: 18px;
+        color: #999;
+        margin-left: 16px;
+        cursor: pointer;
+        padding-left: 16px;
+        border-left: 1px solid #e8e8e8;
+        height: 20px;
+        line-height: 20px;
+      }
+      .close-icon:hover {
+        color: #666;
+      }
+
+      /* 主容器 */
+      .container {
+        margin: 16px;
+        background: #fff;
+        border-radius: 2px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        padding-bottom: 16px;
+      }
+
+      /* 分区标题栏 */
+      .section-header {
+        background-color: #f5f7fa;
+        padding: 10px 24px;
+        font-weight: 600;
+        color: #333;
+        font-size: 14px;
+        border-bottom: 1px solid #e8e8e8;
+        border-top: 1px solid #e8e8e8;
+      }
+      .section-header:first-child {
+        border-top: none;
+      }
+
+      /* 表单区域 */
+      .form-content {
+        padding: 20px 24px 0 24px;
+      }
+
+      /* 栅格布局 */
+      .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      }
+      .form-row:last-child {
+        margin-bottom: 0;
+      }
+
+      .col-2 {
+        width: 50%;
+        padding-right: 20px;
+      }
+      .col-3 {
+        width: 33.33%;
+        padding-right: 20px;
+      }
+      .col-1 {
+        width: 100%;
+      }
+
+      .form-item {
+        display: flex;
+        align-items: center;
+      }
+
+      /* 标签样式 - 核心：不换行 */
+      .form-label {
+        text-align: right;
+        padding-right: 10px;
+        color: #333;
+        font-weight: 500;
+        font-size: 12px;
+        white-space: nowrap; /* 强制不换行 */
+        flex-shrink: 0; /* 防止标签被压缩 */
+        min-width: 80px; /* 最小宽度 */
+      }
+
+      .required::before {
+        content: '*';
+        color: #ff4d4f;
+        margin-right: 4px;
+      }
+
+      /* 帮助图标 (i) / (?) */
+      .help-icon {
+        color: #1890ff;
+        margin-left: 2px;
+        cursor: pointer;
+        font-size: 14px;
+        vertical-align: middle;
+        margin-right: 2px;
+      }
+
+      /* 输入框容器 */
+      .input-wrapper {
+        flex-grow: 1;
+        position: relative;
+      }
+
+      input[type='text'],
+      .select-box,
+      textarea {
+        width: 100%;
+        height: 32px;
+        padding: 4px 11px;
+        border: 1px solid #d9d9d9;
+        border-radius: 2px;
+        outline: none;
+        transition: all 0.3s;
+        font-size: 14px;
+        color: rgba(0, 0, 0, 0.65);
+        background: #fff;
+      }
+
+      textarea {
+        height: 80px;
+        resize: vertical;
+        padding-top: 6px;
+      }
+
+      input:focus,
+      .select-box:focus,
+      textarea:focus {
+        border-color: #40a9ff;
+        box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+      }
+
+      input::placeholder {
+        color: #bfbfbf;
+        font-size: 13px;
+      }
+
+      /* 模拟 Select */
+      .select-box {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        color: #333;
+      }
+      .select-arrow {
+        color: #bfbfbf;
+        font-size: 10px;
+        transform: scale(0.8);
+      }
+      .select-arrow::after {
+        content: 'v'; /* 简单模拟 */
+        font-family: sans-serif;
+        transform: scaleY(0.6);
+        display: inline-block;
+      }
+
+      /* 纯文本展示 */
+      .text-display {
+        padding-top: 5px;
+        padding-left: 4px;
+        font-size: 14px;
+        color: #333;
+      }
+
+      /* 开关 Switch (灰色带文字版) */
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 22px;
+        background-color: #bfbfbf; /* 灰色关闭状态 */
+        border-radius: 100px;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .switch.checked {
+        background-color: #1890ff; /* 蓝色开启状态 */
+      }
+
+      .switch::after {
+        content: ' ';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background-color: #fff;
+        transition: all 0.3s;
+        box-shadow: 0 2px 4px 0 rgba(0, 35, 11, 0.2);
+      }
+
+      .switch.checked::after {
+        left: 24px; /* 选中状态位置 */
+      }
+
+      .switch-text {
+        position: absolute;
+        right: 6px;
+        color: #fff;
+        font-size: 12px;
+        line-height: 22px;
+        pointer-events: none;
+        transition: all 0.3s;
+        white-space: nowrap;
+      }
+
+      .switch.checked .switch-text {
+        left: 6px;
+        right: auto;
+      }
+
+      /* 添加按钮 (蓝色虚线) */
+      .btn-dashed-add {
+        border: 1px dashed #1890ff;
+        color: #1890ff;
+        background: #fff;
+        padding: 0 12px;
+        height: 24px;
+        line-height: 22px;
+        font-size: 12px;
+        border-radius: 2px;
+        display: inline-block;
+        cursor: pointer;
+      }
+
+      /* 表格样式 */
+      .table-section {
+        padding: 0;
+        border-top: 1px solid #e8e8e8;
+      }
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .data-table th {
+        background: #fafafa;
+        color: #333;
+        font-weight: 600;
+        text-align: left;
+        padding: 10px 16px;
+        border-bottom: 1px solid #e8e8e8;
+        font-size: 13px;
+      }
+      .empty-state {
+        padding: 40px 0;
+        text-align: center;
+        color: #ccc;
+        border-bottom: 1px solid #e8e8e8;
+      }
+      .empty-icon {
+        display: block;
+        font-size: 32px;
+        margin-bottom: 8px;
+        color: #e8e8e8;
+      }
+      .empty-icon span {
+        display: inline-block;
+        border: 2px solid #e8e8e8;
+        width: 40px;
+        height: 30px;
+        border-radius: 4px;
+        position: relative;
+      }
+
+      .table-add-btn {
+        width: 100%;
+        padding: 10px;
+        text-align: center;
+        color: #1890ff;
+        cursor: pointer;
+        background: #fff;
+        border: none;
+        border-bottom: 1px dashed #e8e8e8; /* 图片中是下划线或底部边界 */
+      }
+      .table-add-btn:hover {
+        background-color: #fcfcfc;
+      }
+
+      /* 附件上传按钮 */
+      .upload-wrapper {
+        display: inline-flex;
+      }
+      .btn-upload {
+        padding: 0 15px;
+        height: 32px;
+        border: 1px solid #d9d9d9;
+        background: #fff;
+        border-radius: 2px;
+        display: flex;
+        align-items: center;
+        color: #666;
+        cursor: pointer;
+      }
+      .btn-upload:hover {
+        border-color: #40a9ff;
+        color: #40a9ff;
+      }
+
+      /* 特殊调整：模拟图片中的间距 */
+      .mb-20 {
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="page-title">项目编辑</div>
+      <div class="header-actions">
+        <button type="button" class="btn btn-primary">提交</button>
+        <button type="button" class="btn btn-default">保存</button>
+        <div class="close-icon">✕</div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="section-header">基本信息</div>
+      <div class="form-content">
+        <div class="form-row">
+          <div class="col-2 form-item">
+            <label class="form-label required">项目名称：</label>
+            <div class="input-wrapper">
+              <input type="text" value="" />
+            </div>
+          </div>
+          <div class="col-2 form-item">
+            <label class="form-label">甲方项目编码：</label>
+            <div class="input-wrapper">
+              <input type="text" value="" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="col-2 form-item">
+            <label class="form-label required">业务类型：</label>
+            <div class="input-wrapper">
+              <div class="select-box"><span class="select-arrow"></span></div>
+            </div>
+          </div>
+          <div class="col-2 form-item">
+            <label class="form-label required">核算主体：</label>
+            <div class="input-wrapper">
+              <div class="select-box"><span class="select-arrow"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="col-2 form-item">
+            <label class="form-label required">客户单位：</label>
+            <div class="input-wrapper">
+              <div class="select-box"><span class="select-arrow"></span></div>
+            </div>
+          </div>
+          <div class="col-2 form-item">
+            <label class="form-label">甲方经营部门：</label>
+            <div class="input-wrapper">
+              <div class="select-box"><span class="select-arrow"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="col-2 form-item">
+            <label class="form-label">行业线：</label>
+            <div class="input-wrapper text-display"></div>
+          </div>
+          <div class="col-2 form-item">
+            <label class="form-label">行客线：</label>
+            <div class="input-wrapper text-display"></div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="col-1 form-item">
+            <label class="form-label" style="min-width: 80px">收入合同：</label>
+            <div class="input-wrapper text-display"></div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="col-3 form-item">
+            <label class="form-label required">营销中心：</label>
+            <div class="input-wrapper">
+              <div class="select-box"><span class="select-arrow"></span></div>
+            </div>
+          </div>
+          <div class="col-3 form-item">
+            <label class="form-label required">交付中心：</label>
+            <div class="input-wrapper">
+              <div class="select-box"><span class="select-arrow"></span></div>
+            </div>
+          </div>
+          <div class="col-3 form-item">
+            <label class="form-label">申请人：</label>
+            <div class="input-wrapper text-display">张三</div>
+          </div>
+        </div>
+
+        <div class="form-row mb-20">
+          <div class="col-3 form-item">
+            <label class="form-label"><span class="help-icon">?</span> 谨慎性配比：</label>
+            <div class="input-wrapper">
+              <div class="switch" id="prudentRatioSwitch" onclick="togglePrudentRatio()">
+                <span class="switch-text">否</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-3 form-item">
+            <label class="form-label">操作人：</label>
+            <div class="input-wrapper">
+              <span class="btn-dashed-add">+ 添加</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-header">结算信息</div>
+      <div class="form-content">
+        <div class="form-row">
+          <div class="col-3 form-item">
+            <label class="form-label required"
+              >向客户收取管理费基准 <span class="help-icon">?</span>：</label
+            >
+            <div class="input-wrapper">
+              <div class="select-box"><span class="select-arrow"></span></div>
+            </div>
+          </div>
+          <div class="col-3 form-item">
+            <label class="form-label">向客户收取的管理费率：</label>
+            <div class="input-wrapper">
+              <input type="text" placeholder="0.00000%" />
+            </div>
+          </div>
+          <div class="col-3 form-item">
+            <label class="form-label">向客户收取的管理费描述：</label>
+            <div class="input-wrapper">
+              <input type="text" value="" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row mb-20">
+          <div class="col-3 form-item">
+            <label class="form-label required"
+              >向客户收取税金基准 <span class="help-icon">?</span>：</label
+            >
+            <div class="input-wrapper">
+              <div class="select-box"><span class="select-arrow"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-section">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 20%">开票税率</th>
+              <th style="width: 20%">计划税负率</th>
+              <th style="width: 20%">向客户收取税率</th>
+              <th style="width: 25%">向客户收取税金描述</th>
+              <th style="width: 15%">操作</th>
+            </tr>
+          </thead>
+        </table>
+        <div class="empty-state">
+          <div class="empty-icon"><span></span></div>
+          <div>暂无数据</div>
+        </div>
+        <button class="table-add-btn">+ 添加税率</button>
+      </div>
+
+      <div class="section-header" style="border-top: none">施工班组</div>
+      <div class="table-section" style="border-top: none">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 80%">施工班组</th>
+              <th style="width: 20%">操作</th>
+            </tr>
+          </thead>
+        </table>
+        <div class="empty-state">
+          <div class="empty-icon"><span></span></div>
+          <div>暂无数据</div>
+        </div>
+        <button class="table-add-btn">+ 添加施工班组</button>
+      </div>
+
+      <div class="section-header">其他信息</div>
+      <div class="form-content">
+        <div class="form-row">
+          <div class="col-1 form-item" style="align-items: flex-start">
+            <label class="form-label" style="margin-top: 6px">备注：</label>
+            <div class="input-wrapper">
+              <textarea></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="col-1 form-item">
+            <label class="form-label">附件：</label>
+            <div class="upload-wrapper">
+              <button type="button" class="btn-upload">
+                <span style="margin-right: 5px; font-weight: bold">↑</span> 上传附件
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row mb-20">
+          <div class="col-2 form-item">
+            <label class="form-label"><span class="help-icon">?</span> 是否同步附件：</label>
+            <div class="input-wrapper">
+              <div class="switch" id="syncAttachmentSwitch" onclick="toggleSyncAttachment()">
+                <span class="switch-text">否</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 谨慎性配比开关切换
+      function togglePrudentRatio() {
+        const switchEl = document.getElementById('prudentRatioSwitch');
+        const textEl = switchEl.querySelector('.switch-text');
+
+        if (switchEl.classList.contains('checked')) {
+          // 切换到"否"
+          switchEl.classList.remove('checked');
+          textEl.textContent = '否';
+        } else {
+          // 切换到"是"
+          switchEl.classList.add('checked');
+          textEl.textContent = '是';
+        }
+      }
+
+      // 是否同步附件开关切换
+      function toggleSyncAttachment() {
+        const switchEl = document.getElementById('syncAttachmentSwitch');
+        const textEl = switchEl.querySelector('.switch-text');
+
+        if (switchEl.classList.contains('checked')) {
+          // 切换到"否"
+          switchEl.classList.remove('checked');
+          textEl.textContent = '否';
+        } else {
+          // 切换到"是"
+          switchEl.classList.add('checked');
+          textEl.textContent = '是';
+        }
+      }
+
+      // 页面加载时阻止页面刷新
+      document.addEventListener('DOMContentLoaded', function () {
+        // 阻止所有按钮的默认提交行为
+        const buttons = document.querySelectorAll('button');
+        buttons.forEach(function (button) {
+          button.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          });
+        });
+
+        // 阻止Enter键触发表单提交和页面刷新
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') {
+            const target = e.target;
+            // 如果是在textarea中，允许换行
+            if (target.tagName === 'TEXTAREA') {
+              return;
+            }
+            // 其他情况下阻止默认行为
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        });
+
+        // 阻止表单提交（如果有表单的话）
+        const forms = document.querySelectorAll('form');
+        forms.forEach(function (form) {
+          form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

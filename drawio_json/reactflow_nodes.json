@@ -1,0 +1,882 @@
+[
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-6",
+    "position": {
+      "x": -0.2689,
+      "y": -1.0
+    },
+    "data": {
+      "label": "是"
+    }
+  },
+  {
+    "id": "Y9WJppi61BByDguIrdlh-1",
+    "position": {
+      "x": 262.5,
+      "y": -250.0
+    },
+    "data": {
+      "label": "客户录入"
+    }
+  },
+  {
+    "id": "U1zQrPWHHBlNqDn4Iazs-2",
+    "position": {
+      "x": 262.5,
+      "y": -40.0
+    },
+    "data": {
+      "label": "商机录入"
+    }
+  },
+  {
+    "id": "Gu-Yal3uA0nNQ-pkzDeh-1",
+    "position": {
+      "x": 262.5,
+      "y": 40.0
+    },
+    "data": {
+      "label": "商机跟踪"
+    }
+  },
+  {
+    "id": "bvZmaO9czFdMbkqaPyB_-6",
+    "position": {
+      "x": -0.1126,
+      "y": 0.0
+    },
+    "data": {
+      "label": "是"
+    }
+  },
+  {
+    "id": "bvZmaO9czFdMbkqaPyB_-16",
+    "position": {
+      "x": -0.3059,
+      "y": 2.0
+    },
+    "data": {
+      "label": "否"
+    }
+  },
+  {
+    "id": "bvZmaO9czFdMbkqaPyB_-1",
+    "position": {
+      "x": 240.0,
+      "y": 130.0
+    },
+    "data": {
+      "label": "是否<span style=\"background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));\">参与</span><div>投标</div>"
+    }
+  },
+  {
+    "id": "bvZmaO9czFdMbkqaPyB_-3",
+    "position": {
+      "x": 100.0,
+      "y": 145.0
+    },
+    "data": {
+      "label": "投标项目立项"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-5",
+    "position": {
+      "x": -0.1712,
+      "y": 1.0
+    },
+    "data": {
+      "label": "否"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-81",
+    "position": {
+      "x": -0.7336,
+      "y": 0.0
+    },
+    "data": {
+      "label": "是"
+    }
+  },
+  {
+    "id": "bvZmaO9czFdMbkqaPyB_-14",
+    "position": {
+      "x": 240.0,
+      "y": 280.0
+    },
+    "data": {
+      "label": "是否达成合作"
+    }
+  },
+  {
+    "id": "bvZmaO9czFdMbkqaPyB_-17",
+    "position": {
+      "x": 100.0,
+      "y": 290.0
+    },
+    "data": {
+      "label": "支付<div>投标保证金</div>"
+    }
+  },
+  {
+    "id": "bvZmaO9czFdMbkqaPyB_-18",
+    "position": {
+      "x": 100.0,
+      "y": 220.0
+    },
+    "data": {
+      "label": "支付<div>投标文件费</div>"
+    }
+  },
+  {
+    "id": "4VJ7B7fsHdyRGo8Utlzq-6",
+    "position": {
+      "x": -0.2242,
+      "y": 0.0
+    },
+    "data": {
+      "label": "否"
+    }
+  },
+  {
+    "id": "fPddnWIGF0r_oD2BtgRG-4",
+    "position": {
+      "x": -0.1951,
+      "y": 1.0
+    },
+    "data": {
+      "label": "是"
+    }
+  },
+  {
+    "id": "9yf0Ff6gT347YwZgsXFW-2",
+    "position": {
+      "x": 77.5,
+      "y": 440.0
+    },
+    "data": {
+      "label": "是否中标"
+    }
+  },
+  {
+    "id": "9yf0Ff6gT347YwZgsXFW-9",
+    "position": {
+      "x": 100.0,
+      "y": 560.0
+    },
+    "data": {
+      "label": "返还<div>投标保证金</div>"
+    }
+  },
+  {
+    "id": "Tpd97yPnTGmA9_Z_5GpV-1",
+    "position": {
+      "x": 101.0,
+      "y": 630.0
+    },
+    "data": {
+      "label": "投标项目<div>关闭</div>"
+    }
+  },
+  {
+    "id": "Tpd97yPnTGmA9_Z_5GpV-3",
+    "position": {
+      "x": 108.5,
+      "y": 700.0
+    },
+    "data": {
+      "label": "结束"
+    }
+  },
+  {
+    "id": "l-UN-LB05KeyWejjERRF-1",
+    "position": {
+      "x": -42.0,
+      "y": 560.0
+    },
+    "data": {
+      "label": "投标项目关闭"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-7",
+    "position": {
+      "x": 0.2135,
+      "y": -1.0
+    },
+    "data": {
+      "label": "否"
+    }
+  },
+  {
+    "id": "FVkg1p5LJNHbSiimJ4Km-1",
+    "position": {
+      "x": 240.0,
+      "y": -180.0
+    },
+    "data": {
+      "label": "是否存在商机"
+    }
+  },
+  {
+    "id": "FVkg1p5LJNHbSiimJ4Km-3",
+    "position": {
+      "x": 100.0,
+      "y": 40.0
+    },
+    "data": {
+      "label": "独立发起<div>投标项目</div>"
+    }
+  },
+  {
+    "id": "sigMrHhIoDQTpIZUfisF-1",
+    "position": {
+      "x": 107.5,
+      "y": 360.0
+    },
+    "data": {
+      "label": "等待<div>投标<span style=\"background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));\">结果</span></div>"
+    }
+  },
+  {
+    "id": "sigMrHhIoDQTpIZUfisF-7",
+    "position": {
+      "x": -42.0,
+      "y": 630.0
+    },
+    "data": {
+      "label": "业务项目立项"
+    }
+  },
+  {
+    "id": "sigMrHhIoDQTpIZUfisF-8",
+    "position": {
+      "x": -157.0,
+      "y": 630.0
+    },
+    "data": {
+      "label": "支付<div>招标代理费</div>"
+    }
+  },
+  {
+    "id": "sigMrHhIoDQTpIZUfisF-9",
+    "position": {
+      "x": -267.0,
+      "y": 630.0
+    },
+    "data": {
+      "label": "支付<div>履约保证金</div>"
+    }
+  },
+  {
+    "id": "ENbwduzckg6LZKkkJnjV-1",
+    "position": {
+      "x": 460.0,
+      "y": 295.0
+    },
+    "data": {
+      "label": "标记商机失单"
+    }
+  },
+  {
+    "id": "GG-BTpMRZ48YQQPFh84h-2",
+    "position": {
+      "x": -42.0,
+      "y": 696.0
+    },
+    "data": {
+      "label": "合同商务沟通"
+    }
+  },
+  {
+    "id": "GG-BTpMRZ48YQQPFh84h-3",
+    "position": {
+      "x": -42.0,
+      "y": 756.0
+    },
+    "data": {
+      "label": "收入合同起拟"
+    }
+  },
+  {
+    "id": "GG-BTpMRZ48YQQPFh84h-8",
+    "position": {
+      "x": -42.0,
+      "y": 830.0
+    },
+    "data": {
+      "label": "合同审批"
+    }
+  },
+  {
+    "id": "GG-BTpMRZ48YQQPFh84h-19",
+    "position": {
+      "x": 0.3714,
+      "y": 0.0
+    },
+    "data": {
+      "label": "否"
+    }
+  },
+  {
+    "id": "4VJ7B7fsHdyRGo8Utlzq-3",
+    "position": {
+      "x": -0.2045,
+      "y": 0.0
+    },
+    "data": {
+      "label": "是"
+    }
+  },
+  {
+    "id": "GG-BTpMRZ48YQQPFh84h-9",
+    "position": {
+      "x": -64.5,
+      "y": 890.0
+    },
+    "data": {
+      "label": "是否通过审批"
+    }
+  },
+  {
+    "id": "GG-BTpMRZ48YQQPFh84h-16",
+    "position": {
+      "x": -167.0,
+      "y": 756.0
+    },
+    "data": {
+      "label": "合同修改<div>(补稿)</div>"
+    }
+  },
+  {
+    "id": "-Awt2JSk5ec_BPXuShpX-3",
+    "position": {
+      "x": 255.0,
+      "y": 1026.0
+    },
+    "data": {
+      "label": "合同作废"
+    }
+  },
+  {
+    "id": "bh9-16gkUIuPaqF3xNlo-1",
+    "position": {
+      "x": -42.0,
+      "y": 1520.0
+    },
+    "data": {
+      "label": "合同项目<div>立项申请</div>"
+    }
+  },
+  {
+    "id": "bh9-16gkUIuPaqF3xNlo-4",
+    "position": {
+      "x": -42.0,
+      "y": 1597.0
+    },
+    "data": {
+      "label": "合同项目<div>立项审批</div>"
+    }
+  },
+  {
+    "id": "JcsoN98Tkl76eQr3ZQgc-1",
+    "position": {
+      "x": 262.5,
+      "y": -950.0
+    },
+    "data": {
+      "label": "市场活动/<div>渠道触点</div>"
+    }
+  },
+  {
+    "id": "JcsoN98Tkl76eQr3ZQgc-2",
+    "position": {
+      "x": 262.5,
+      "y": -885.0
+    },
+    "data": {
+      "label": "线索收集"
+    }
+  },
+  {
+    "id": "JcsoN98Tkl76eQr3ZQgc-3",
+    "position": {
+      "x": 262.5,
+      "y": -820.0
+    },
+    "data": {
+      "label": "线索登记"
+    }
+  },
+  {
+    "id": "JcsoN98Tkl76eQr3ZQgc-19",
+    "position": {
+      "x": -0.3055,
+      "y": 0.0
+    },
+    "data": {
+      "label": "是"
+    }
+  },
+  {
+    "id": "JcsoN98Tkl76eQr3ZQgc-25",
+    "position": {
+      "x": -0.0599,
+      "y": 0.0
+    },
+    "data": {
+      "label": "否"
+    }
+  },
+  {
+    "id": "JcsoN98Tkl76eQr3ZQgc-4",
+    "position": {
+      "x": 240.0,
+      "y": -740.0
+    },
+    "data": {
+      "label": "是否有效线索"
+    }
+  },
+  {
+    "id": "JcsoN98Tkl76eQr3ZQgc-5",
+    "position": {
+      "x": 262.5,
+      "y": -630.0
+    },
+    "data": {
+      "label": "客户拜访"
+    }
+  },
+  {
+    "id": "JcsoN98Tkl76eQr3ZQgc-6",
+    "position": {
+      "x": 262.5,
+      "y": -567.0
+    },
+    "data": {
+      "label": "客户意向确认"
+    }
+  },
+  {
+    "id": "JcsoN98Tkl76eQr3ZQgc-7",
+    "position": {
+      "x": 262.5,
+      "y": -503.0
+    },
+    "data": {
+      "label": "系统自动查重"
+    }
+  },
+  {
+    "id": "JcsoN98Tkl76eQr3ZQgc-8",
+    "position": {
+      "x": 262.5,
+      "y": -440.0
+    },
+    "data": {
+      "label": "客户准入检查"
+    }
+  },
+  {
+    "id": "JcsoN98Tkl76eQr3ZQgc-28",
+    "position": {
+      "x": -0.1003,
+      "y": -2.0
+    },
+    "data": {
+      "label": "是"
+    }
+  },
+  {
+    "id": "JcsoN98Tkl76eQr3ZQgc-27",
+    "position": {
+      "x": 0.1962,
+      "y": 0.0
+    },
+    "data": {
+      "label": "否"
+    }
+  },
+  {
+    "id": "JcsoN98Tkl76eQr3ZQgc-16",
+    "position": {
+      "x": 240.0,
+      "y": -360.0
+    },
+    "data": {
+      "label": "是否符合要求"
+    }
+  },
+  {
+    "id": "JcsoN98Tkl76eQr3ZQgc-21",
+    "position": {
+      "x": 270.0,
+      "y": -1030.0
+    },
+    "data": {
+      "label": "开始"
+    }
+  },
+  {
+    "id": "JcsoN98Tkl76eQr3ZQgc-23",
+    "position": {
+      "x": 467.5,
+      "y": -345.0
+    },
+    "data": {
+      "label": "结束"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-9",
+    "position": {
+      "x": -182.0,
+      "y": 1520.0
+    },
+    "data": {
+      "label": "合同项目<div>修改<span style=\"background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));\">(补稿)</span></div>"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-15",
+    "position": {
+      "x": 0.3055,
+      "y": 1.0
+    },
+    "data": {
+      "label": "否"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-58",
+    "position": {
+      "x": -0.0272,
+      "y": -2.0
+    },
+    "data": {
+      "label": "是"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-11",
+    "position": {
+      "x": -64.5,
+      "y": 1673.0
+    },
+    "data": {
+      "label": "合同项目<div>是否通过审批</div>"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-47",
+    "position": {
+      "x": 0.0123,
+      "y": -1.0
+    },
+    "data": {
+      "label": "否"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-59",
+    "position": {
+      "x": -0.2485,
+      "y": 0.0
+    },
+    "data": {
+      "label": "是"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-18",
+    "position": {
+      "x": -65.0,
+      "y": 1011.0
+    },
+    "data": {
+      "label": "是否签署合同"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-24",
+    "position": {
+      "x": -70.0,
+      "y": 1127.91
+    },
+    "data": {
+      "label": "合同签署反馈<div>(业务录入/上传扫描件)</div>"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-25",
+    "position": {
+      "x": -192.0,
+      "y": 1142.94
+    },
+    "data": {
+      "label": "合同原件回传"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-26",
+    "position": {
+      "x": -429.0,
+      "y": 1142.94
+    },
+    "data": {
+      "label": "合同归档"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-27",
+    "position": {
+      "x": -539.0,
+      "y": 1142.94
+    },
+    "data": {
+      "label": "合同借阅登记"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-28",
+    "position": {
+      "x": -649.0,
+      "y": 1142.94
+    },
+    "data": {
+      "label": "合同归还"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-52",
+    "position": {
+      "x": -310.0,
+      "y": 1142.94
+    },
+    "data": {
+      "label": "合同原件验收"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-56",
+    "position": {
+      "x": -42.0,
+      "y": 1789.0
+    },
+    "data": {
+      "label": "建立(生成)<div>项目信息</div>"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-70",
+    "position": {
+      "x": -42.0,
+      "y": 1859.0
+    },
+    "data": {
+      "label": "项目执行"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-72",
+    "position": {
+      "x": -42.0,
+      "y": 1930.0
+    },
+    "data": {
+      "label": "项目完结"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-74",
+    "position": {
+      "x": -42.0,
+      "y": 2000.0
+    },
+    "data": {
+      "label": "项目清算"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-76",
+    "position": {
+      "x": -42.0,
+      "y": 2070.0
+    },
+    "data": {
+      "label": "项目退出"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-82",
+    "position": {
+      "x": -69.5,
+      "y": 1230.0
+    },
+    "data": {
+      "label": "施工班组<div>建立审批</div>"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-90",
+    "position": {
+      "x": 0.614,
+      "y": 0.0
+    },
+    "data": {
+      "label": "否"
+    }
+  },
+  {
+    "id": "Q52KDLDWgLxAS_TBAmk2-1",
+    "position": {
+      "x": -0.0283,
+      "y": -1.0
+    },
+    "data": {
+      "label": "是"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-83",
+    "position": {
+      "x": -65.0,
+      "y": 1310.0
+    },
+    "data": {
+      "label": "是否审批通过"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-87",
+    "position": {
+      "x": -230.0,
+      "y": 1235.0
+    },
+    "data": {
+      "label": "施工班组信息<div>修改</div>"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-93",
+    "position": {
+      "x": -42.0,
+      "y": 1435.0
+    },
+    "data": {
+      "label": "施工班组成立"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-101",
+    "position": {
+      "x": 101.0,
+      "y": 1420.0
+    },
+    "data": {
+      "label": "标识计提方式"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-102",
+    "position": {
+      "x": 210.0,
+      "y": 1420.0
+    },
+    "data": {
+      "label": "系统自动按月计提"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-103",
+    "position": {
+      "x": 310.0,
+      "y": 1410.0
+    },
+    "data": {
+      "label": "专项资金池<div>累积</div>"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-104",
+    "position": {
+      "x": 400.0,
+      "y": 1420.0
+    },
+    "data": {
+      "label": "专项资金<div>使用</div>"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-110",
+    "position": {
+      "x": 150.0,
+      "y": 1714.0
+    },
+    "data": {
+      "label": "开票流程"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-111",
+    "position": {
+      "x": 670.0,
+      "y": 1637.0
+    },
+    "data": {
+      "label": "收款流程"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-112",
+    "position": {
+      "x": 700.0,
+      "y": 1819.0
+    },
+    "data": {
+      "label": "付款流程"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-113",
+    "position": {
+      "x": 700.0,
+      "y": 1743.0
+    },
+    "data": {
+      "label": "工资结算流程"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-114",
+    "position": {
+      "x": 690.0,
+      "y": 1990.0
+    },
+    "data": {
+      "label": "往来款流程"
+    }
+  },
+  {
+    "id": "tXOpSJkzOXJpe61U2wCs-115",
+    "position": {
+      "x": 690.0,
+      "y": 1910.0
+    },
+    "data": {
+      "label": "外经证流程"
+    }
+  },
+  {
+    "id": "EFpDDtASL9AJijXVQkTA-2",
+    "position": {
+      "x": 155.0,
+      "y": 1620.0
+    },
+    "data": {
+      "label": "创建预算：紧密型项目的预算，主要关注管理费和税金的收取；<div>在项目创建(合同项目的立项申请)阶段，结合合同上约定的信息，来计算实际应该收取的</div><div>管理费和税金；</div>"
+    }
+  }
+]

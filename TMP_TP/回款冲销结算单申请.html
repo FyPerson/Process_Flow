@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>回款冲销结算单申请</title>
+    <style>
+      /* ================= 全局重置与基础样式 ================= */
+      * {
+        box-sizing: border-box;
+        outline: none;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px;
+        background-color: #f0f2f5;
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-size: 12px;
+        color: #333;
+        /* 核心：强制页面最小宽度，防止挤压导致换行 */
+        min-width: 1300px;
+        overflow-x: auto;
+      }
+
+      /* 核心：全局禁止换行 */
+      div,
+      span,
+      label,
+      td,
+      th,
+      p,
+      a {
+        white-space: nowrap !important;
+      }
+
+      /* 通用工具类 */
+      .flex {
+        display: flex;
+        align-items: center;
+      }
+      .flex-between {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .flex-end {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+      }
+      .w-100 {
+        width: 100%;
+      }
+      .text-red {
+        color: #ff4d4f;
+      }
+      .text-blue {
+        color: #1890ff;
+        cursor: pointer;
+      }
+      .text-gray {
+        color: #999;
+      }
+      .font-bold {
+        font-weight: 500;
+      } /* AntD的加粗通常是500 */
+      .ml-10 {
+        margin-left: 10px;
+      }
+      .mr-5 {
+        margin-right: 5px;
+      }
+      .mb-15 {
+        margin-bottom: 15px;
+      }
+      .mt-5 {
+        margin-top: 5px;
+      }
+
+      /* 模拟 Ant Design 的输入控件样式 */
+      input[type='text'],
+      select {
+        width: 100%;
+        height: 32px;
+        padding: 4px 11px;
+        border: 1px solid #d9d9d9;
+        border-radius: 2px;
+        color: rgba(0, 0, 0, 0.88);
+        background-color: #fff;
+        font-size: 12px;
+        transition: all 0.2s;
+      }
+      input:hover,
+      select:hover {
+        border-color: #4096ff;
+      }
+      input:focus,
+      select:focus {
+        border-color: #4096ff;
+        box-shadow: 0 0 0 2px rgba(5, 145, 255, 0.1);
+      }
+
+      /* 禁用状态 */
+      input:disabled,
+      select:disabled {
+        color: rgba(0, 0, 0, 0.25);
+        background-color: #f5f5f5;
+        cursor: not-allowed;
+      }
+
+      /* 按钮样式 */
+      .btn {
+        height: 32px;
+        padding: 4px 15px;
+        font-size: 14px;
+        border-radius: 2px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.3s;
+      }
+      .btn-primary {
+        background-color: #1890ff;
+        color: #fff;
+        box-shadow: 0 2px 0 rgba(5, 145, 255, 0.1);
+      }
+      .btn-primary:hover {
+        background-color: #4096ff;
+      }
+      .btn-outline {
+        background: #fff;
+        border-color: #d9d9d9;
+        color: #333;
+      }
+      .btn-outline:hover {
+        color: #4096ff;
+        border-color: #4096ff;
+      }
+      .btn-dashed {
+        border-style: dashed;
+        width: 100%;
+        color: #1890ff;
+        border-color: #d9d9d9;
+      }
+      .btn-small-outline {
+        padding: 0 7px;
+        height: 24px;
+        font-size: 12px;
+        color: #1890ff;
+        border: 1px solid #1890ff;
+        background: #fff;
+      }
+
+      /* 布局容器 */
+      .container {
+        background: #fff;
+        padding: 24px;
+        border-radius: 2px;
+      }
+
+      /* 头部 */
+      .header {
+        background: #fff;
+        padding: 16px 24px;
+        margin-bottom: 16px;
+        border-radius: 2px;
+      }
+      .header h2 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        margin-right: 20px;
+      }
+
+      /* 表单行与列 */
+      .form-row {
+        display: flex;
+        margin-bottom: 20px;
+        gap: 40px; /* 列间距 */
+      }
+      .form-col {
+        flex: 1; /* 三等分 */
+        display: flex;
+        align-items: center;
+      }
+      /* Label 样式 */
+      .form-label {
+        width: auto; /* 不固定宽度，紧贴 */
+        min-width: 100px; /* 最小宽度视觉对齐 */
+        text-align: right;
+        margin-right: 12px;
+        color: #333;
+        flex-shrink: 0; /* 禁止压缩 */
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+      }
+      .form-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+      }
+
+      /* 章节标题 */
+      .section-header {
+        background-color: #fafafa;
+        padding: 10px 15px;
+        margin-bottom: 20px;
+        font-weight: 600;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+      }
+      .section-sub {
+        font-weight: normal;
+        margin-left: 10px;
+        font-size: 12px;
+      }
+
+      /* 税率条 */
+      .tax-bar {
+        background: #fafafa;
+        padding: 15px 20px;
+        display: flex;
+        margin-bottom: 24px;
+      }
+      .tax-item {
+        flex: 1;
+      }
+      .tax-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #333;
+      }
+      .tax-val {
+        color: #666;
+      }
+
+      /* 图标模拟 */
+      .icon-info {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        line-height: 14px;
+        text-align: center;
+        border-radius: 50%;
+        border: 1px solid #1890ff;
+        color: #1890ff;
+        font-size: 10px;
+        margin-left: 4px;
+        font-style: normal;
+        cursor: help;
+      }
+      .icon-plus {
+        font-style: normal;
+        font-weight: bold;
+        margin-right: 4px;
+      }
+
+      /* 表格样式 */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+      }
+      th {
+        background: #fafafa;
+        border: 1px solid #f0f0f0;
+        padding: 10px;
+        text-align: left;
+        font-weight: 500;
+      }
+      td {
+        border: 1px solid #f0f0f0;
+        padding: 10px;
+      }
+      .empty-block {
+        padding: 40px;
+        text-align: center;
+        color: #ccc;
+        border: 1px solid #f0f0f0;
+        border-top: none;
+        margin-bottom: 20px;
+      }
+
+      /* 支付列表 */
+      .pay-list {
+        border: 1px solid #f0f0f0;
+        margin-bottom: 24px;
+      }
+      .pay-item {
+        padding: 12px 20px;
+        border-bottom: 1px solid #f0f0f0;
+        background: #fafafa; /* 截图看起来有点灰 */
+        display: flex;
+        align-items: center;
+      }
+      .pay-item:last-child {
+        border-bottom: none;
+      }
+      .pay-arrow {
+        color: #ccc;
+        margin-right: 10px;
+        font-size: 10px;
+        transform: scaleY(1.5);
+      }
+
+      /* Switch 开关模拟 */
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 22px;
+        background-color: #bfbfbf; /* 关闭颜色 */
+        border-radius: 100px;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+      .switch::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 18px;
+        height: 18px;
+        background-color: white;
+        border-radius: 50%;
+        transition: all 0.3s;
+      }
+      .switch.active {
+        background-color: #1890ff;
+      }
+      .switch.active::after {
+        left: 24px;
+      }
+      .switch-text {
+        position: absolute;
+        right: 6px;
+        color: #fff;
+        font-size: 12px;
+        top: 2px;
+        line-height: 18px;
+      }
+
+      /* Radio 模拟 */
+      .radio-group {
+        display: flex;
+        gap: 15px;
+      }
+      .radio-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+      }
+      .radio-circle {
+        width: 16px;
+        height: 16px;
+        border: 1px solid #d9d9d9;
+        border-radius: 50%;
+        position: relative;
+      }
+      .radio-item.checked .radio-circle {
+        border-color: #1890ff;
+      }
+      .radio-item.checked .radio-circle::after {
+        content: '';
+        width: 8px;
+        height: 8px;
+        background: #1890ff;
+        border-radius: 50%;
+        position: absolute;
+        top: 3px;
+        left: 3px;
+      }
+      .radio-item.disabled {
+        color: #ccc;
+        cursor: not-allowed;
+      }
+      .radio-item.disabled .radio-circle {
+        background: #f5f5f5;
+        border-color: #d9d9d9;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header flex-between">
+      <div class="flex">
+        <h2>回款冲销结算单申请</h2>
+        <button class="btn btn-small-outline">票据额度</button>
+      </div>
+      <button class="btn btn-primary">提交</button>
+    </div>
+
+    <div class="container">
+      <div class="section-header">基本信息</div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <div class="form-label"><span class="text-red mr-5">*</span>结算单类型:</div>
+          <div class="form-content">
+            <select>
+              <option>预付款结算单</option>
+              <option>开票结算单</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-col">
+          <div class="form-label"><span class="text-red mr-5">*</span>出款时间:</div>
+          <div class="form-content">
+            <input type="text" value="2025-12-05" />
+          </div>
+        </div>
+        <div class="form-col">
+          <div class="form-label"><span class="text-red mr-5">*</span>申请部门:</div>
+          <div class="form-content">
+            <select disabled>
+              <option>杭州区域_交付一部</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <div class="form-label">项目名称<i class="icon-info">i</i>:</div>
+          <div class="form-content">XXXX项目</div>
+        </div>
+        <div class="form-col">
+          <div class="form-label">甲方经营部门:</div>
+        </div>
+        <div class="form-col">
+          <div class="form-label">申请人:</div>
+          <div class="form-content" style="padding-left: 10px">系统管理员</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <div class="form-label">合同编号:</div>
+          <div class="form-content">
+            <select>
+              <option></option>
+            </select>
+          </div>
+        </div>
+        <div class="form-col"></div>
+        <div class="form-col"></div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <div class="form-label">向客户收取管理费基准<i class="icon-info">i</i>:</div>
+          <div class="form-content text-gray ml-10">开票金额（含税）</div>
+        </div>
+        <div class="form-col">
+          <div class="form-label">向客户收取的管理费率:</div>
+          <div class="form-content ml-10">2.00000%</div>
+        </div>
+        <div class="form-col">
+          <div class="form-label">向客户收取的管理费描述:</div>
+          <div class="form-content ml-10">2</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <div class="form-label">向客户收取税金基准<i class="icon-info">i</i>:</div>
+          <div class="form-content text-gray ml-10">开票金额（含税）</div>
+        </div>
+        <div class="form-col">
+          <div class="form-label">是否延迟支付:</div>
+          <div class="form-content">
+            <div class="switch"><span class="switch-text">否</span></div>
+          </div>
+        </div>
+        <div class="form-col"></div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <div class="form-label">到款ID:</div>
+          <div class="form-content">
+            <span class="text-blue flex"><span class="icon-plus">+</span>选择到款</span>
+          </div>
+        </div>
+        <div class="form-col" style="flex: 2">
+          <span class="text-red font-bold">* 总回款冲销金额： 0</span>
+        </div>
+      </div>
+
+      <div class="tax-bar">
+        <div class="tax-item">
+          <div class="tax-title">税率</div>
+          <div class="tax-val">9%</div>
+        </div>
+        <div class="tax-item">
+          <div class="tax-title">计划税负率</div>
+          <div class="tax-val">9.28%</div>
+        </div>
+        <div class="tax-item">
+          <div class="tax-title">向客户收取的税率</div>
+          <div class="tax-val">9.28%</div>
+        </div>
+        <div class="tax-item">
+          <div class="tax-title">向客户收取税金描述</div>
+          <div class="tax-val">9</div>
+        </div>
+      </div>
+
+      <div class="section-header">结算班组信息</div>
+      <div class="form-row">
+        <div class="form-col" style="flex: 2">
+          <div class="form-label" style="width: 140px">
+            <span class="text-red mr-5">*</span>施工班组:
+          </div>
+          <div class="form-content">
+            <select>
+              <option>杭州分公司高虹项目部S0001-杭州通服</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-col">
+          <span class="text-red ml-10">(在职人数: 0人)</span>
+        </div>
+        <div class="form-col">
+          <span class="font-bold">施工班组组长:</span>
+        </div>
+      </div>
+
+      <div class="section-header">
+        收入信息 <span class="section-sub text-red">(回款总计: 0)</span>
+      </div>
+      <div class="form-row">
+        <div class="form-col">
+          <div class="form-label">到款情况:</div>
+          <div class="form-content">
+            <div class="radio-group">
+              <div class="radio-item disabled">
+                <div class="radio-circle"></div>
+                已领取
+              </div>
+              <div class="radio-item checked">
+                <div class="radio-circle"></div>
+                待领取
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-col">
+          <div class="form-label">本次回款金额:</div>
+          <div class="form-content">
+            <input type="text" value="0.00" />
+          </div>
+        </div>
+        <div class="form-col">
+          <div class="form-label">未使用回款金额:</div>
+          <div class="form-content ml-10">17.4</div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        费用扣除 <span class="section-sub text-red">(扣除总计: 0)</span>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <div class="form-label">
+            <span class="text-red mr-5">*</span>管理费扣除基准<i class="icon-info">i</i>:
+          </div>
+          <div class="form-content text-gray ml-10">开票金额（含税）</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <div class="form-label">扣除标准税金<i class="icon-info">i</i>:</div>
+          <div class="form-content ml-10">0</div>
+        </div>
+        <div class="form-col">
+          <div class="form-label"><span class="text-red mr-5">*</span>税金调整:</div>
+          <div class="form-content">
+            <input type="text" value="0.00" />
+          </div>
+        </div>
+        <div class="form-col">
+          <div class="form-label">扣除税金合计<i class="icon-info">i</i>:</div>
+          <div class="form-content ml-10">0</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <div class="form-label">扣除管理费<i class="icon-info">i</i>:</div>
+          <div class="form-content">
+            <input type="text" value="0.00" />
+          </div>
+        </div>
+        <div class="form-col">
+          <div class="form-label">管理费调整(劳务公司)<i class="icon-info">i</i>:</div>
+          <div class="form-content ml-10">0</div>
+        </div>
+        <div class="form-col"></div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <div class="form-label">扣除安全生产费:</div>
+          <div class="form-content">
+            <input type="text" value="0.00" />
+          </div>
+        </div>
+        <div class="form-col">
+          <div class="form-label">暂留款<i class="icon-info">i</i>:</div>
+          <div class="form-content">
+            <input type="text" value="0.00" />
+          </div>
+        </div>
+        <div class="form-col">
+          <div class="form-label">公共费用收支余额:</div>
+          <div class="form-content ml-10 text-blue">3135.78</div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th width="25%">扣除公共费用类型</th>
+            <th width="25%">扣除金额</th>
+            <th width="25%">扣除周期</th>
+            <th width="15%">扣除备注</th>
+            <th width="10%">操作</th>
+          </tr>
+        </thead>
+      </table>
+      <div class="empty-block">
+        <div style="font-size: 24px; margin-bottom: 5px">📥</div>
+        暂无数据
+      </div>
+      <div class="mb-15">
+        <button class="btn btn-dashed"><span class="icon-plus">+</span>添加数据</button>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <div class="form-label">
+            <span class="text-red mr-5">*</span>扣除公共费用其他<i class="icon-info">i</i>:
+          </div>
+          <div class="form-content">
+            <input type="text" value="0.00" />
+          </div>
+        </div>
+        <div class="form-col">
+          <div class="form-label">其他加收费用<i class="icon-info">i</i>:</div>
+          <div class="form-content">
+            <input type="text" value="0.00" />
+          </div>
+        </div>
+        <div class="form-col">
+          <div class="form-label">本次到剩余应付金额:</div>
+          <div class="form-content font-bold ml-10">0</div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        支付信息 <span class="section-sub text-red">(本次应付金额: 0)</span>
+      </div>
+
+      <div class="pay-list">
+        <div class="pay-item"><span class="pay-arrow">></span>本次工资支付: 0</div>
+        <div class="pay-item"><span class="pay-arrow">></span>本次劳务公司支付(模式三): 0</div>
+        <div class="pay-item"><span class="pay-arrow">></span>本次报销支付: 0</div>
+        <div class="pay-item"><span class="pay-arrow">></span>本次个体户支付: 0</div>
+        <div class="pay-item"><span class="pay-arrow">></span>本次小法人支付: 0</div>
+        <div class="pay-item"><span class="pay-arrow">></span>本次劳务公司支付(模式一): 0</div>
+        <div class="pay-item">
+          <span class="pay-arrow">></span>施工班组往来工资款退回: 0 | 往来付款额度（含流程中）: 0
+        </div>
+      </div>
+
+      <div class="section-header">其他信息</div>
+      <div class="form-row">
+        <div class="form-col" style="flex: 3">
+          <div class="form-label">结算单说明:</div>
+          <div class="form-content">
+            <div style="height: 60px"></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-col">
+          <div class="form-label">附件:</div>
+          <div class="form-content">
+            <button
+              class="btn btn-outline"
+              style="padding: 4px 10px; height: 32px; display: flex; align-items: center"
+            >
+              <span style="font-size: 16px; margin-right: 5px">📤</span> 上传附件
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

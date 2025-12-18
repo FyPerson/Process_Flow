@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>外经证税金报销申请</title>
+    <style>
+      /* 全局重置与基础样式 */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family:
+          'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+          '微软雅黑', Arial, sans-serif;
+        background-color: #f5f7fa; /* 模态框外部背景 */
+        color: #606266;
+        font-size: 14px;
+        display: flex;
+        justify-content: center;
+        padding-top: 20px;
+        padding-bottom: 20px;
+      }
+
+      /* 模拟模态框容器 */
+      .container {
+        width: 1200px;
+        background-color: #fff;
+        box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* 顶部 Header */
+      .header {
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #e4e7ed;
+      }
+
+      .header-title {
+        font-size: 18px;
+        color: #303133;
+        font-weight: 500; /* 不完全加粗，Element风格 */
+        white-space: nowrap; /* 防止文字换行 */
+      }
+
+      .header-actions button {
+        cursor: pointer;
+        padding: 9px 15px;
+        font-size: 12px;
+        border-radius: 3px;
+        border: 1px solid #dcdfe6;
+        outline: none;
+        margin-left: 10px;
+      }
+
+      .btn-primary {
+        background-color: #409eff;
+        color: #fff;
+        border-color: #409eff !important;
+      }
+
+      .btn-default {
+        background-color: #fff;
+        color: #606266;
+      }
+
+      .btn-default:hover {
+        color: #409eff;
+        border-color: #c6e2ff !important;
+        background-color: #ecf5ff;
+      }
+
+      .close-btn {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        font-size: 20px;
+        color: #909399;
+        cursor: pointer;
+        border: none;
+        background: none;
+      }
+
+      /* 步骤条 */
+      .steps-container {
+        padding: 20px 40px;
+        background-color: #f5f7fa;
+        border-bottom: 1px solid #e4e7ed;
+      }
+
+      .steps {
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .step {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        position: relative;
+      }
+
+      .step:last-child {
+        flex: none;
+      }
+
+      .step-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background-color: #c0c4cc;
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-right: 10px;
+        font-weight: bold;
+        z-index: 2;
+      }
+
+      .step.active .step-icon {
+        background-color: #409eff;
+      }
+
+      .step-title {
+        color: #c0c4cc;
+        font-weight: bold;
+        padding-right: 10px;
+        background-color: #f5f7fa;
+        z-index: 2;
+        white-space: nowrap; /* 防止文字换行 */
+      }
+
+      .step.active .step-title {
+        color: #303133;
+      }
+
+      .step-line {
+        flex: 1;
+        height: 2px;
+        background-color: #c0c4cc;
+        margin-right: 10px;
+      }
+      .step:last-child .step-line {
+        display: none;
+      }
+
+      /* 通用 Section 标题 */
+      .section-title {
+        font-size: 14px;
+        font-weight: bold;
+        color: #303133;
+        margin-bottom: 15px;
+        margin-top: 20px;
+        white-space: nowrap; /* 防止文字换行 */
+      }
+
+      /* 内容区域 padding */
+      .content {
+        padding: 0 20px 30px 20px;
+      }
+
+      /* 表单网格 */
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px 40px; /* 行间距 列间距 */
+      }
+
+      .form-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 18px;
+      }
+
+      .form-label {
+        width: 120px; /* 固定标签宽度 */
+        text-align: right;
+        padding-right: 12px;
+        color: #606266;
+        font-weight: bold;
+        white-space: nowrap; /* 防止文字换行 */
+        flex-shrink: 0; /* 防止标签被压缩 */
+      }
+
+      .form-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+      }
+
+      .required {
+        color: #f56c6c;
+        margin-right: 4px;
+      }
+
+      /* 输入框样式 */
+      input[type='text'],
+      select,
+      textarea {
+        width: 100%;
+        height: 32px;
+        line-height: 32px;
+        border: 1px solid #dcdfe6;
+        border-radius: 4px;
+        padding: 0 15px;
+        color: #606266;
+        outline: none;
+        transition: border-color 0.2s;
+        background-color: #fff;
+      }
+
+      select {
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'%3E%3Cpath fill='%23C0C4CC' d='M831.872 340.864 512 652.672 192.128 340.864a30.592 30.592 0 0 0-42.752 0 29.12 29.12 0 0 0 0 41.6L489.664 714.24a32 32 0 0 0 44.672 0l340.288-331.712a29.12 29.12 0 0 0 0-41.728 30.592 30.592 0 0 0-42.752 0z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 12px;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: #409eff;
+      }
+
+      textarea {
+        height: 60px;
+        padding: 5px 15px;
+        resize: vertical;
+      }
+
+      /* 纯文本显示 */
+      .text-value {
+        color: #606266;
+        white-space: nowrap; /* 防止文字换行 */
+      }
+
+      /* 表格区域 */
+      .table-section {
+        border: 1px solid #ebeef5;
+        border-bottom: none;
+      }
+
+      .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .custom-table th {
+        background-color: #f5f7fa;
+        color: #909399;
+        text-align: left;
+        padding: 12px 10px;
+        font-size: 13px;
+        border-bottom: 1px solid #ebeef5;
+        font-weight: bold;
+        white-space: nowrap; /* 防止文字换行 */
+      }
+
+      .custom-table td {
+        padding: 10px;
+        border-bottom: 1px solid #ebeef5;
+        color: #606266;
+        white-space: nowrap; /* 防止文字换行 */
+      }
+
+      /* 虚线新增按钮 */
+      .dashed-btn {
+        width: 100%;
+        border: 1px dashed #dcdfe6;
+        background-color: #fff;
+        color: #606266;
+        text-align: center;
+        padding: 8px 0;
+        margin-top: 10px;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 13px;
+        white-space: nowrap; /* 防止文字换行 */
+      }
+
+      .dashed-btn:hover {
+        border-color: #409eff;
+        color: #409eff;
+      }
+
+      /* 申请明细特定样式 */
+      .detail-card {
+        border: 1px solid #ebeef5;
+        padding: 15px;
+        background-color: #fff;
+        margin-bottom: 10px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05); /* 轻微阴影 */
+      }
+
+      .detail-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .detail-import-btn {
+        background-color: #fff;
+        border: 1px solid #dcdfe6;
+        padding: 5px 10px;
+        font-size: 12px;
+        border-radius: 3px;
+        cursor: pointer;
+        white-space: nowrap; /* 防止文字换行 */
+      }
+
+      /* 内嵌的小表格 */
+      .inner-table-wrapper {
+        background-color: #fff;
+        margin-top: 10px;
+      }
+
+      /* 底部合计 */
+      .total-summary {
+        text-align: right;
+        padding: 15px 0;
+        font-size: 14px;
+        color: #606266;
+        white-space: nowrap; /* 防止文字换行 */
+      }
+
+      /* 附件上传按钮模拟 */
+      .upload-btn {
+        display: inline-block;
+        padding: 7px 15px;
+        background-color: #fff;
+        border: 1px solid #dcdfe6;
+        border-radius: 3px;
+        font-size: 12px;
+        cursor: pointer;
+        white-space: nowrap; /* 防止文字换行 */
+      }
+
+      /* 操作列文字颜色 */
+      .action-text {
+        color: #409eff;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <span class="close-btn">&times;</span>
+
+      <div class="header">
+        <div class="header-title">外经证税金报销申请</div>
+        <div class="header-actions">
+          <button type="button" class="btn-primary">提交</button>
+          <button type="button" class="btn-default">保存</button>
+        </div>
+      </div>
+
+      <div class="steps-container">
+        <div class="steps">
+          <div class="step active">
+            <div class="step-icon">1</div>
+            <div class="step-title">填写报销信息</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step">
+            <div class="step-icon">2</div>
+            <div class="step-title">报销审核</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step">
+            <div class="step-icon">3</div>
+            <div class="step-title">出纳审核</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step">
+            <div class="step-icon">4</div>
+            <div class="step-title">财务出款</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step">
+            <div class="step-icon">5</div>
+            <div class="step-title">出款成功</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="section-title">基本信息</div>
+        <div class="form-grid">
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>申请部门：</label>
+            <div class="form-content">
+              <select>
+                <option>信息技术部</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label">发起人：</label>
+            <div class="form-content">
+              <span class="text-value">张三</span>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>出款单位：</label>
+            <div class="form-content">
+              <select>
+                <option></option>
+              </select>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label"><span class="required">*</span>结算类型：</label>
+            <div class="form-content">
+              <select>
+                <option></option>
+              </select>
+            </div>
+          </div>
+          <div class="form-item">
+            <label class="form-label">支付方式：</label>
+            <div class="form-content"></div>
+          </div>
+          <div class="form-item">
+            <label class="form-label" style="width: 140px">本次报销总金额：</label>
+            <div class="form-content">
+              <span class="text-value">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">账号清单</div>
+        <div class="table-section">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th style="width: 15%">账户</th>
+                <th style="width: 15%">总行</th>
+                <th style="width: 15%">开户行</th>
+                <th style="width: 20%">银行账号</th>
+                <th style="width: 15%">金额</th>
+                <th style="width: 15%">收款对象</th>
+                <th style="width: 5%">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="text" placeholder="账户" /></td>
+                <td>
+                  <select>
+                    <option></option>
+                  </select>
+                </td>
+                <td>
+                  <select>
+                    <option></option>
+                  </select>
+                </td>
+                <td><input type="text" placeholder="银行账号" /></td>
+                <td><input type="text" value="0.00" /></td>
+                <td>
+                  <select>
+                    <option></option>
+                  </select>
+                </td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="dashed-btn">+ 新增账号</div>
+
+        <div
+          class="section-title"
+          style="display: flex; justify-content: space-between; align-items: center"
+        >
+          <span>申请明细</span>
+          <button class="detail-import-btn">外经证税金报销明细导入 ▾</button>
+        </div>
+
+        <div class="detail-card">
+          <div class="section-title" style="margin-top: 0">申请明细1</div>
+
+          <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 20px">
+            <div class="form-item" style="margin-bottom: 10px">
+              <label class="form-label"><span class="required">*</span>项目名称：</label>
+              <div class="form-content">
+                <select>
+                  <option></option>
+                </select>
+              </div>
+            </div>
+            <div class="form-item" style="margin-bottom: 10px">
+              <label class="form-label" style="width: 120px">项目已开票金额：</label>
+              <div class="form-content"></div>
+            </div>
+          </div>
+
+          <div class="inner-table-wrapper">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th style="width: 45%"><span class="required">*</span>税种</th>
+                  <th style="width: 45%"><span class="required">*</span>实缴 (退) 金额</th>
+                  <th style="width: 10%">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <select>
+                      <option></option>
+                    </select>
+                  </td>
+                  <td><input type="text" value="0.00" /></td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="dashed-btn" style="border-style: dotted">+ 新增税种</div>
+          </div>
+        </div>
+
+        <div class="dashed-btn">+ 新增申请明细</div>
+
+        <div class="total-summary">实缴 (退) 金额合计: 0</div>
+
+        <div class="section-title">其他</div>
+        <div class="form-item" style="display: block">
+          <div style="display: flex; margin-bottom: 15px">
+            <label class="form-label" style="margin-top: 5px">备注：</label>
+            <div class="form-content">
+              <textarea></textarea>
+            </div>
+          </div>
+          <div style="display: flex">
+            <label class="form-label" style="margin-top: 5px">附件：</label>
+            <div class="form-content">
+              <button class="upload-btn">⬆ 上传附件</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 页面加载时阻止页面刷新
+      document.addEventListener('DOMContentLoaded', function () {
+        // 阻止所有按钮的默认提交行为
+        const buttons = document.querySelectorAll('button');
+        buttons.forEach(function (button) {
+          button.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          });
+        });
+
+        // 阻止Enter键触发表单提交和页面刷新
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') {
+            const target = e.target;
+            // 如果是在textarea中，允许换行
+            if (target.tagName === 'TEXTAREA') {
+              return;
+            }
+            // 其他情况下阻止默认行为
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        });
+
+        // 阻止表单提交（如果有表单的话）
+        const forms = document.querySelectorAll('form');
+        forms.forEach(function (form) {
+          form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

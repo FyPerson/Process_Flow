@@ -1,0 +1,1042 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>（紧密型单项）收入合同</title>
+    <style>
+      /* 全局重置与基础样式 */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        background-color: #f0f2f5; /* 页面灰色背景 */
+        color: #333;
+        font-size: 14px;
+        line-height: 1.5;
+        padding-bottom: 40px;
+      }
+
+      /* 通用工具类 */
+      .w-full {
+        width: 100%;
+      }
+      .flex {
+        display: flex;
+      }
+      .items-center {
+        align-items: center;
+      }
+      .justify-between {
+        justify-content: space-between;
+      }
+      .justify-center {
+        justify-content: center;
+      }
+      .text-right {
+        text-align: right;
+      }
+
+      /* 顶部导航栏 */
+      .header {
+        background: #fff;
+        padding: 12px 24px;
+        border-bottom: 1px solid #e8e8e8;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .page-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .header-actions button {
+        margin-left: 8px;
+        padding: 5px 16px;
+        border-radius: 4px;
+        border: 1px solid #d9d9d9;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s;
+      }
+
+      .btn-primary {
+        background-color: #1890ff;
+        color: #fff;
+        border-color: #1890ff !important;
+      }
+
+      .btn-default {
+        background-color: #fff;
+        color: #333;
+      }
+
+      .btn-default:hover {
+        color: #40a9ff;
+        border-color: #40a9ff;
+      }
+      .btn-primary:hover {
+        background-color: #40a9ff;
+        border-color: #40a9ff;
+      }
+
+      /* 主内容容器 */
+      .container {
+        margin: 16px;
+        background: #fff;
+        border-radius: 2px;
+        padding: 24px;
+      }
+
+      /* 表单分块标题 */
+      .section-title {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 20px;
+        border-left: none;
+        padding-left: 0;
+        font-size: 14px;
+        background-color: #f5f7fa; /* 标题栏背景 */
+        padding: 8px 10px;
+        margin-left: -24px;
+        margin-right: -24px;
+        margin-top: 10px;
+      }
+
+      .section-title:first-child {
+        margin-top: -10px;
+      }
+
+      /* 表单栅格布局 */
+      .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin-bottom: 4px; /* 行间距 */
+      }
+
+      .form-col {
+        padding: 0 12px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center; /* Label 和 Input 垂直居中 */
+      }
+
+      .col-1-2 {
+        width: 50%;
+      }
+      .col-1-3 {
+        width: 33.33%;
+      }
+      .col-2-3 {
+        width: 66.66%;
+      }
+      .col-1-4 {
+        width: 25%;
+      }
+      .col-1 {
+        width: 100%;
+      }
+
+      /* 表单控件样式 */
+      .form-label {
+        width: 130px; /* 固定 Label 宽度，对齐 */
+        text-align: right;
+        padding-right: 12px;
+        color: #333;
+        font-weight: 500;
+        flex-shrink: 0;
+        font-size: 12px;
+        white-space: nowrap; /* 防止文本换行 */
+      }
+
+      .required::before {
+        content: '*';
+        color: #ff4d4f;
+        margin-right: 4px;
+      }
+
+      .input-wrapper {
+        flex-grow: 1;
+        position: relative;
+      }
+
+      input[type='text'],
+      input[type='number'],
+      .select-box,
+      textarea {
+        width: 100%;
+        height: 32px;
+        padding: 4px 11px;
+        border: 1px solid #d9d9d9;
+        border-radius: 2px;
+        outline: none;
+        transition: all 0.3s;
+        color: rgba(0, 0, 0, 0.85);
+        font-size: 14px;
+        background: #fff;
+      }
+
+      input::placeholder {
+        color: #bfbfbf;
+        font-size: 13px;
+      }
+
+      input:focus,
+      .select-box:focus-within,
+      textarea:focus {
+        border-color: #40a9ff;
+        box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+      }
+
+      /* 模拟 Select 下拉框 */
+      .select-box {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        color: #bfbfbf; /* 默认 placeholder 颜色 */
+      }
+
+      .select-arrow::after {
+        content: '';
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-right: 1px solid #bfbfbf;
+        border-bottom: 1px solid #bfbfbf;
+        transform: rotate(45deg);
+        margin-bottom: 2px;
+      }
+
+      /* 日期范围选择器模拟 */
+      .date-range-picker {
+        display: flex;
+        align-items: center;
+        border: 1px solid #d9d9d9;
+        border-radius: 2px;
+        height: 32px;
+        padding: 0 11px;
+      }
+      .date-range-picker input {
+        border: none;
+        height: 30px;
+        width: 45%;
+        padding: 0;
+        text-align: center;
+      }
+      .date-range-separator {
+        color: #bfbfbf;
+        padding: 0 5px;
+      }
+
+      /* 开关 Switch 样式 */
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 22px;
+      }
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #bfbfbf; /* 灰色背景 - 否 */
+        transition: 0.4s;
+        border-radius: 34px;
+      }
+      .slider:before {
+        position: absolute;
+        content: '';
+        height: 18px;
+        width: 18px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
+      /* 选中状态 - 默认50px宽度 */
+      input:checked + .slider {
+        background-color: #1890ff;
+      }
+      input:checked + .slider:before {
+        transform: translateX(28px);
+      }
+      /* 70px宽度的开关（驻点服务） */
+      .switch[style*='width: 70px'] input:checked + .slider:before {
+        transform: translateX(48px);
+      }
+
+      /* 文本展示（这是图片里的"否"字，实际switch通常包含文字） */
+      .switch-label-text {
+        position: absolute;
+        right: 6px;
+        color: #999;
+        font-size: 12px;
+        line-height: 22px;
+        pointer-events: none;
+        white-space: nowrap;
+        transition: all 0.3s;
+        z-index: 2;
+      }
+
+      /* 帮助图标 */
+      .help-icon {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        line-height: 14px;
+        text-align: center;
+        border-radius: 50%;
+        border: 1px solid #999;
+        color: #999;
+        font-size: 10px;
+        margin-left: 4px;
+        cursor: help;
+      }
+
+      /* 表格样式 */
+      .table-wrapper {
+        border: 1px solid #e8e8e8;
+        border-radius: 2px;
+        margin-top: 10px;
+        margin-bottom: 20px;
+        width: 100%;
+      }
+
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .data-table th {
+        background: #fafafa;
+        color: #333;
+        font-weight: 500;
+        text-align: left;
+        padding: 10px 16px;
+        border-bottom: 1px solid #e8e8e8;
+        font-size: 13px;
+      }
+
+      .empty-state {
+        padding: 30px 0;
+        text-align: center;
+        color: #ccc;
+      }
+
+      .empty-icon {
+        font-size: 32px;
+        margin-bottom: 8px;
+        display: block;
+        opacity: 0.5;
+      }
+
+      .add-row-btn {
+        display: block;
+        width: 100%;
+        padding: 8px;
+        text-align: center;
+        border-top: 1px solid #e8e8e8; /* dashed in some designs, solid here */
+        color: #1890ff;
+        cursor: pointer;
+        border: 1px dashed #d9d9d9;
+        margin-top: 10px;
+        border-radius: 2px;
+        background: #fff;
+      }
+      .add-row-btn:hover {
+        border-color: #1890ff;
+      }
+
+      /* 文件上传 */
+      .upload-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 15px;
+        border: 1px solid #d9d9d9;
+        border-radius: 2px;
+        background: #fff;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      .upload-icon {
+        margin-right: 5px;
+        font-size: 16px;
+        font-weight: bold;
+      }
+
+      /* 特殊调整 */
+      .readonly-text {
+        padding-top: 5px;
+      }
+      .suffix {
+        position: absolute;
+        right: 10px;
+        top: 6px;
+        color: #333;
+      }
+
+      /* 针对不同屏幕微调 */
+      @media (max-width: 1200px) {
+        .col-1-3,
+        .col-1-4 {
+          width: 50%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="page-title">（紧密型单项）收入合同</div>
+      <div class="header-actions">
+        <button class="btn-primary">提交</button>
+        <button class="btn-default">保存</button>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="section-title">合同信息</div>
+      <div class="form-row">
+        <div class="form-col col-1-3">
+          <label class="form-label required">合同类型<span class="help-icon">?</span>：</label>
+          <div class="input-wrapper">
+            <input
+              type="text"
+              value="紧密型单项收入合同"
+              readonly
+              style="background-color: #f5f5f5; color: #666"
+            />
+          </div>
+        </div>
+        <div class="form-col col-2-3">
+          <label class="form-label required">合同名称：</label>
+          <div class="input-wrapper">
+            <input type="text" value="" />
+          </div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label required">主合同：</label>
+          <div class="input-wrapper">
+            <div class="select-box"><span class="select-arrow"></span></div>
+          </div>
+        </div>
+        <div class="form-col col-2-3"></div>
+
+        <div class="form-col col-1-3">
+          <label class="form-label required">合同新续<span class="help-icon">?</span>：</label>
+          <div class="input-wrapper">
+            <div class="select-box" style="color: #333">
+              续签 <span class="select-arrow"></span>
+            </div>
+          </div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label required">原始合同：</label>
+          <div class="input-wrapper">
+            <div class="select-box">请选择 <span class="select-arrow"></span></div>
+          </div>
+        </div>
+        <div class="form-col col-1-3"></div>
+        <div class="form-col col-1-3">
+          <label class="form-label required">合同主体：</label>
+          <div class="input-wrapper">
+            <div class="select-box"><span class="select-arrow"></span></div>
+          </div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label required">合同经办部门：</label>
+          <div class="input-wrapper">
+            <div class="select-box"><span class="select-arrow"></span></div>
+          </div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label required">合同经办人：</label>
+          <div class="input-wrapper readonly-text">张三</div>
+        </div>
+
+        <div class="form-col col-2-3">
+          <label class="form-label required"
+            ><span class="help-icon" style="margin-right: 2px; margin-left: 0">?</span>
+            关联投标项目：</label
+          >
+          <div class="input-wrapper">
+            <div class="select-box"><span class="select-arrow"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">客户信息</div>
+      <div class="form-row">
+        <div class="form-col col-2-3">
+          <label class="form-label required">客户公司名称：</label>
+          <div class="input-wrapper">
+            <div class="select-box"><span class="select-arrow"></span></div>
+          </div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label required">客户经办人：</label>
+          <div class="input-wrapper">
+            <input type="text" />
+          </div>
+        </div>
+
+        <div class="form-col col-1-3">
+          <label class="form-label required">所属客户小类：</label>
+          <div class="input-wrapper readonly-text"></div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label">所属客户大类：</label>
+          <div class="input-wrapper readonly-text"></div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label required">客户联系电话：</label>
+          <div class="input-wrapper">
+            <input type="text" />
+          </div>
+        </div>
+
+        <div class="form-col col-1-3">
+          <label class="form-label required">行业线：</label>
+          <div class="input-wrapper readonly-text"></div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label required">行客线：</label>
+          <div class="input-wrapper readonly-text"></div>
+        </div>
+        <div class="form-col col-1-3"></div>
+
+        <div class="form-col col-2-3">
+          <label class="form-label required">客户通信地址：</label>
+          <div class="input-wrapper">
+            <input type="text" />
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">合同内容</div>
+      <div class="form-row">
+        <div class="form-col col-1-3">
+          <label class="form-label required">合同总金额(元)：</label>
+          <div class="input-wrapper">
+            <input type="number" value="0.00" />
+          </div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label required"
+            ><span class="help-icon" style="margin-right: 2px; margin-left: 0">?</span>
+            合同预估毛利(元)：</label
+          >
+          <div class="input-wrapper">
+            <input type="number" value="0.00" />
+          </div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label">预估毛利率：</label>
+          <div class="input-wrapper readonly-text">0 %</div>
+        </div>
+
+        <div class="form-col col-2-3">
+          <label class="form-label required">续签方式：</label>
+          <div class="input-wrapper">
+            <div class="select-box"><span class="select-arrow"></span></div>
+          </div>
+        </div>
+        <div class="form-col col-1-3"></div>
+
+        <div class="form-col col-1-3">
+          <label class="form-label required">开始-结束日期：</label>
+          <div class="input-wrapper">
+            <div class="date-range-picker">
+              <input type="text" placeholder="开始日期" />
+              <span class="date-range-separator">~</span>
+              <input type="text" placeholder="结束日期" />
+            </div>
+          </div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label">是否我司标准模板：</label>
+          <div class="input-wrapper">
+            <label class="switch">
+              <input type="checkbox" onchange="toggleSwitch(this)" />
+              <span class="slider"></span>
+              <span class="switch-label-text">否</span>
+            </label>
+          </div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label">合同条款是否可修改：</label>
+          <div class="input-wrapper">
+            <label class="switch">
+              <input type="checkbox" onchange="toggleSwitch(this)" />
+              <span class="slider"></span>
+              <span class="switch-label-text">否</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-col col-1-3">
+          <label class="form-label required">交付业务类型：</label>
+          <div class="input-wrapper readonly-text">紧密型</div>
+        </div>
+      </div>
+
+      <div class="section-title">交付信息（紧密型）</div>
+      <div class="form-row">
+        <div class="form-col col-1-3">
+          <label class="form-label required">业务类型：</label>
+          <div class="input-wrapper">
+            <div class="select-box">请选择 <span class="select-arrow"></span></div>
+          </div>
+        </div>
+        <div class="form-col col-2-3"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-col col-1-3">
+          <label class="form-label required" style="white-space: nowrap">驻点服务：</label>
+          <div class="input-wrapper">
+            <label class="switch" style="width: 70px">
+              <input type="checkbox" id="onSiteService" onchange="toggleOnSiteService()" />
+              <span class="slider" style="width: 70px"></span>
+              <span
+                class="switch-label-text"
+                id="onSiteServiceText"
+                style="right: auto; left: 24px; color: #999; white-space: nowrap"
+                >不需要</span
+              >
+            </label>
+          </div>
+        </div>
+
+        <div class="w-full" style="padding: 0 12px; margin-bottom: 20px">
+          <div
+            class="form-label"
+            style="text-align: left; padding-left: 0; width: auto; margin-bottom: 8px"
+          >
+            <b>发票类型：</b>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 25%">发票类型</th>
+                  <th style="width: 25%">向客户收取税率</th>
+                  <th style="width: 35%">税金收取基准</th>
+                  <th style="width: 15%">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="4">
+                    <div class="empty-state">
+                      <div class="empty-icon">🗂️</div>
+                      <div>暂无数据</div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <button class="add-row-btn">+ 新增明细</button>
+        </div>
+
+        <div class="form-col col-2-3">
+          <label class="form-label">开票内容：</label>
+          <div class="input-wrapper">
+            <div class="select-box">请选择 <span class="select-arrow"></span></div>
+          </div>
+        </div>
+        <div class="form-col col-1-3"></div>
+
+        <div class="form-col col-1-3">
+          <label class="form-label required">结算周期：</label>
+          <div class="input-wrapper">
+            <div class="select-box">请选择 <span class="select-arrow"></span></div>
+          </div>
+        </div>
+        <div class="form-col col-2-3">
+          <label class="form-label">其他结算内容：</label>
+          <div class="input-wrapper">
+            <input type="text" />
+          </div>
+        </div>
+
+        <div class="w-full" style="padding: 0 12px; margin-bottom: 20px">
+          <div
+            class="form-label"
+            style="text-align: left; padding-left: 0; width: auto; margin-bottom: 8px"
+          >
+            <b>管理费信息：</b>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 20%">管理费收取基准</th>
+                  <th style="width: 20%">收取管理费率</th>
+                  <th style="width: 20%">管理费收取依据</th>
+                  <th style="width: 20%">管理费具体内容</th>
+                  <th style="width: 20%">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="select-box" style="border: 1px solid #eee; padding: 4px">
+                      <span class="select-arrow"></span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="input-wrapper" style="border: 1px solid #eee; padding: 4px">%</div>
+                  </td>
+                  <td>
+                    <div class="select-box" style="border: 1px solid #eee; padding: 4px">
+                      <span class="select-arrow"></span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="select-box" style="border: 1px solid #eee; padding: 4px">
+                      <span class="select-arrow"></span>
+                    </div>
+                  </td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+            <div
+              style="
+                height: 10px;
+                background: #f0f0f0;
+                border-radius: 4px;
+                margin-top: 2px;
+                position: relative;
+              "
+            >
+              <div
+                style="
+                  width: 20px;
+                  height: 10px;
+                  background: #ccc;
+                  border-radius: 4px;
+                  margin-left: 0;
+                "
+              ></div>
+            </div>
+          </div>
+          <button class="add-row-btn">+ 新增明细</button>
+        </div>
+
+        <div class="form-col col-1-3">
+          <label class="form-label required" style="white-space: nowrap">残保金是否收取：</label>
+          <div class="input-wrapper">
+            <label class="switch">
+              <input type="checkbox" onchange="toggleSwitch(this)" />
+              <span class="slider"></span>
+              <span class="switch-label-text">否</span>
+            </label>
+          </div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label required" style="white-space: nowrap">是否同意垫资：</label>
+          <div class="input-wrapper">
+            <label class="switch">
+              <input type="checkbox" id="advanceFunds" onchange="toggleAdvanceFunds(this)" />
+              <span class="slider"></span>
+              <span class="switch-label-text">否</span>
+            </label>
+          </div>
+        </div>
+        <div class="form-col col-1-3"></div>
+
+        <!-- 垫资相关字段，显示在"是否同意垫资"的下一行 -->
+        <div class="form-row" id="advanceFundsRow" style="display: none">
+          <div class="form-col col-1-3" id="advanceFundsFields">
+            <label class="form-label required" style="white-space: nowrap"
+              >最高垫资金额(元)：</label
+            >
+            <div class="input-wrapper">
+              <input type="text" placeholder="请输入最高垫资金额" />
+            </div>
+          </div>
+          <div class="form-col col-1-3" id="advanceFundsAgreement">
+            <label class="form-label required" style="white-space: nowrap">垫资约定(元)：</label>
+            <div class="input-wrapper">
+              <input type="text" placeholder="请输入垫资约定" />
+            </div>
+          </div>
+          <div class="form-col col-1-3" id="advanceFundsPeriod">
+            <label class="form-label required" style="white-space: nowrap">垫资期限：</label>
+            <div class="input-wrapper" style="display: flex; align-items: center; gap: 8px">
+              <input type="text" placeholder="请输入" style="flex: 1" />
+              <span style="color: #333; font-size: 14px">月</span>
+            </div>
+          </div>
+          <div class="form-col col-1-3" id="advanceFundsInterest">
+            <label class="form-label required" style="white-space: nowrap"
+              >垫资利息结算标准：</label
+            >
+            <div class="input-wrapper">
+              <input type="text" placeholder="请输入垫资利息结算标准" />
+            </div>
+          </div>
+          <div class="form-col col-1-3"></div>
+          <div class="form-col col-1-3"></div>
+        </div>
+
+        <div class="form-col col-1-3">
+          <label class="form-label required" style="white-space: nowrap"
+            >全日制员工是否缴纳社保：</label
+          >
+          <div class="input-wrapper">
+            <label class="switch">
+              <input type="checkbox" onchange="toggleSwitch(this)" />
+              <span class="slider"></span>
+              <span class="switch-label-text">否</span>
+            </label>
+          </div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label required" style="white-space: nowrap"
+            >全日制员工是否缴纳公积金：</label
+          >
+          <div class="input-wrapper">
+            <label class="switch">
+              <input type="checkbox" onchange="toggleSwitch(this)" />
+              <span class="slider"></span>
+              <span class="switch-label-text">否</span>
+            </label>
+          </div>
+        </div>
+        <div class="form-col col-1-3"></div>
+
+        <div class="form-col col-1-3">
+          <label class="form-label required" style="white-space: nowrap">是否参加商业险：</label>
+          <div class="input-wrapper">
+            <label class="switch">
+              <input type="checkbox" onchange="toggleSwitch(this)" />
+              <span class="slider"></span>
+              <span class="switch-label-text">否</span>
+            </label>
+          </div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label required" style="white-space: nowrap"
+            >是否缴纳建筑单工伤：</label
+          >
+          <div class="input-wrapper">
+            <label class="switch">
+              <input type="checkbox" onchange="toggleSwitch(this)" />
+              <span class="slider"></span>
+              <span class="switch-label-text">否</span>
+            </label>
+          </div>
+        </div>
+        <div class="form-col col-1-3"></div>
+
+        <div class="form-col col-1-3">
+          <label class="form-label required" style="white-space: nowrap; width: 150px"
+            >安全管理责任约定方式：</label
+          >
+          <div class="input-wrapper">
+            <div class="select-box">请选择 <span class="select-arrow"></span></div>
+          </div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label required" style="white-space: nowrap">安全管理责任处理：</label>
+          <div class="input-wrapper">
+            <div class="select-box">请选择 <span class="select-arrow"></span></div>
+          </div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label required" style="white-space: nowrap">安全管理责任承担：</label>
+          <div class="input-wrapper">
+            <div class="select-box">请选择 <span class="select-arrow"></span></div>
+          </div>
+        </div>
+
+        <div class="form-col col-1-3">
+          <label class="form-label required" style="white-space: nowrap; width: 150px"
+            >纠纷责任约定方式：</label
+          >
+          <div class="input-wrapper">
+            <div class="select-box">请选择 <span class="select-arrow"></span></div>
+          </div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label required" style="white-space: nowrap">纠纷处理：</label>
+          <div class="input-wrapper">
+            <div class="select-box">请选择 <span class="select-arrow"></span></div>
+          </div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label required" style="white-space: nowrap">纠纷责任承担：</label>
+          <div class="input-wrapper">
+            <div class="select-box">请选择 <span class="select-arrow"></span></div>
+          </div>
+        </div>
+
+        <div class="form-col col-1-3">
+          <label class="form-label required" style="white-space: nowrap; width: 150px"
+            >工伤/工亡责任约定方式：</label
+          >
+          <div class="input-wrapper">
+            <div class="select-box">请选择 <span class="select-arrow"></span></div>
+          </div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label required" style="white-space: nowrap">工伤/工亡处理：</label>
+          <div class="input-wrapper">
+            <div class="select-box">请选择 <span class="select-arrow"></span></div>
+          </div>
+        </div>
+        <div class="form-col col-1-3">
+          <label class="form-label required" style="white-space: nowrap">工伤/工亡责任承担：</label>
+          <div class="input-wrapper">
+            <div class="select-box">请选择 <span class="select-arrow"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">其他</div>
+      <div class="form-row">
+        <div class="form-col col-1">
+          <label class="form-label">备注：</label>
+          <div class="input-wrapper">
+            <textarea style="height: 60px; resize: vertical"></textarea>
+          </div>
+        </div>
+        <div class="form-col col-1">
+          <label class="form-label">附件：</label>
+          <div class="input-wrapper">
+            <button class="upload-btn"><span class="upload-icon">↑</span> 上传附件</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      style="
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        background: #ff4d4f;
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      "
+    >
+      E
+    </div>
+
+    <script>
+      function toggleOnSiteService() {
+        const checkbox = document.getElementById('onSiteService');
+        const text = document.getElementById('onSiteServiceText');
+
+        if (checkbox.checked) {
+          // 更新开关文字为"需要"
+          text.textContent = '需要';
+          text.style.color = '#fff';
+          text.style.left = '6px';
+          text.style.right = 'auto';
+        } else {
+          // 更新开关文字为"不需要"
+          text.textContent = '不需要';
+          text.style.color = '#999';
+          text.style.left = '24px';
+          text.style.right = 'auto';
+        }
+      }
+
+      // 通用开关切换函数，显示"是"/"否"
+      function toggleSwitch(checkbox) {
+        const switchLabel = checkbox.closest('.switch');
+        const textElement = switchLabel.querySelector('.switch-label-text');
+
+        if (checkbox.checked) {
+          textElement.textContent = '是';
+          textElement.style.color = '#fff';
+          textElement.style.left = '6px';
+          textElement.style.right = 'auto';
+        } else {
+          textElement.textContent = '否';
+          textElement.style.color = '#999';
+          textElement.style.left = 'auto';
+          textElement.style.right = '6px';
+        }
+      }
+
+      // 是否同意垫资开关切换函数
+      function toggleAdvanceFunds(checkbox) {
+        const switchLabel = checkbox.closest('.switch');
+        const textElement = switchLabel.querySelector('.switch-label-text');
+        const advanceFundsRow = document.getElementById('advanceFundsRow');
+
+        if (checkbox.checked) {
+          // 更新开关文字
+          textElement.textContent = '是';
+          textElement.style.color = '#fff';
+          textElement.style.left = '6px';
+          textElement.style.right = 'auto';
+          // 显示相关字段行
+          advanceFundsRow.style.display = 'flex';
+        } else {
+          // 更新开关文字
+          textElement.textContent = '否';
+          textElement.style.color = '#999';
+          textElement.style.left = 'auto';
+          textElement.style.right = '6px';
+          // 隐藏相关字段行
+          advanceFundsRow.style.display = 'none';
+        }
+      }
+
+      // 页面加载时初始化所有开关的文字位置
+      document.addEventListener('DOMContentLoaded', function () {
+        const switches = document.querySelectorAll(
+          '.switch input[type="checkbox"]:not(#onSiteService)',
+        );
+        switches.forEach(function (checkbox) {
+          const textElement = checkbox.closest('.switch').querySelector('.switch-label-text');
+          if (checkbox.checked) {
+            textElement.textContent = '是';
+            textElement.style.color = '#fff';
+            textElement.style.left = '6px';
+            textElement.style.right = 'auto';
+          } else {
+            textElement.textContent = '否';
+            textElement.style.color = '#999';
+            textElement.style.left = 'auto';
+            textElement.style.right = '6px';
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

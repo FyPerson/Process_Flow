@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>收入合同起拟</title>
+    <style>
+        :root {
+            --primary-color: #1890ff;
+            --border-color: #d9d9d9;
+            --bg-color: #f0f2f5;
+            --text-color: #000000d9;
+            --label-color: #000000d9;
+            --section-bg: #fafafa;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            padding: 20px;
+            color: var(--text-color);
+        }
+
+        /* 顶部导航 */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 16px 24px;
+            margin-bottom: 16px;
+            border-radius: 2px;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+        }
+
+        .page-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .header-actions button {
+            padding: 8px 16px;
+            border-radius: 2px;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            margin-left: 8px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color) !important;
+        }
+
+        .btn-default {
+            background-color: white;
+            color: var(--text-color);
+        }
+
+        .btn-default:hover {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        /* 主容器 */
+        .main-container {
+            background: white;
+            border-radius: 2px;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+        }
+
+        /* 分区通用样式 */
+        .section {
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .section-header {
+            background-color: var(--section-bg);
+            padding: 12px 24px;
+            font-weight: 600;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .section-body {
+            padding: 24px;
+        }
+
+        /* 表单网格布局 */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            /* 默认3列 */
+            gap: 24px 48px;
+            /* 行间距24px，列间距48px */
+        }
+
+        .form-grid.two-col {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .form-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .form-item.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .label {
+            width: 160px;
+            /* 固定标签宽度 */
+            text-align: right;
+            padding-right: 12px;
+            color: var(--label-color);
+            white-space: nowrap;
+            /* 禁止换行 */
+            flex-shrink: 0;
+        }
+
+        .required::before {
+            content: '*';
+            color: #ff4d4f;
+            margin-right: 4px;
+            font-family: SimSun, sans-serif;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="text"],
+        select,
+        .date-picker {
+            width: 100%;
+            height: 32px;
+            padding: 4px 11px;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            outline: none;
+            color: var(--text-color);
+            background: white;
+            transition: border-color 0.3s;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 4px 11px;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            outline: none;
+            resize: vertical;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+        }
+
+        input:disabled,
+        select:disabled {
+            background-color: #f5f5f5;
+            cursor: not-allowed;
+            color: rgba(0, 0, 0, 0.25);
+        }
+
+        /* 图标辅助 */
+        .icon-help {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 1px solid #999;
+            border-radius: 50%;
+            color: #999;
+            text-align: center;
+            line-height: 12px;
+            font-size: 10px;
+            margin-left: 4px;
+            cursor: help;
+        }
+
+        /* 表格样式 */
+        .table-container {
+            border: 1px solid #f0f0f0;
+        }
+
+        .custom-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .custom-table th {
+            background: #fafafa;
+            border-bottom: 1px solid #f0f0f0;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .empty-state {
+            padding: 32px 0;
+            text-align: center;
+            color: rgba(0, 0, 0, 0.25);
+        }
+
+        .empty-icon {
+            font-size: 40px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .add-row-btn {
+            width: 100%;
+            border: 1px dashed var(--border-color);
+            background: #fff;
+            color: var(--primary-color);
+            padding: 8px 0;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .add-row-btn:hover {
+            border-color: var(--primary-color);
+        }
+
+        /* 附件上传按钮 */
+        .upload-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .upload-btn:hover {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        /* 开关按钮 (Toggle Switch) */
+        .switch-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 22px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #bfbfbf;
+            /* 灰色 */
+            transition: .4s;
+            border-radius: 22px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px 0 rgba(0, 35, 11, 0.2);
+        }
+
+        /* 开关内的文字 '否' */
+        .slider::after {
+            content: "否";
+            color: white;
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            transition: opacity 0.3s;
+        }
+
+        input:checked+.slider {
+            background-color: var(--primary-color);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(22px);
+        }
+
+        input:checked+.slider::after {
+            content: "是";
+            left: 8px;
+            right: auto;
+        }
+
+        /* 布局微调 */
+        .suffix {
+            margin-left: 8px;
+            color: var(--text-color);
+        }
+
+        .date-range {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .date-range input {
+            text-align: center;
+        }
+
+        .date-split {
+            padding: 0 8px;
+            color: #999;
+        }
+
+        /* 多选下拉框样式 */
+        .multi-select-trigger {
+            width: 100%;
+            min-height: 32px;
+            padding: 2px 4px;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            transition: border-color 0.3s;
+            position: relative;
+        }
+
+        .multi-select-trigger:hover {
+            border-color: var(--primary-color);
+        }
+
+        .selected-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            width: 100%;
+        }
+
+        .tag {
+            background: #f5f5f5;
+            border: 1px solid #d9d9d9;
+            border-radius: 2px;
+            padding: 0 4px;
+            font-size: 12px;
+            line-height: 22px;
+            color: rgba(0, 0, 0, 0.65);
+            display: flex;
+            align-items: center;
+            cursor: default;
+        }
+
+        .tag-close {
+            margin-left: 4px;
+            color: rgba(0, 0, 0, 0.45);
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 1;
+            display: inline-block;
+        }
+
+        .tag-close:hover {
+            color: rgba(0, 0, 0, 0.85);
+        }
+
+        .multi-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: -1px;
+            /* Align with border */
+            width: calc(100% + 2px);
+            /* Align with border */
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 0 0 2px 2px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 2px;
+        }
+
+        .multi-select-option {
+            padding: 5px 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .multi-select-option:hover {
+            background: #e6f7ff;
+        }
+
+        .multi-select-option.selected {
+            background: #fafafa;
+            color: #d9d9d9;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page-header">
+        <div class="page-title">收入合同</div>
+        <div class="header-actions">
+            <button class="btn-primary">提交</button>
+            <button class="btn-default">保存</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+
+        <div class="section">
+            <div class="section-header">合同信息</div>
+            <div class="section-body">
+                <div class="form-grid">
+                    <div class="form-item">
+                        <label class="label required">合同类型<span class="icon-help">?</span>：</label>
+                        <div class="input-wrapper">
+                            <select>
+                                <option>请选择</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-item">
+                        <label class="label required">合同名称：</label>
+                        <div class="input-wrapper">
+                            <input type="text">
+                        </div>
+                    </div>
+                    <div class="form-item"></div>
+
+                    <div class="form-item">
+                        <label class="label required">合同新续<span class="icon-help">?</span>：</label>
+                        <div class="input-wrapper">
+                            <select id="contract-renewal-select" onchange="toggleOriginalContract()">
+                                <option value="新签">新签</option>
+                                <option value="续签" selected>续签</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-item" id="original-contract-item">
+                        <label class="label required">原始合同：</label>
+                        <div class="input-wrapper">
+                            <input type="text" placeholder="请选择" disabled>
+                        </div>
+                    </div>
+                    <div class="form-item"></div>
+
+                    <div class="form-item">
+                        <label class="label required">合同主体：</label>
+                        <div class="input-wrapper">
+                            <select>
+                                <option>请选择</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-item">
+                        <label class="label required">合同经办部门：</label>
+                        <div class="input-wrapper">
+                            <select>
+                                <option></option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-item">
+                        <label class="label required">合同经办人：</label>
+                        <div class="input-wrapper">
+                            <span style="padding-left: 4px;">系统管理员</span>
+                        </div>
+                    </div>
+
+                    <div class="form-item">
+                        <label class="label">支撑营销中心：</label>
+                        <div class="input-wrapper">
+                            <input type="text" placeholder="请选择" disabled>
+                        </div>
+                    </div>
+                    <div class="form-item" style="grid-column: span 2;">
+                        <label class="label required"><span class="icon-help">?</span> 关联投标项目：</label>
+                        <div class="input-wrapper">
+                            <select>
+                                <option></option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">客户信息</div>
+            <div class="section-body">
+                <div class="form-grid">
+                    <div class="form-item" style="grid-column: span 2;">
+                        <label class="label required">客户公司名称：</label>
+                        <div class="input-wrapper">
+                            <select>
+                                <option></option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-item">
+                        <label class="label required">客户经办人：</label>
+                        <div class="input-wrapper">
+                            <input type="text">
+                        </div>
+                    </div>
+
+                    <div class="form-item">
+                        <label class="label required">所属客户小类：</label>
+                        <div class="input-wrapper"></div>
+                    </div>
+                    <div class="form-item">
+                        <label class="label required">所属客户大类：</label>
+                        <div class="input-wrapper"></div>
+                    </div>
+                    <div class="form-item">
+                        <label class="label required">客户联系电话：</label>
+                        <div class="input-wrapper">
+                            <input type="text">
+                        </div>
+                    </div>
+
+                    <div class="form-item">
+                        <label class="label required">行业线：</label>
+                        <div class="input-wrapper"></div>
+                    </div>
+                    <div class="form-item">
+                        <label class="label required">行客线：</label>
+                        <div class="input-wrapper"></div>
+                    </div>
+                    <div class="form-item"></div>
+
+                    <div class="form-item" style="grid-column: span 2;">
+                        <label class="label required">客户通信地址：</label>
+                        <div class="input-wrapper">
+                            <input type="text">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">产品信息</div>
+            <div class="section-body">
+                <div class="table-container">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>产品类别</th>
+                                <th>业务类型</th>
+                                <th>报价项目</th>
+                                <th>项目综合收益率</th>
+                                <th>是否后项分成</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="6">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">📥</div>
+                                        <div>暂无数据</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="add-row-btn">
+                    + 新增明细
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">合同内容</div>
+            <div class="section-body">
+                <div class="form-grid">
+                    <div class="form-item">
+                        <label class="label required">合同总金额(元)：</label>
+                        <div class="input-wrapper">
+                            <input type="text" value="0.00" style="text-align: right;">
+                        </div>
+                    </div>
+                    <div class="form-item">
+                        <label class="label required"><span class="icon-help">?</span> 合同预估毛利(元)：</label>
+                        <div class="input-wrapper">
+                            <input type="text" value="0.00" style="text-align: right;">
+                        </div>
+                    </div>
+                    <div class="form-item">
+                        <label class="label">预估毛利率：</label>
+                        <div class="input-wrapper">
+                            <span>0 %</span>
+                        </div>
+                    </div>
+
+                    <div class="form-item" style="grid-column: span 2;">
+                        <label class="label required">续签方式：</label>
+                        <div class="input-wrapper">
+                            <select>
+                                <option></option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-item"></div>
+
+                    <div class="form-item">
+                        <label class="label required">开始-结束日期：</label>
+                        <div class="input-wrapper date-range">
+                            <input type="text" placeholder="开始日期" class="date-picker">
+                            <span class="date-split">~</span>
+                            <input type="text" placeholder="结束日期" class="date-picker">
+                        </div>
+                    </div>
+                    <div class="form-item">
+                        <label class="label">是否我司标准模板：</label>
+                        <div class="switch-container">
+                            <label class="switch">
+                                <input type="checkbox">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-item">
+                        <label class="label">合同条款是否可修改：</label>
+                        <div class="switch-container">
+                            <label class="switch">
+                                <input type="checkbox">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-item" style="grid-column: span 2;">
+                        <label class="label required">交付业务类型：</label>
+                        <div class="input-wrapper" id="bus-type-wrapper">
+                            <div class="multi-select-trigger" onclick="toggleBusTypeDropdown()">
+                                <div class="selected-tags" id="bus-type-tags"></div>
+                                <input type="hidden" id="bus-type-value">
+                            </div>
+                            <div class="multi-select-dropdown" id="bus-type-dropdown" style="display: none;">
+                                <div class="multi-select-option" data-value="支撑型、自营型"
+                                    onclick="selectBusType('支撑型、自营型')">支撑型、自营型</div>
+                                <div class="multi-select-option" data-value="紧密型" onclick="selectBusType('紧密型')">紧密型
+                                </div>
+                                <div class="multi-select-option" data-value="BOT" onclick="selectBusType('BOT')">BOT
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section" style="border-bottom: none;">
+            <div class="section-header">其他</div>
+            <div class="section-body">
+                <div class="form-grid" style="grid-template-columns: 1fr;">
+                    <div class="form-item">
+                        <label class="label">备注：</label>
+                        <div class="input-wrapper">
+                            <textarea></textarea>
+                        </div>
+                    </div>
+                    <div class="form-item">
+                        <label class="label">附件：</label>
+                        <div class="input-wrapper">
+                            <button class="upload-btn">
+                                <span style="margin-right: 5px;">📤</span> 上传附件
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const busTypeState = {
+            selected: []
+        };
+
+        function toggleBusTypeDropdown() {
+            const dropdown = document.getElementById('bus-type-dropdown');
+            if (dropdown.style.display === 'none') {
+                dropdown.style.display = 'block';
+            } else {
+                dropdown.style.display = 'none';
+            }
+        }
+
+        function selectBusType(value) {
+            if (busTypeState.selected.includes(value)) return;
+            busTypeState.selected.push(value);
+            renderBusTypeTags();
+            updateOptionsStyle();
+
+            // 保持下拉框打开以方便多选，或者不需要的话可以 uncomment 下面这行
+            // toggleBusTypeDropdown(); 
+        }
+
+        function removeBusType(value, event) {
+            if (event) event.stopPropagation();
+            busTypeState.selected = busTypeState.selected.filter(item => item !== value);
+            renderBusTypeTags();
+            updateOptionsStyle();
+
+            // 如果删除了标签，更新下拉框状态
+            const dropdown = document.getElementById('bus-type-dropdown');
+            if (dropdown.style.display !== 'none') {
+                updateOptionsStyle();
+            }
+        }
+
+        function renderBusTypeTags() {
+            const container = document.getElementById('bus-type-tags');
+            if (busTypeState.selected.length === 0) {
+                container.innerHTML = '<span style="color:#d9d9d9; padding-left: 8px;">请选择</span>';
+            } else {
+                container.innerHTML = busTypeState.selected.map(val => `
+                    <div class="tag">
+                        ${val}
+                        <span class="tag-close" onclick="removeBusType('${val}', event)">×</span>
+                    </div>
+                `).join('');
+            }
+            // Update hidden input
+            document.getElementById('bus-type-value').value = busTypeState.selected.join(',');
+        }
+
+        function updateOptionsStyle() {
+            const options = document.querySelectorAll('.multi-select-option');
+            options.forEach(opt => {
+                const val = opt.getAttribute('data-value');
+                if (busTypeState.selected.includes(val)) {
+                    opt.classList.add('selected');
+                } else {
+                    opt.classList.remove('selected');
+                }
+            });
+        }
+
+        // 初始化显示 Placeholder
+        renderBusTypeTags();
+
+        // 点击外部关闭
+        document.addEventListener('click', function (e) {
+            const wrapper = document.getElementById('bus-type-wrapper');
+            const dropdown = document.getElementById('bus-type-dropdown');
+            if (wrapper && !wrapper.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        function toggleOriginalContract() {
+            const select = document.getElementById('contract-renewal-select');
+            const item = document.getElementById('original-contract-item');
+            if (select.value === '新签') {
+                item.style.visibility = 'hidden';
+            } else {
+                item.style.visibility = 'visible';
+            }
+        }
+    </script>
+</body>
+
+</html>
