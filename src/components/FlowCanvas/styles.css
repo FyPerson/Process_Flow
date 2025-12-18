@@ -191,6 +191,13 @@
   transition: all 0.3s ease;
 }
 
+/* Group Nodes */
+.related-node-highlight .group-node {
+  border-color: #f97316 !important;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.7) !important;
+  transition: all 0.3s ease;
+}
+
 /* Removed the badge (::after) for cleaner look */
 .related-node-highlight::after {
   content: none;
@@ -231,6 +238,13 @@
 .source-node-highlight .node-data .data-shape svg line {
   stroke: #22c55e !important;
   filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.6)) !important;
+  transition: all 0.3s ease;
+}
+
+/* Group Nodes */
+.source-node-highlight .group-node {
+  border-color: #22c55e !important;
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.7) !important;
   transition: all 0.3s ease;
 }
 

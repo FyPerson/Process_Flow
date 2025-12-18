@@ -71,12 +71,19 @@ export function NodeSelector({ currentNodeId, allNodes, onSelect, excludeIds = [
     }, [isOpen]);
 
     const availableNodes = useMemo(() => {
-        return allNodes.filter(node =>
+        const filtered = allNodes.filter(node =>
             node.id !== currentNodeId &&
             !excludeIds.includes(node.id) &&
-            node.type !== 'group' &&
+            // 移除了 node.type !== 'group' 限制，现在支持分组节点
             String(node.data.label || node.data.name || node.id).toLowerCase().includes(searchTerm.toLowerCase())
         );
+
+        // 分组节点排在前面，便于识别
+        return filtered.sort((a, b) => {
+            if (a.type === 'group' && b.type !== 'group') return -1;
+            if (a.type !== 'group' && b.type === 'group') return 1;
+            return 0;
+        });
     }, [allNodes, currentNodeId, excludeIds, searchTerm]);
 
     return (
@@ -122,6 +129,7 @@ export function NodeSelector({ currentNodeId, allNodes, onSelect, excludeIds = [
                                         setSearchTerm('');
                                     }}
                                 >
+                                    {node.type === 'group' && <span className="node-type-badge">📁 </span>}
                                     {String(node.data.label || node.data.name || node.id)}
                                 </div>
                             ))

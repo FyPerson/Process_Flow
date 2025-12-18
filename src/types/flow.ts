@@ -61,6 +61,7 @@ export interface GroupNodeData {
   id: string;
   label: string;
   color?: string;
+  relatedNodeIds?: string[]; // 关联的其他节点 ID（支持分组之间互相关联）
   [key: string]: unknown; // 索引签名，兼容 React Flow
 }
 

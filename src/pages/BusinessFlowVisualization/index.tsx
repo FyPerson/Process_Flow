@@ -70,6 +70,7 @@ export function BusinessFlowVisualization() {
             id: node.id,
             label: node.label || node.name,
             color: node.color || '#3b82f6',
+            relatedNodeIds: node.relatedNodeIds || [],  // 加载关联节点 ID
           } as any,
           zIndex: -1, // 分组在底层
         };

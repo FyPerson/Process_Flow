@@ -68,6 +68,7 @@ export function useAutoSave(
           // 分组节点专用字段
           label: groupData.label,
           color: groupData.color,
+          relatedNodeIds: groupData.relatedNodeIds || [],  // 保存关联节点 ID
         };
         return savedGroupNode;
       }
