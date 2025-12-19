@@ -105,15 +105,66 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
     return () => cancelAnimationFrame(timer);
   }, [nodeData.name]);
 
-  // 自动聚焦和调整高度
+  // 提交编辑
+  const handleSubmit = useCallback(() => {
+    setIsEditing(false);
+    if (editValue.trim() !== nodeData.name) {
+      setNodes((nodes) =>
+        nodes.map((node) => {
+          if (node.id === id) {
+            return {
+              ...node,
+              data: { ...node.data, name: editValue },
+            };
+          }
+          return node;
+        }),
+      );
+    }
+  }, [id, editValue, nodeData.name, setNodes]);
+
+  // 自动聚焦和键盘事件处理
   useEffect(() => {
     if (isEditing && inputRef.current) {
-      // ... (existing code, no change needed here usually)
       const textarea = inputRef.current;
       textarea.focus();
-      // ...
+      // 选中所有文本
+      textarea.select();
+
+      // 键盘事件处理
       const handleNativeKeyDown = (e: KeyboardEvent) => {
-        // ...
+        // Ctrl+Enter: 插入换行符
+        if (e.key === 'Enter' && e.ctrlKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const value = textarea.value;
+          const newValue = value.substring(0, start) + '\n' + value.substring(end);
+          setEditValue(newValue);
+          // 更新光标位置
+          setTimeout(() => {
+            textarea.selectionStart = textarea.selectionEnd = start + 1;
+          }, 0);
+          return;
+        }
+
+        // Enter (不带 Ctrl): 提交
+        if (e.key === 'Enter' && !e.ctrlKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          handleSubmit();
+          return;
+        }
+
+        // Escape: 取消编辑
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          setEditValue(originalValue);
+          setIsEditing(false);
+          return;
+        }
       };
 
       textarea.addEventListener('keydown', handleNativeKeyDown, true);
@@ -122,7 +173,7 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
         textarea.removeEventListener('keydown', handleNativeKeyDown, true);
       };
     }
-  }, [isEditing, originalValue, nodeData.name, id, setNodes]);
+  }, [isEditing, originalValue, handleSubmit]);
 
   // 清理动画帧
   useEffect(() => {
@@ -192,32 +243,21 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
     setIsEditing(true);
   };
 
-  // 提交编辑
-  const handleSubmit = useCallback(() => {
-    setIsEditing(false);
-    if (editValue.trim() !== nodeData.name) {
-      setNodes((nodes) =>
-        nodes.map((node) => {
-          if (node.id === id) {
-            return {
-              ...node,
-              data: { ...node.data, name: editValue },
-            };
-          }
-          return node;
-        }),
-      );
-    }
-  }, [id, editValue, nodeData.name, setNodes]);
+
 
   // 处理文本变化时自动调整高度
   const handleTextareaChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditValue(e.target.value);
-    // 自动调整 textarea 高度以适应内容
-    const textarea = e.target;
-    textarea.style.height = 'auto';
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
   }, []);
+
+  // 监听内容变化自动调整高度
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      const textarea = inputRef.current;
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+    }
+  }, [editValue, isEditing]);
 
   // 键盘事件处理已经移到原生事件监听器中，这里不需要了
 
