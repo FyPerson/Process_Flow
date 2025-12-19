@@ -66,10 +66,13 @@ export function BusinessFlowVisualization() {
             width,  // 使用 size 中的宽度
             height, // 使用 size 中的高度
           },
+          hidden: (node as any).hidden, // 恢复显隐状态
           data: {
             id: node.id,
             label: node.label || node.name,
             color: node.color || '#3b82f6',
+            collapsed: (node as any).collapsed, // 恢复折叠状态
+            expandedSize: (node as any).expandedSize, // 恢复折叠前尺寸
             relatedNodeIds: node.relatedNodeIds || [],  // 加载关联节点 ID
           } as any,
           zIndex: -1, // 分组在底层
@@ -82,6 +85,7 @@ export function BusinessFlowVisualization() {
         type: 'custom',
         position: node.position,
         style: node.style,
+        hidden: (node as any).hidden, // 恢复显隐状态
         parentId: node.parentId, // 加载父节点 ID
         extent: node.parentId ? ('parent' as 'parent') : undefined, // 如果有 parentId，设置 extent 为 'parent'
         data: {

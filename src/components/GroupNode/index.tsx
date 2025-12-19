@@ -1,5 +1,5 @@
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
-import { NodeProps, NodeResizer, useReactFlow, Position, Handle, useStore, type ReactFlowState, useUpdateNodeInternals } from '@xyflow/react';
+import { Node, NodeProps, NodeResizer, useReactFlow, Position, Handle, useStore, type ReactFlowState, useUpdateNodeInternals } from '@xyflow/react';
 import { GroupNodeData } from '../../types/flow';
 import { getUniqueName } from '../../utils/uniqueName';
 import './styles.css';
@@ -93,22 +93,34 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
       if (n.id === id) {
         const currentData = n.data as unknown as GroupNodeData;
         let newStyle = { ...n.style };
-        let newData: GroupNodeData = { ...(n.data as unknown as GroupNodeData), collapsed: newCollapsedState };
+        // 关键修正：必须同时更新 data.collapsed
+        let newData: GroupNodeData = {
+          ...(n.data as unknown as GroupNodeData),
+          collapsed: newCollapsedState
+        };
 
         if (newCollapsedState) {
           // 折叠：保存当前尺寸
+          // 优先保存 style 中的尺寸（用户调整过的），其次是 measured（自适应的）
+          const currentWidth = n.style?.width ?? n.measured?.width ?? 200;
+          const currentHeight = n.style?.height ?? n.measured?.height ?? 150;
+
           newData = {
             ...newData,
             expandedSize: {
-              width: n.style?.width ?? n.measured?.width ?? 'auto',
-              height: n.style?.height ?? n.measured?.height ?? 'auto',
+              width: currentWidth,
+              height: currentHeight,
             }
           };
+
           // 设置折叠后尺寸
+          // 强制覆盖 width 和 height，并清除可能存在的 min/max 限制
           newStyle = {
             ...newStyle,
             width: 150,
             height: 60,
+            minWidth: undefined,
+            minHeight: undefined,
           };
         } else {
           // 展开：恢复尺寸
@@ -120,20 +132,34 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
             };
           } else {
             // 如果没有保存尺寸，则清除固定尺寸，利用 React Flow 的自适应或 minSize
-            newStyle.width = undefined; // 或者是之前的 minSize 计算值
-            newStyle.height = undefined;
+            // 此时必须将 width/height 设置为 undefined，让它回退到自适应
+            newStyle = {
+              ...newStyle,
+              width: undefined,
+              height: undefined,
+            }
           }
         }
 
+        // 构造一个全新的节点对象，排除 `measured` 和其他可能的内部属性
+        // 这模拟了重新加载节点的效果，确保 React Flow 重新计算尺寸
         return {
-          ...n,
+          id: n.id,
+          type: n.type,
+          position: n.position,
           data: newData,
-          style: newStyle
-        };
+          style: newStyle,
+          parentId: n.parentId,
+          extent: n.extent,
+          hidden: n.hidden,
+          zIndex: n.zIndex,
+          // 显式丢弃 measured, width, height (顶层属性)
+        } as Node<GroupNodeData>;
       }
       return n;
     }));
 
+    // 更新子节点可见性
     // 更新子节点可见性
     setNodes((nodes) => {
       // 1. 找到所有属于该分组的子节点
@@ -155,7 +181,18 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
         return n;
       });
     });
-  }, [id, isCollapsed, setNodes]);
+
+    // 强制更新节点内部状态
+    // 使用 requestAnimationFrame 确保在渲染循环之后执行
+    requestAnimationFrame(() => {
+      updateNodeInternals(id);
+
+      // 双重保险：再次触发，以防首次更新被 React Flow 的内部批处理吞掉
+      setTimeout(() => {
+        updateNodeInternals(id);
+      }, 50);
+    });
+  }, [id, isCollapsed, setNodes, updateNodeInternals]);
 
   // Handle 样式：与 CustomNode 保持一致
   const sourceHandleStyle = {
@@ -175,9 +212,11 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
   };
 
   // 使用 useStore 实时监听子节点变化，计算最小尺寸
-  // 使用 useStore 实时监听子节点变化，计算最小尺寸
   const minSize = useStore((state: ReactFlowState) => {
-    if (isCollapsed) {
+    // 优先使用 data 中的 collapsed 状态，因为它是最准确的数据源
+    const isNodeCollapsed = (data as unknown as GroupNodeData).collapsed;
+
+    if (isNodeCollapsed) {
       return { minWidth: 150, minHeight: 60 };
     }
 
@@ -233,8 +272,8 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
         className={`group-node ${selected ? 'selected' : ''} ${isCollapsed ? 'collapsed' : ''}`}
         style={{
           '--group-color': color,
-          '--group-bg-color': isCollapsed ? color : `${color}15`,
-          ...(isCollapsed ? {
+          '--group-bg-color': groupData.collapsed ? color : `${color}15`,
+          ...(groupData.collapsed ? {
             width: '100%',
             height: '100%',
             minWidth: 'unset',
@@ -272,13 +311,13 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
         <div
           className="group-header"
           style={{
-            backgroundColor: isCollapsed ? 'transparent' : color,
-            height: isCollapsed ? '100%' : 40, // 确保固定高度
+            backgroundColor: groupData.collapsed ? 'transparent' : color,
+            height: groupData.collapsed ? '100%' : 40, // 确保固定高度
             width: '100%',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: isCollapsed ? 'center' : 'flex-start',
-            padding: isCollapsed ? '0' : '0 10px',
+            justifyContent: groupData.collapsed ? 'center' : 'flex-start',
+            padding: groupData.collapsed ? '0' : '0 10px',
             boxSizing: 'border-box',
           }}
         >
@@ -307,15 +346,15 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
             {isCollapsed ? '+' : '-'}
           </button>
 
-          <div className="group-label-container" style={{ flexGrow: 1, textAlign: isCollapsed ? 'center' : 'left', overflow: 'hidden' }}>
+          <div className="group-label-container" style={{ flexGrow: 1, textAlign: groupData.collapsed ? 'center' : 'left', overflow: 'hidden' }}>
             {isEditing ? (
               <input
                 ref={inputRef}
                 type="text"
                 className="group-label-input"
                 style={{
-                  color: isCollapsed ? '#fff' : 'inherit',
-                  textAlign: isCollapsed ? 'center' : 'left',
+                  color: groupData.collapsed ? '#fff' : 'inherit',
+                  textAlign: groupData.collapsed ? 'center' : 'left',
                 }}
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
@@ -324,13 +363,13 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <span className="group-label" style={{ color: isCollapsed ? '#fff' : '#fff', fontWeight: 500 }}>{groupData.label || '新分组'}</span>
+              <span className="group-label" style={{ color: groupData.collapsed ? '#fff' : '#fff', fontWeight: 500 }}>{groupData.label || '新分组'}</span>
             )}
           </div>
         </div>
 
         {/* 内容区域（子节点会渲染在这里） */}
-        {!isCollapsed && <div className="group-content" />}
+        {!groupData.collapsed && <div className="group-content" />}
       </div>
     </>
   );

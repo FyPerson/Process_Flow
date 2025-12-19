@@ -65,9 +65,12 @@ export function useAutoSave(
           },
           style: safeDeepCopy(node.style, undefined, autoSaveFilter) as React.CSSProperties | undefined,
           expandable: false,
+          hidden: node.hidden, // 保存显隐状态
           // 分组节点专用字段
           label: groupData.label,
           color: groupData.color,
+          collapsed: groupData.collapsed, // 保存折叠状态
+          expandedSize: groupData.expandedSize, // 保存折叠前尺寸
           relatedNodeIds: groupData.relatedNodeIds || [],  // 保存关联节点 ID
         };
         return savedGroupNode;
@@ -86,6 +89,7 @@ export function useAutoSave(
         },
         style: safeDeepCopy(node.style, undefined, autoSaveFilter) as React.CSSProperties | undefined,
         expandable: node.data.expandable,
+        hidden: node.hidden, // 保存显隐状态
         detailConfig: safeDeepCopy(node.data.detailConfig, undefined, autoSaveFilter),
         subType: node.data.subType,
         backgroundColor: node.data.backgroundColor,

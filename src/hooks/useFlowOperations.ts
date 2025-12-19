@@ -225,7 +225,10 @@ export function useFlowOperations({
                             name: node.label || node.name || '分组',
                             type: 'group' as const,
                             expandable: false,
+                            collapsed: (node as any).collapsed, // 恢复折叠状态
+                            expandedSize: (node as any).expandedSize, // 恢复折叠前尺寸
                         },
+                        hidden: (node as any).hidden,
                         zIndex: -1,
                     };
                 }
@@ -237,6 +240,7 @@ export function useFlowOperations({
                     position: node.position || { x: 0, y: 0 },
                     style: node.style,
                     parentId: node.parentId,
+                    hidden: (node as any).hidden,
                     extent: undefined, // 不设置 extent，由动态计算接管
                     data: {
                         id: node.id,
