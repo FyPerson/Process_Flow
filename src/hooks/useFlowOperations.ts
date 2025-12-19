@@ -10,6 +10,7 @@ import {
     saveToLocalFolder,
     getSavedDirectoryHandle,
 } from '../utils/flowVersionStorage';
+import { getUniqueName } from '../utils/uniqueName';
 
 interface UseFlowOperationsProps {
     nodes: Node<FlowNodeData>[];
@@ -48,6 +49,19 @@ export function useFlowOperations({
                             ? '新数据节点'
                             : '新开始节点';
 
+            // 确保名称唯一
+            const currentNodes = setNodes instanceof Function ? [] : []; // Hack to get types right, actually we need getNodes or passed nodes
+            // But wait, we have `nodes` in props!
+
+            const existingNames = nodes.map((n) => {
+                if (n.type === 'group') {
+                    return (n.data as any).label || (n.data as any).name;
+                }
+                return (n.data as any).name;
+            }).filter(Boolean);
+
+            const uniqueName = getUniqueName(name, existingNames);
+
             const defaultDetailConfig = {
                 description: '请点击此处编辑描述...',
                 databaseTables: [],
@@ -85,7 +99,7 @@ export function useFlowOperations({
                 },
                 data: {
                     id,
-                    name,
+                    name: uniqueName,
                     type,
                     expandable: true,
                     detailConfig: defaultDetailConfig,
@@ -297,6 +311,15 @@ export function useFlowOperations({
 
         // 创建分组节点
         const groupId = `group_${Date.now()}`;
+
+        const existingNames = currentNodes.map((n) => {
+            if (n.type === 'group') {
+                return (n.data as any).label || (n.data as any).name;
+            }
+            return (n.data as any).name;
+        }).filter(Boolean);
+        const uniqueLabel = getUniqueName('新分组', existingNames);
+
         const groupNode: Node<FlowNodeData> = {
             id: groupId,
             type: 'group',
@@ -310,9 +333,9 @@ export function useFlowOperations({
             },
             data: {
                 id: groupId,
-                label: '新分组',
+                label: uniqueLabel,
                 color: '#3b82f6',
-                name: '新分组',
+                name: uniqueLabel,
                 type: 'group',
                 expandable: false,
             },
@@ -472,8 +495,18 @@ export function useFlowOperations({
     // 更新分组标签
     const onUpdateGroupLabel = useCallback(
         (groupId: string, label: string) => {
-            setNodes((nds) =>
-                nds.map((node) => {
+            setNodes((nds) => {
+                // Ensure new label is unique (excluding current group itself if it hasn't changed, but here we are updating)
+                // Actually this is called by window event, which we already checked in component?
+                // Yes, onUpdateGroupLabel is called by FlowCanvas event listener which receives data from GroupNode.
+                // In GroupNode we already checked uniqueness and passed the unique name.
+                // So we might NOT need to check here again if we trust the event detail.
+                // However, to be safe or if called from other places...
+                // But wait, the previous logic in GroupNode ALREADY generated a unique name.
+                // So we can just trust 'label' here.
+                // But let's verify if `onCreateGroup` needs it.
+
+                return nds.map((node) => {
                     if (node.id === groupId && node.type === 'group') {
                         return {
                             ...node,
@@ -484,8 +517,8 @@ export function useFlowOperations({
                         };
                     }
                     return node;
-                })
-            );
+                });
+            });
             triggerAutoSave();
         },
         [setNodes, triggerAutoSave]

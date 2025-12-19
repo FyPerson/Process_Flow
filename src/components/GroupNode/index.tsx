@@ -1,6 +1,7 @@
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { NodeProps, NodeResizer, useReactFlow, Position, Handle, useStore, type ReactFlowState, useUpdateNodeInternals } from '@xyflow/react';
 import { GroupNodeData } from '../../types/flow';
+import { getUniqueName } from '../../utils/uniqueName';
 import './styles.css';
 
 export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
@@ -27,8 +28,9 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
   // 双击进入编辑模式
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    setEditValue(groupData.label || '新分组');
     setIsEditing(true);
-  }, []);
+  }, [groupData.label]);
 
   // 编辑模式时自动聚焦
   useEffect(() => {
@@ -42,13 +44,32 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
   const handleSubmit = useCallback(() => {
     setIsEditing(false);
     if (editValue.trim() && editValue !== groupData.label) {
+      // 检查并在必要时生成唯一名称
+      const currentNodes = getNodes();
+
+      const existingNames = currentNodes
+        .filter((n) => n.id !== id)
+        .map((n) => {
+          if (n.type === 'group') {
+            return (n.data as any).label || (n.data as any).name;
+          }
+          return (n.data as any).name;
+        })
+        .filter(Boolean);
+
+      const uniqueName = getUniqueName(editValue.trim(), existingNames);
+
+      if (uniqueName !== editValue.trim()) {
+        setEditValue(uniqueName);
+      }
+
       // 触发自定义事件通知父组件更新
       const event = new CustomEvent('groupLabelChange', {
-        detail: { id, label: editValue.trim() }
+        detail: { id, label: uniqueName }
       });
       window.dispatchEvent(event);
     }
-  }, [id, editValue, groupData.label]);
+  }, [id, editValue, groupData.label, getNodes]);
 
   // 键盘事件处理
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {

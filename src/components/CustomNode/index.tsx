@@ -7,7 +7,9 @@ import {
   NodeResizer,
   useUpdateNodeInternals,
 } from '@xyflow/react';
+
 import { FlowNodeData } from '../../types/flow';
+import { getUniqueName } from '../../utils/uniqueName';
 import './styles.css';
 
 interface CustomNodeProps extends NodeProps {
@@ -16,7 +18,7 @@ interface CustomNodeProps extends NodeProps {
 
 export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) => {
   const nodeData = data as unknown as FlowNodeData;
-  const { setNodes, getNode } = useReactFlow();
+  const { setNodes, getNode, getNodes } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
 
   // 编辑状态
@@ -109,29 +111,54 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
   const handleSubmit = useCallback(() => {
     setIsEditing(false);
     if (editValue.trim() !== nodeData.name) {
+      // 检查并在必要时生成唯一名称
+      const currentNodes = getNodes();
+      // 获取除当前节点之外的所有节点名称和分组节点名称
+      const existingNames = currentNodes
+        .filter((n) => n.id !== id)
+        .map((n) => {
+          if (n.type === 'group') {
+            return (n.data as any).label || (n.data as any).name;
+          }
+          return (n.data as any).name;
+        })
+        .filter(Boolean);
+
+      const uniqueName = getUniqueName(editValue.trim(), existingNames);
+
+      // 如果名称被修改了（因为不唯一），更新 UI 显示
+      if (uniqueName !== editValue.trim()) {
+        setEditValue(uniqueName);
+      }
+
       setNodes((nodes) =>
         nodes.map((node) => {
           if (node.id === id) {
             return {
               ...node,
-              data: { ...node.data, name: editValue },
+              data: { ...node.data, name: uniqueName },
             };
           }
           return node;
         }),
       );
     }
-  }, [id, editValue, nodeData.name, setNodes]);
+  }, [id, editValue, nodeData.name, setNodes, getNodes]);
 
-  // 自动聚焦和键盘事件处理
+  // 自动聚焦和全选
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      // 选中所有文本
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  // 键盘事件处理
   useEffect(() => {
     if (isEditing && inputRef.current) {
       const textarea = inputRef.current;
-      textarea.focus();
-      // 选中所有文本
-      textarea.select();
 
-      // 键盘事件处理
       const handleNativeKeyDown = (e: KeyboardEvent) => {
         // Ctrl+Enter: 插入换行符
         if (e.key === 'Enter' && e.ctrlKey) {
