@@ -61,6 +61,8 @@ export interface GroupNodeData {
   id: string;
   label: string;
   color?: string;
+  collapsed?: boolean; // 是否折叠
+  expandedSize?: { width: number | string; height: number | string }; // 折叠前的尺寸
   relatedNodeIds?: string[]; // 关联的其他节点 ID（支持分组之间互相关联）
   [key: string]: unknown; // 索引签名，兼容 React Flow
 }
