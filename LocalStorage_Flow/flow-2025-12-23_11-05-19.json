@@ -1,7 +1,7 @@
 {
   "id": "business-flow-v1",
   "name": "业务流程图",
-  "description": "自动保存时间: 2025/12/23 11:26:44",
+  "description": "自动保存时间: 2025/12/23 11:05:08",
   "nodes": [
     {
       "id": "new_node_1764570075528",
@@ -22,10 +22,8 @@
         "borderColor": "#cbd5e1",
         "color": "#000000",
         "fontFamily": "微软雅黑",
-        "fontWeight": 300,
-        "borderWidth": 1,
-        "background": "#dcfce7",
-        "backgroundColor": "#dcfce7"
+        "fontWeight": 400,
+        "borderWidth": 1
       },
       "expandable": true,
       "detailConfig": {
@@ -140,9 +138,7 @@
         "color": "#000000",
         "fontFamily": "微软雅黑",
         "fontWeight": 300,
-        "borderWidth": 1,
-        "background": "#fee2e2",
-        "backgroundColor": "#fee2e2"
+        "borderWidth": 1
       },
       "expandable": true,
       "detailConfig": {
@@ -534,9 +530,7 @@
         "width": 120,
         "height": 60,
         "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "color": "#000000",
-        "fontWeight": 300
+        "borderColor": "#cbd5e1"
       },
       "expandable": true,
       "detailConfig": {
@@ -682,7 +676,7 @@
       "type": "process",
       "position": {
         "x": 790.9010418736749,
-        "y": 896.0808498195495
+        "y": 893.2091038252759
       },
       "size": {
         "width": 120,
@@ -744,9 +738,7 @@
         "color": "#000000",
         "fontFamily": "微软雅黑",
         "fontWeight": 300,
-        "borderWidth": 1,
-        "background": "#fee2e2",
-        "backgroundColor": "#fee2e2"
+        "borderWidth": 1
       },
       "expandable": true,
       "detailConfig": {
@@ -888,8 +880,7 @@
       "detailConfig": {
         "description": "请点击此处编辑描述...",
         "databaseTables": []
-      },
-      "backgroundColor": "#ffffff"
+      }
     },
     {
       "id": "new_node_1764663991571",
@@ -1040,7 +1031,7 @@
       "name": "合同原件验收",
       "type": "process",
       "position": {
-        "x": 236.6047786949719,
+        "x": 251.79033231592376,
         "y": 1601.9074109900357
       },
       "size": {
@@ -1069,7 +1060,7 @@
       "name": "合同归档",
       "type": "process",
       "position": {
-        "x": 64.74022779782007,
+        "x": 82.45279313836085,
         "y": 1602.9968498123926
       },
       "size": {
@@ -1098,7 +1089,7 @@
       "name": "合同借阅登记",
       "type": "process",
       "position": {
-        "x": -107.12432309933183,
+        "x": -80.14410987968336,
         "y": 1602.1342032873806
       },
       "size": {
@@ -1127,8 +1118,8 @@
       "name": "合同归还",
       "type": "process",
       "position": {
-        "x": -278.98887399648373,
-        "y": 1601.9885202247706
+        "x": -277.24777282673153,
+        "y": 1608.0823743189032
       },
       "size": {
         "width": 123,
@@ -1383,7 +1374,7 @@
       "name": "建立(生成)\n项目信息",
       "type": "process",
       "position": {
-        "x": 574.2882459091438,
+        "x": 574.2882459091437,
         "y": 2487.3466051667356
       },
       "size": {
@@ -1402,10 +1393,7 @@
       "detailConfig": {
         "description": "请点击此处编辑描述...",
         "databaseTables": []
-      },
-      "relatedNodeIds": [
-        "copied_copied_copied_new_node_1764741166080_1764741234386_0_1764741288703_0_1765177323745_0"
-      ]
+      }
     },
     {
       "id": "new_node_1764746972085",
@@ -1453,8 +1441,8 @@
       "name": "合同修改(补稿)",
       "type": "process",
       "position": {
-        "x": 351.1584430073131,
-        "y": 1287.1529121642286
+        "x": 372.405350867256,
+        "y": 1285.0652966013442
       },
       "size": {
         "width": 120,
@@ -1477,8 +1465,8 @@
       "name": "外经证税金报销申请",
       "type": "process",
       "position": {
-        "x": 749.2071710303454,
-        "y": 2596.555112870494
+        "x": 1011.0039538995895,
+        "y": 1765.4705796150317
       },
       "size": {
         "width": 120,
@@ -1518,8 +1506,8 @@
       "name": "紧密型交接清单申请",
       "type": "process",
       "position": {
-        "x": 893.2403163120373,
-        "y": 2320.774151097164
+        "x": 1007.831666644269,
+        "y": 1865.9969338627789
       },
       "size": {
         "width": 120,
@@ -1540,46 +1528,7 @@
       "expandable": true,
       "detailConfig": {
         "description": "请点击此处编辑描述...",
-        "databaseTables": [
-          {
-            "tableName": "新数据表",
-            "description": "",
-            "sourceDatabase": "",
-            "sourceDatabaseUrl": "",
-            "fields": [
-              {
-                "fieldName": "",
-                "fieldType": "VARCHAR",
-                "comment": "",
-                "required": false
-              },
-              {
-                "fieldName": "",
-                "fieldType": "VARCHAR",
-                "comment": "",
-                "required": false
-              },
-              {
-                "fieldName": "",
-                "fieldType": "VARCHAR",
-                "comment": "",
-                "required": false
-              },
-              {
-                "fieldName": "",
-                "fieldType": "VARCHAR",
-                "comment": "",
-                "required": false
-              },
-              {
-                "fieldName": "",
-                "fieldType": "VARCHAR",
-                "comment": "",
-                "required": false
-              }
-            ]
-          }
-        ],
+        "databaseTables": [],
         "screenshots": [
           {
             "id": "screenshot_1764832538681",
@@ -1598,8 +1547,8 @@
       "name": "项目开票申请",
       "type": "process",
       "position": {
-        "x": 369.56759548149114,
-        "y": 2712.4197370874085
+        "x": 1011.266752971067,
+        "y": 1962.1228493693284
       },
       "size": {
         "width": 120,
@@ -1620,15 +1569,7 @@
       "expandable": true,
       "detailConfig": {
         "description": "请点击此处编辑描述...",
-        "databaseTables": [
-          {
-            "tableName": "新数据表",
-            "description": "",
-            "sourceDatabase": "",
-            "sourceDatabaseUrl": "",
-            "fields": []
-          }
-        ],
+        "databaseTables": [],
         "screenshots": [
           {
             "id": "screenshot_1764836191531",
@@ -1647,8 +1588,8 @@
       "name": "结算单申请",
       "type": "process",
       "position": {
-        "x": 360.5273762244222,
-        "y": 2600.2264885402155
+        "x": 1008.6293760548836,
+        "y": 2052.0228085621548
       },
       "size": {
         "width": 120,
@@ -1688,8 +1629,8 @@
       "name": "回款冲销\n结算单申请",
       "type": "process",
       "position": {
-        "x": 750.348677800457,
-        "y": 2723.95685425022
+        "x": 1014.5067097029851,
+        "y": 2148.6473156293023
       },
       "size": {
         "width": 120,
@@ -1723,661 +1664,6 @@
           }
         ]
       }
-    },
-    {
-      "id": "new_node_1765163367633",
-      "name": "银行回款(到款)导入",
-      "type": "process",
-      "position": {
-        "x": 1117.4704127697787,
-        "y": 2731.190252623171
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "new_node_1765163451276",
-      "name": "是否\n(财务)认领",
-      "type": "decision",
-      "position": {
-        "x": 1115.703962917723,
-        "y": 3378.1075732739405
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "fontWeight": 300
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      },
-      "backgroundColor": "#FFFFFF"
-    },
-    {
-      "id": "new_node_1765163491071",
-      "name": "映射客户信息",
-      "type": "process",
-      "position": {
-        "x": 1114.3384280343348,
-        "y": 3042.2184099042806
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF",
-        "fontWeight": 300
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "new_node_1765163565179",
-      "name": "填写不认领说明",
-      "type": "process",
-      "position": {
-        "x": 914.847138843603,
-        "y": 3376.238848173429
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "new_node_1765165924590",
-      "name": "待领款清单\n(资金、票据)",
-      "type": "process",
-      "position": {
-        "x": 1366.3660679305822,
-        "y": 3525.2095203907415
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF",
-        "color": "#000000",
-        "fontWeight": 300
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "new_node_1765165988358",
-      "name": "是否分拨领取",
-      "type": "decision",
-      "position": {
-        "x": 1114.761786704149,
-        "y": 3218.03374372091
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "fontWeight": 300
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      },
-      "backgroundColor": "#FFFFFF"
-    },
-    {
-      "id": "new_node_1765175954241",
-      "name": "是否关联\n客户信息",
-      "type": "decision",
-      "position": {
-        "x": 1117.2394932484845,
-        "y": 2898.406827763029
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      },
-      "backgroundColor": "#FFFFFF"
-    },
-    {
-      "id": "new_node_1765176029211",
-      "name": "添加账号映射",
-      "description": "需要先维护客户信息，才能对回款数据行做相应的客户映射。",
-      "type": "process",
-      "position": {
-        "x": 1314.9804442310597,
-        "y": 3042.88667372191
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "new_node_1765176272484",
-      "name": "款项冻结\n待财务最终确认用途",
-      "type": "process",
-      "position": {
-        "x": 913.7624353079045,
-        "y": 3508.1632280811773
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "copied_copied_copied_new_node_1764741166080_1764741234386_0_1764741288703_0_1765177323745_0",
-      "name": "项目执行",
-      "type": "process",
-      "position": {
-        "x": 574.5050213669036,
-        "y": 2604.409961894702
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#CBD5E1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "new_node_1765179247638",
-      "name": "工费会管理",
-      "type": "process",
-      "position": {
-        "x": 71.93048739658124,
-        "y": 3103.385321693941
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "copied_new_node_1765179247638_1765179321687_0",
-      "name": "社保/公积金预打款",
-      "type": "process",
-      "position": {
-        "x": -569.8540429438001,
-        "y": 2711.534723585907
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "copied_new_node_1765179247638_1765179904196_0",
-      "name": "二级代理支付",
-      "type": "process",
-      "position": {
-        "x": -48.87816503806664,
-        "y": 2625.4410239075564
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "copied_copied_new_node_1765179247638_1765179904196_0_1765179925766_0",
-      "name": "商业险管理",
-      "type": "process",
-      "position": {
-        "x": -389.251309732626,
-        "y": 2558.5527291392664
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "copied_copied_copied_new_node_1765179247638_1765179904196_0_1765179955495_0_1765179973705_0",
-      "name": "自营项目计提费用",
-      "type": "process",
-      "position": {
-        "x": 218.31178998248146,
-        "y": 3105.1878688467004
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "copied_copied_copied_copied_new_node_1765179247638_1765179904196_0_1765179955495_0_1765179973705_0_1765180034697_0",
-      "name": "安全生产费管理",
-      "type": "process",
-      "position": {
-        "x": 108.69149082450616,
-        "y": 2476.5768738937445
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "copied_copied_copied_copied_copied_new_node_1765179247638_1765179904196_0_1765179955495_0_1765179973705_0_1765180034697_0_1765180134972_0",
-      "name": "紧密型公共费用",
-      "type": "process",
-      "position": {
-        "x": -146.37983054418902,
-        "y": 2476.5768738937445
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "copied_copied_copied_copied_copied_copied_new_node_1765179247638_1765179904196_0_1765179955495_0_1765179973705_0_1765180034697_0_1765180134972_0_1765181997315_0",
-      "name": "保底费用管理",
-      "type": "process",
-      "position": {
-        "x": 653.1209084347311,
-        "y": 3106.596842139317
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "copied_copied_copied_copied_copied_copied_copied_new_node_1765179247638_1765179904196_0_1765179955495_0_1765179973705_0_1765180034697_0_1765180134972_0_1765181997315_0_1765182014108_0",
-      "name": "紧密型预收预付",
-      "type": "process",
-      "position": {
-        "x": -416.9658613712625,
-        "y": 2705.534723585907
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "copied_copied_copied_copied_copied_copied_copied_copied_new_node_1765179247638_1765179904196_0_1765179955495_0_1765179973705_0_1765180034697_0_1765180134972_0_1765181997315_0_1765182014108_0_1765182031785_0",
-      "name": "费用返还管理",
-      "type": "process",
-      "position": {
-        "x": 511.9351447008725,
-        "y": 3110.428905531958
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "copied_copied_copied_copied_copied_copied_copied_copied_copied_new_node_1765179247638_1765179904196_0_1765179955495_0_1765179973705_0_1765180034697_0_1765180134972_0_1765181997315_0_1765182014108_0_1765182031785_0_1765182048236_0",
-      "name": "个体户代办支付",
-      "type": "process",
-      "position": {
-        "x": 2048.6030531128927,
-        "y": -3191.7307316439305
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "copied_copied_copied_copied_copied_copied_copied_copied_copied_new_node_1765179247638_1765179904196_0_1765179955495_0_1765179973705_0_1765180034697_0_1765180134972_0_1765181997315_0_1765182014108_0_1765182031785_0_1765182060573_0",
-      "name": "建单工伤管理",
-      "type": "process",
-      "position": {
-        "x": 578.9987806774731,
-        "y": 2726.5952072353944
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "copied_copied_copied_copied_copied_copied_copied_copied_copied_copied_new_node_1765179247638_1765179904196_0_1765179955495_0_1765179973705_0_1765180034697_0_1765180134972_0_1765181997315_0_1765182014108_0_1765182031785_0_1765182060573_0_1765182072983_0",
-      "name": "分成费用管理",
-      "type": "process",
-      "position": {
-        "x": 367.7757611721432,
-        "y": 3114.770626058039
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "new_node_1766027719639",
-      "name": "分组测试节点",
-      "type": "process",
-      "position": {
-        "x": 2036.7478975350646,
-        "y": -3556.4341146718684
-      },
-      "size": {
-        "width": 294,
-        "height": 146
-      },
-      "style": {
-        "width": 294,
-        "height": 146,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
-    },
-    {
-      "id": "new_node_1766030035062",
-      "name": "新流程节点",
-      "type": "process",
-      "position": {
-        "x": 1956.3149214362875,
-        "y": -4170.103007871865
-      },
-      "size": {
-        "width": 120,
-        "height": 60
-      },
-      "style": {
-        "width": 120,
-        "height": 60,
-        "fontSize": 9,
-        "borderColor": "#cbd5e1",
-        "background": "#FFFFFF",
-        "backgroundColor": "#FFFFFF"
-      },
-      "expandable": true,
-      "detailConfig": {
-        "description": "请点击此处编辑描述...",
-        "databaseTables": []
-      }
     }
   ],
   "connectors": [
@@ -2404,20 +1690,20 @@
       "labelBgStyle": {
         "fill": "#e0e0e0",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -2443,20 +1729,20 @@
       "labelBgStyle": {
         "fill": "#e0e0e0",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -2482,20 +1768,20 @@
       "labelBgStyle": {
         "fill": "#1e293b",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -2521,21 +1807,20 @@
       "labelBgStyle": {
         "fill": "#1e293b",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25,
-        "lineType": "solid"
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -2561,20 +1846,20 @@
       "labelBgStyle": {
         "fill": "#1e293b",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -2600,20 +1885,20 @@
       "labelBgStyle": {
         "fill": "#1e293b",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -2639,20 +1924,20 @@
       "labelBgStyle": {
         "fill": "#1e293b",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -2678,20 +1963,20 @@
       "labelBgStyle": {
         "fill": "#e0e0e0",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -2717,24 +2002,16 @@
       "labelBgStyle": {
         "fill": "#e0e0e0",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
+        "width": 33,
+        "height": 26,
         "widthAuto": true,
         "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
-        "type": "arrowclosed",
-        "color": "#64748b",
-        "width": 16,
-        "height": 16
-      },
-      "markerEnd": {
         "type": "arrowclosed",
         "color": "#64748b",
         "width": 16,
@@ -2764,24 +2041,16 @@
       "labelBgStyle": {
         "fill": "#e0e0e0",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
+        "width": 33,
+        "height": 26,
         "widthAuto": true,
         "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
-        "type": "arrowclosed",
-        "color": "#64748b",
-        "width": 16,
-        "height": 16
-      },
-      "markerEnd": {
         "type": "arrowclosed",
         "color": "#64748b",
         "width": 16,
@@ -2811,20 +2080,20 @@
       "labelBgStyle": {
         "fill": "#1e293b",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -2850,21 +2119,21 @@
       "labelBgStyle": {
         "fill": "#1e293b",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
         "offset": 0,
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -2890,21 +2159,20 @@
       "labelBgStyle": {
         "fill": "#1e293b",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25,
-        "lineType": "solid"
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -2929,19 +2197,17 @@
       },
       "labelBgStyle": {
         "fill": "#e0e0e0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -2967,20 +2233,20 @@
       "labelBgStyle": {
         "fill": "#1e293b",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -3006,20 +2272,20 @@
       "labelBgStyle": {
         "fill": "#1e293b",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -3045,20 +2311,20 @@
       "labelBgStyle": {
         "fill": "#1e293b",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -3084,20 +2350,20 @@
       "labelBgStyle": {
         "fill": "#1e293b",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -3123,20 +2389,20 @@
       "labelBgStyle": {
         "fill": "#1e293b",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -3162,20 +2428,20 @@
       "labelBgStyle": {
         "fill": "#1e293b",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 24,
+        "height": 33,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -3199,14 +2465,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -3239,20 +2501,20 @@
       "labelBgStyle": {
         "fill": "#e0e0e0",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -3278,20 +2540,20 @@
       "labelBgStyle": {
         "fill": "#e0e0e0",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -3317,20 +2579,20 @@
       "labelBgStyle": {
         "fill": "#e0e0e0",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -3356,21 +2618,21 @@
       "labelBgStyle": {
         "fill": "#e0e0e0",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
         "notImplemented": false,
-        "offset": 1.7230475965641654,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "offset": 1.7230475965641654
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -3396,20 +2658,20 @@
       "labelBgStyle": {
         "fill": "#e0e0e0",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "width": 33,
+        "height": 26,
+        "widthAuto": true,
+        "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerStart": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -3435,20 +2697,20 @@
       "labelBgStyle": {
         "fill": "#e0e0e0",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
+        "width": 33,
+        "height": 26,
         "widthAuto": true,
         "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -3474,15 +2736,13 @@
       "labelBgStyle": {
         "fill": "#e0e0e0",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
+        "width": 24,
+        "height": 26,
         "widthAuto": true,
         "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -3513,14 +2773,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -3551,23 +2807,18 @@
         "borderRadius": "6px"
       },
       "labelBgStyle": {
-        "fill": "#e0e0e0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "fill": "#E0E0E0",
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25,
-        "lineType": "solid"
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -3591,14 +2842,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -3629,14 +2876,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -3667,14 +2910,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -3705,14 +2944,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -3743,14 +2978,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -3781,14 +3012,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -3827,15 +3054,14 @@
         "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": "auto",
-        "bgHeight": "auto",
-        "offset": -31.112699336269053
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -3859,21 +3085,19 @@
         "borderRadius": "6px"
       },
       "labelBgStyle": {
-        "fill": "#e0e0e0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fill": "#E0E0E0",
+        "fillOpacity": 0.8
       },
       "data": {
         "notImplemented": false,
-        "offset": 45.447671850456764,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "offset": 52.249846554650055
       },
       "notImplemented": false,
       "markerEnd": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -3890,7 +3114,7 @@
       "labelStyle": {
         "fill": "#000000",
         "color": "#000000",
-        "fontSize": 7,
+        "fontSize": 9,
         "fontWeight": 300,
         "fontFamily": "微软雅黑",
         "padding": "6px 12px",
@@ -3899,20 +3123,20 @@
       "labelBgStyle": {
         "fill": "#e0e0e0",
         "fillOpacity": 0.8,
-        "width": 31,
-        "height": 23,
+        "width": 33,
+        "height": 26,
         "widthAuto": true,
         "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": "auto",
-        "bgHeight": "auto"
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -3938,21 +3162,20 @@
       "labelBgStyle": {
         "fill": "#e0e0e0",
         "fillOpacity": 0.8,
-        "width": 33,
+        "width": 35,
         "height": 26,
-        "widthAuto": true,
+        "widthAuto": false,
         "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": "auto",
-        "bgHeight": "auto",
-        "offset": 202.93965248884587
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -3976,14 +3199,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -4014,14 +3233,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -4052,14 +3267,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -4090,14 +3301,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -4128,14 +3335,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -4166,15 +3369,11 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "offset": 32.60514673047676,
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "offset": 33.312253533573795,
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -4206,15 +3405,10 @@
       },
       "labelBgStyle": {
         "fill": "#e0e0e0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "offset": 3.4822023395043704,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -4245,14 +3439,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -4284,14 +3474,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -4323,14 +3509,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -4361,14 +3543,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -4399,14 +3577,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -4437,14 +3611,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -4477,20 +3647,20 @@
       "labelBgStyle": {
         "fill": "#e0e0e0",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
+        "width": 33,
+        "height": 26,
         "widthAuto": true,
         "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -4514,14 +3684,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -4552,20 +3718,18 @@
         "borderRadius": "6px"
       },
       "labelBgStyle": {
-        "fill": "#e0e0e0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fill": "#E0E0E0",
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -4589,14 +3753,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -4627,14 +3787,10 @@
       },
       "labelBgStyle": {
         "fill": "#E0E0E0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
@@ -4673,14 +3829,14 @@
         "heightAuto": true
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": "auto",
-        "bgHeight": "auto"
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -4689,7 +3845,6 @@
       "targetID": "new_node_1764663550821",
       "sourceHandle": "right",
       "targetHandle": "left-target",
-      "label": "",
       "style": {
         "stroke": "#64748b",
         "strokeWidth": 1
@@ -4704,22 +3859,18 @@
         "borderRadius": "6px"
       },
       "labelBgStyle": {
-        "fill": "#e0e0e0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
+        "fill": "#E0E0E0",
+        "fillOpacity": 0.8
       },
       "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
+        "notImplemented": false
       },
       "notImplemented": false,
       "markerEnd": {
         "type": "arrowclosed",
-        "color": "#64748b"
+        "color": "#64748b",
+        "width": 16,
+        "height": 16
       }
     },
     {
@@ -4745,415 +3896,12 @@
       "labelBgStyle": {
         "fill": "#e0e0e0",
         "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": true,
-        "heightAuto": true
-      },
-      "data": {
-        "notImplemented": false,
-        "bgWidth": 25,
-        "bgHeight": 25
-      },
-      "notImplemented": false,
-      "markerEnd": {
-        "type": "arrowclosed",
-        "color": "#64748b",
-        "width": 16,
-        "height": 16
-      }
-    },
-    {
-      "id": "edge-new_node_1765163451276-new_node_1765163565179-1765163568145",
-      "sourceID": "new_node_1765163451276",
-      "targetID": "new_node_1765163565179",
-      "sourceHandle": "left",
-      "targetHandle": "right",
-      "label": "否",
-      "style": {
-        "stroke": "#64748b",
-        "strokeWidth": 1
-      },
-      "labelStyle": {
-        "fontSize": 9,
-        "fontFamily": "微软雅黑",
-        "fontWeight": 400,
-        "fill": "#000000"
-      },
-      "labelBgStyle": {
-        "fill": "#e0e0e0",
-        "fillOpacity": 0.8,
-        "width": 33,
+        "width": 24,
         "height": 26,
         "widthAuto": true,
         "heightAuto": true
       },
       "data": {
-        "bgWidth": "auto",
-        "bgHeight": "auto",
-        "notImplemented": false
-      },
-      "notImplemented": false,
-      "markerEnd": {
-        "type": "arrowclosed",
-        "color": "#64748b"
-      }
-    },
-    {
-      "id": "edge-new_node_1765165988358-new_node_1765163451276-1765166010908",
-      "sourceID": "new_node_1765165988358",
-      "targetID": "new_node_1765163451276",
-      "sourceHandle": "bottom",
-      "targetHandle": "top-source",
-      "label": "否",
-      "style": {
-        "stroke": "#64748b",
-        "strokeWidth": 1
-      },
-      "labelStyle": {
-        "fontSize": 12,
-        "fontFamily": "微软雅黑",
-        "fontWeight": 400,
-        "fill": "#000000"
-      },
-      "labelBgStyle": {
-        "fill": "#ffffff",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
-      },
-      "data": {
-        "bgWidth": 25,
-        "bgHeight": 25,
-        "notImplemented": false
-      },
-      "notImplemented": false,
-      "markerEnd": {
-        "type": "arrowclosed",
-        "color": "#64748b"
-      }
-    },
-    {
-      "id": "edge-new_node_1765165988358-new_node_1765165924590-1765166125524",
-      "sourceID": "new_node_1765165988358",
-      "targetID": "new_node_1765165924590",
-      "sourceHandle": "right",
-      "targetHandle": "top-target",
-      "label": "是",
-      "style": {
-        "stroke": "#64748b",
-        "strokeWidth": 1
-      },
-      "labelStyle": {
-        "fontSize": 7,
-        "fontFamily": "微软雅黑",
-        "fontWeight": 300,
-        "fill": "#000000"
-      },
-      "labelBgStyle": {
-        "fill": "#e0e0e0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
-      },
-      "data": {
-        "bgWidth": 25,
-        "bgHeight": 25,
-        "notImplemented": false,
-        "offset": 0
-      },
-      "notImplemented": false,
-      "markerEnd": {
-        "type": "arrowclosed",
-        "color": "#64748b"
-      }
-    },
-    {
-      "id": "edge-new_node_1765175954241-new_node_1765163491071-1765175982081",
-      "sourceID": "new_node_1765175954241",
-      "targetID": "new_node_1765163491071",
-      "sourceHandle": "bottom",
-      "targetHandle": "top-source",
-      "label": "是",
-      "style": {
-        "stroke": "#64748b",
-        "strokeWidth": 1
-      },
-      "labelStyle": {
-        "fontSize": 12,
-        "fontFamily": "微软雅黑",
-        "fontWeight": 400,
-        "fill": "#000000"
-      },
-      "labelBgStyle": {
-        "fill": "#e0e0e0",
-        "fillOpacity": 0.8,
-        "width": 36,
-        "height": 30,
-        "widthAuto": true,
-        "heightAuto": true
-      },
-      "data": {
-        "bgWidth": "auto",
-        "bgHeight": "auto",
-        "notImplemented": false
-      },
-      "notImplemented": false,
-      "markerEnd": {
-        "type": "arrowclosed",
-        "color": "#64748b"
-      }
-    },
-    {
-      "id": "edge-new_node_1765175954241-new_node_1765176029211-1765176050661",
-      "sourceID": "new_node_1765175954241",
-      "targetID": "new_node_1765176029211",
-      "sourceHandle": "right",
-      "targetHandle": "top-target",
-      "label": "否",
-      "style": {
-        "stroke": "#64748b",
-        "strokeWidth": 1
-      },
-      "labelStyle": {
-        "fontSize": 12,
-        "fontFamily": "微软雅黑",
-        "fontWeight": 400,
-        "fill": "#64748b"
-      },
-      "labelBgStyle": {
-        "fill": "#e0e0e0",
-        "fillOpacity": 0.8,
-        "width": 36,
-        "height": 30,
-        "widthAuto": true,
-        "heightAuto": true
-      },
-      "data": {
-        "bgWidth": "auto",
-        "bgHeight": "auto",
-        "notImplemented": false
-      },
-      "notImplemented": false,
-      "markerEnd": {
-        "type": "arrowclosed",
-        "color": "#64748b"
-      }
-    },
-    {
-      "id": "edge-new_node_1765176029211-new_node_1765163491071-1765176052282",
-      "sourceID": "new_node_1765176029211",
-      "targetID": "new_node_1765163491071",
-      "sourceHandle": "left",
-      "targetHandle": "right-target",
-      "style": {
-        "stroke": "#64748b",
-        "strokeWidth": 1
-      },
-      "labelStyle": {
-        "fill": "#000000",
-        "fontSize": 9,
-        "fontWeight": 300,
-        "fontFamily": "微软雅黑",
-        "background": "#E0E0E0",
-        "padding": "6px 12px",
-        "borderRadius": "6px"
-      },
-      "labelBgStyle": {
-        "fill": "#ffffff",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
-      },
-      "data": {
-        "bgWidth": 25,
-        "bgHeight": 25,
-        "notImplemented": false
-      },
-      "notImplemented": false,
-      "markerEnd": {
-        "type": "arrowclosed",
-        "color": "#64748b",
-        "width": 16,
-        "height": 16
-      }
-    },
-    {
-      "id": "edge-new_node_1765163491071-new_node_1765165988358-1765176098471",
-      "sourceID": "new_node_1765163491071",
-      "targetID": "new_node_1765165988358",
-      "sourceHandle": "bottom",
-      "targetHandle": "top-target",
-      "style": {
-        "stroke": "#64748b",
-        "strokeWidth": 1
-      },
-      "labelStyle": {
-        "fill": "#000000",
-        "fontSize": 9,
-        "fontWeight": 300,
-        "fontFamily": "微软雅黑",
-        "background": "#E0E0E0",
-        "padding": "6px 12px",
-        "borderRadius": "6px"
-      },
-      "labelBgStyle": {
-        "fill": "#ffffff",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
-      },
-      "data": {
-        "bgWidth": 25,
-        "bgHeight": 25,
-        "notImplemented": false
-      },
-      "notImplemented": false,
-      "markerEnd": {
-        "type": "arrowclosed",
-        "color": "#64748b",
-        "width": 16,
-        "height": 16
-      }
-    },
-    {
-      "id": "edge-new_node_1765163565179-new_node_1765176272484-1765176287154",
-      "sourceID": "new_node_1765163565179",
-      "targetID": "new_node_1765176272484",
-      "sourceHandle": "bottom",
-      "targetHandle": "top-target",
-      "style": {
-        "stroke": "#64748b",
-        "strokeWidth": 1
-      },
-      "labelStyle": {
-        "fill": "#000000",
-        "fontSize": 9,
-        "fontWeight": 300,
-        "fontFamily": "微软雅黑",
-        "background": "#E0E0E0",
-        "padding": "6px 12px",
-        "borderRadius": "6px"
-      },
-      "labelBgStyle": {
-        "fill": "#ffffff",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
-      },
-      "data": {
-        "bgWidth": 25,
-        "bgHeight": 25,
-        "notImplemented": false
-      },
-      "notImplemented": false,
-      "markerEnd": {
-        "type": "arrowclosed",
-        "color": "#64748b",
-        "width": 16,
-        "height": 16
-      }
-    },
-    {
-      "id": "edge-new_node_1765163451276-new_node_1765176272484-1765176289230",
-      "sourceID": "new_node_1765163451276",
-      "targetID": "new_node_1765176272484",
-      "sourceHandle": "bottom",
-      "targetHandle": "right-target",
-      "label": "是",
-      "style": {
-        "stroke": "#64748b",
-        "strokeWidth": 1
-      },
-      "labelStyle": {
-        "fontSize": 9,
-        "fontFamily": "微软雅黑",
-        "fontWeight": 400,
-        "fill": "#000000"
-      },
-      "labelBgStyle": {
-        "fill": "#e0e0e0",
-        "fillOpacity": 0.8,
-        "width": 33,
-        "height": 26,
-        "widthAuto": true,
-        "heightAuto": true
-      },
-      "data": {
-        "bgWidth": "auto",
-        "bgHeight": "auto",
-        "notImplemented": false
-      },
-      "notImplemented": false,
-      "markerEnd": {
-        "type": "arrowclosed",
-        "color": "#64748b"
-      }
-    },
-    {
-      "id": "edge-new_node_1765163367633-new_node_1765175954241-1765176998418",
-      "sourceID": "new_node_1765163367633",
-      "targetID": "new_node_1765175954241",
-      "sourceHandle": "bottom",
-      "targetHandle": "top-source",
-      "label": "",
-      "style": {
-        "stroke": "#64748b",
-        "strokeWidth": 1
-      },
-      "labelStyle": {
-        "fontSize": 12,
-        "fontFamily": "微软雅黑",
-        "fontWeight": 400,
-        "fill": "#64748b"
-      },
-      "labelBgStyle": {
-        "fill": "#e0e0e0",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25,
-        "widthAuto": false,
-        "heightAuto": false
-      },
-      "data": {
-        "bgWidth": 25,
-        "bgHeight": 25,
-        "notImplemented": false
-      },
-      "notImplemented": false,
-      "markerEnd": {
-        "type": "arrowclosed",
-        "color": "#64748b"
-      }
-    },
-    {
-      "id": "edge-copied_copied_new_node_1764741166080_1764741234386_0_1764741288703_0-copied_copied_copied_new_node_1764741166080_1764741234386_0_1764741288703_0_1765177323745_0-1765177336021",
-      "sourceID": "copied_copied_new_node_1764741166080_1764741234386_0_1764741288703_0",
-      "targetID": "copied_copied_copied_new_node_1764741166080_1764741234386_0_1764741288703_0_1765177323745_0",
-      "sourceHandle": "bottom",
-      "targetHandle": "top-source",
-      "style": {
-        "stroke": "#64748b",
-        "strokeWidth": 1
-      },
-      "labelStyle": {
-        "fill": "#000000",
-        "fontSize": 9,
-        "fontWeight": 300,
-        "fontFamily": "微软雅黑",
-        "background": "#E0E0E0",
-        "padding": "6px 12px",
-        "borderRadius": "6px"
-      },
-      "labelBgStyle": {
-        "fill": "#ffffff",
-        "fillOpacity": 0.8,
-        "width": 25,
-        "height": 25
-      },
-      "data": {
-        "bgWidth": 25,
-        "bgHeight": 25,
         "notImplemented": false
       },
       "notImplemented": false,

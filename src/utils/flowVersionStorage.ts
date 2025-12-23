@@ -4,8 +4,9 @@
  */
 
 const DB_NAME = 'flow-versions-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Upgraded to 2 for settings store
 const STORE_NAME = 'versions';
+const SETTINGS_STORE_NAME = 'settings'; // New store for settings
 const MAX_VERSIONS = 10;
 
 import { FlowDefinition } from '../types/flow';
@@ -40,12 +41,19 @@ function openDB(): Promise<IDBDatabase> {
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
+
+      // Upgrade logic
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         const store = db.createObjectStore(STORE_NAME, {
           keyPath: 'id',
           autoIncrement: true,
         });
         store.createIndex('timestamp', 'timestamp', { unique: false });
+      }
+
+      // New settings store
+      if (!db.objectStoreNames.contains(SETTINGS_STORE_NAME)) {
+        db.createObjectStore(SETTINGS_STORE_NAME);
       }
     };
   });
@@ -291,8 +299,39 @@ export function isFileSystemAccessSupported(): boolean {
 // 存储目录句柄到 IndexedDB（因为 FileSystemDirectoryHandle 不能存储到 localStorage）
 let cachedDirectoryHandle: FileSystemDirectoryHandle | null = null;
 
+// 从 IndexedDB 加载目录句柄
+async function loadDirectoryHandle(): Promise<FileSystemDirectoryHandle | null> {
+  const db = await openDB();
+  return new Promise((resolve) => {
+    const transaction = db.transaction(SETTINGS_STORE_NAME, 'readonly');
+    const store = transaction.objectStore(SETTINGS_STORE_NAME);
+    const request = store.get(DIR_HANDLE_KEY);
+
+    request.onsuccess = () => {
+      resolve(request.result || null);
+    };
+
+    request.onerror = () => {
+      resolve(null);
+    };
+  });
+}
+
+// 保存目录句柄到 IndexedDB
+async function saveDirectoryHandle(handle: FileSystemDirectoryHandle): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(SETTINGS_STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(SETTINGS_STORE_NAME);
+    const request = store.put(handle, DIR_HANDLE_KEY);
+
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(new Error('Saved handle failed'));
+  });
+}
+
 // 请求用户选择保存目录
-export async function selectSaveDirectory(): Promise<FileSystemDirectoryHandle | null> {
+export async function selectSaveDirectory(startInHandle?: FileSystemDirectoryHandle | null): Promise<FileSystemDirectoryHandle | null> {
   if (!isFileSystemAccessSupported()) {
     return null;
   }
@@ -300,9 +339,13 @@ export async function selectSaveDirectory(): Promise<FileSystemDirectoryHandle |
   try {
     const handle = await window.showDirectoryPicker({
       mode: 'readwrite',
-      startIn: 'documents',
+      startIn: startInHandle || 'documents',
     });
     cachedDirectoryHandle = handle;
+
+    // Persist to IndexedDB
+    await saveDirectoryHandle(handle);
+
     return handle;
   } catch (error: any) {
     if (error.name === 'AbortError') {
@@ -326,7 +369,6 @@ export function clearSavedDirectoryHandle(): void {
 // 验证目录句柄是否仍然有效
 async function verifyDirectoryHandle(handle: FileSystemDirectoryHandle): Promise<boolean> {
   try {
-    // 尝试请求权限
     // 尝试请求权限
     const permission = await handle.requestPermission({ mode: 'readwrite' });
     return permission === 'granted';
@@ -357,25 +399,29 @@ async function getFlowFiles(handle: FileSystemDirectoryHandle): Promise<string[]
 
 // 保存到本地文件夹
 export async function saveToLocalFolder(data: FlowDefinition): Promise<LocalFileSaveResult> {
-  // 检查是否已有目录句柄
-  let handle = getSavedDirectoryHandle();
+  // 1. 尝试获取上次使用的句柄（内存或DB），作为本次选择的默认起点
+  let previousHandle = getSavedDirectoryHandle();
 
-  // 如果没有或无效，请求用户选择
-  if (!handle) {
-    handle = await selectSaveDirectory();
-    if (!handle) {
-      throw new Error('未选择保存目录');
+  if (!previousHandle) {
+    try {
+      previousHandle = await loadDirectoryHandle();
+    } catch (e) {
+      console.warn('Failed to load directory handle from DB', e);
     }
   }
 
-  // 验证权限
+  // 2. 始终弹出目录选择框 (传入 previousHandle 作为 startIn)
+  const handle = await selectSaveDirectory(previousHandle);
+
+  if (!handle) {
+    // 用户取消了选择
+    throw new Error('未选择保存目录');
+  }
+
+  // 3. 验证权限
   const isValid = await verifyDirectoryHandle(handle);
   if (!isValid) {
-    // 权限失效，重新请求
-    handle = await selectSaveDirectory();
-    if (!handle) {
-      throw new Error('未选择保存目录');
-    }
+    throw new Error('无法访问选择的目录');
   }
 
   // 生成文件名并保存
