@@ -697,6 +697,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
       {/* Sidebar Area */}
       <div className={`flow-sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-header">
+          {!isSidebarCollapsed && <span className="sidebar-title">功能面板</span>}
           <button
             className="sidebar-toggle-btn"
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}

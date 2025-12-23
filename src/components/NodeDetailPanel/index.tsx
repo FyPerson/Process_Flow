@@ -6,7 +6,7 @@ import { PageSelector, PageOption } from '../PageSelector';
 import { NodePropertiesPanel } from './NodePropertiesPanel';
 import { EdgePropertiesPanel } from './EdgePropertiesPanel';
 import { GroupPropertiesPanel, GroupUpdateParams } from './GroupPropertiesPanel';
-import './styles.css';
+import './styles.css?v=2.0';
 
 // Define the wrapper type passed from FlowCanvas
 export type SelectedElement =
