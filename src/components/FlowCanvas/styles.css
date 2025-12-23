@@ -1,66 +1,110 @@
-/* Main Container: Flex Column Layout */
+/* Main Container */
 .flow-canvas-container {
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: #fff;
   position: relative;
-}
-
-/* dedicated Canvas Area (below toolbar) */
-.canvas-area {
-  flex: 1;
-  width: 100%;
-  height: 100%;
-  position: relative;
+  background: #f8fafc;
   overflow: hidden;
 }
 
-/* New Top Toolbar Style */
-.flow-controls-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  background: rgba(255, 255, 255, 0.8);
-  border-bottom: 1px solid #e2e8f0;
+/* Sidebar Area - Absolute Positioned Overlay */
+.flow-sidebar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 240px;
+  background: rgba(255, 255, 255, 0.95);
+  /* Slightly more opaque */
+  border-right: 1px solid #e2e8f0;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  z-index: 10;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
-}
-
-.flow-controls-panel {
-  display: none;
-  /* Hide original panel wrapper if it remains by accident */
-}
-
-/* Inner Controls Group - Reset floating styles */
-.flow-controls {
+  z-index: 100;
+  /* Above canvas */
   display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0;
+  flex-direction: column;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 4px 0 6px -1px rgba(0, 0, 0, 0.05);
+  padding: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.flow-sidebar.collapsed {
+  width: 60px;
+  padding: 12px 8px;
+}
+
+/* Sidebar Toggle Header */
+.sidebar-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.sidebar-toggle-btn {
   background: transparent;
   border: none;
-  border-radius: 0;
-  box-shadow: none;
-  backdrop-filter: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-size: 12px;
+}
+
+.sidebar-toggle-btn:hover {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.flow-sidebar.collapsed .sidebar-header {
+  justify-content: center;
+}
+
+/* Inner Controls Group */
+.flow-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+/* Control Sections */
+.control-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  padding-left: 8px;
+  letter-spacing: 0.05em;
+}
+
+.flow-sidebar.collapsed .section-title {
+  display: none;
 }
 
 /* Base Button Style */
 .control-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  justify-content: flex-start;
+  gap: 10px;
   padding: 8px 12px;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 8px;
   color: #64748b;
-  /* Slate 500 */
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 13px;
   font-weight: 500;
@@ -68,73 +112,95 @@
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   outline: none;
+  width: 100%;
 }
 
-/* Hover Effect for all buttons */
+.flow-sidebar.collapsed .control-btn {
+  justify-content: center;
+  padding: 8px;
+}
+
+.btn-icon {
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.btn-text {
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+
+/* Hover Effect */
 .control-btn:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: #f1f5f9;
   color: #0f172a;
-  /* Slate 900 */
-  transform: translateY(-1px);
 }
 
 .control-btn:active {
-  transform: translateY(0);
-  background: rgba(0, 0, 0, 0.08);
+  background: #e2e8f0;
+  transform: scale(0.98);
 }
 
-/* Specific variants (Subtle Tints) */
+/* Specific variants */
 .control-btn.btn-save {
   color: #2563eb;
-  /* Blue 600 */
-  background: rgba(37, 99, 235, 0.08);
-  font-weight: 600;
+  background: rgba(37, 99, 235, 0.05);
 }
 
 .control-btn.btn-save:hover {
-  background: rgba(37, 99, 235, 0.15);
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+  background: rgba(37, 99, 235, 0.1);
 }
 
 .control-btn.btn-export,
 .control-btn.btn-import {
   color: #059669;
-  /* Emerald 600 */
 }
 
 .control-btn.btn-export:hover,
 .control-btn.btn-import:hover {
   background: rgba(16, 185, 129, 0.1);
-  color: #047857;
 }
 
 .control-btn.btn-node {
   color: #4f46e5;
-  /* Indigo 600 */
-  font-weight: 500;
 }
 
 .control-btn.btn-node:hover {
   background: rgba(79, 70, 229, 0.1);
-  color: #4338ca;
 }
 
 .control-btn.btn-group {
   color: #7c3aed;
-  /* Violet 600 */
-  background: rgba(124, 58, 237, 0.08);
+  background: rgba(124, 58, 237, 0.05);
 }
 
 .control-btn.btn-group:hover {
-  background: rgba(124, 58, 237, 0.15);
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.15);
+  background: rgba(124, 58, 237, 0.1);
 }
 
-/* Divider override */
-.flow-controls .divider {
-  background: #cbd5e1 !important;
-  /* Slate 300 */
-  margin: 0 4px !important;
+/* Divider */
+.divider {
+  height: 1px !important;
+  width: 100% !important;
+  background: #e2e8f0 !important;
+  margin: 4px 0 !important;
+}
+
+/* dedicated Canvas Area (Full Size Background) */
+.canvas-area {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  /* Below sidebar */
+  background-color: #f8fafc;
 }
 
 /* React Flow 样式覆盖 */

@@ -689,81 +689,129 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   // Determine alignment toolbar visibility (when more than 1 node is selected)
   const showAlignmentToolbar = nodes.filter((n) => n.selected).length > 1;
 
+  // 侧边栏折叠状态
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
   return (
     <div className="flow-canvas-container">
-      {/* Top Toolbar Area - Outside of ReactFlow to prevent overlap */}
-      <div className="flow-controls-toolbar">
+      {/* Sidebar Area */}
+      <div className={`flow-sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+        <div className="sidebar-header">
+          <button
+            className="sidebar-toggle-btn"
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            title={isSidebarCollapsed ? "展开菜单" : "收起菜单"}
+          >
+            {isSidebarCollapsed ? '▶' : '◀'}
+          </button>
+        </div>
+
         <div className="flow-controls">
-          <button
-            className="control-btn btn-save"
-            onClick={onSave}
-            title="保存到本地版本库 (Ctrl+S)"
-          >
-            💾 保存
-          </button>
-          <button
-            className="control-btn btn-export"
-            onClick={onExport}
-            title="导出 JSON 文件"
-          >
-            📤 导出
-          </button>
-          <button
-            className="control-btn btn-import"
-            onClick={onImport}
-            title="导入 JSON 文件"
-          >
-            📥 导入
-          </button>
-          <div
-            className="divider"
-            style={{ width: 1, height: 20, background: '#e2e8f0', margin: '0 8px' }}
-          ></div>
-          <button className="control-btn" onClick={undo} title="撤销 (Ctrl+Z)">
-            ↶ 撤销
-          </button>
-          <button className="control-btn" onClick={redo} title="重做 (Ctrl+Y)">
-            ↷ 重做
-          </button>
-          <div
-            className="divider"
-            style={{ width: 1, height: 20, background: '#e2e8f0', margin: '0 8px' }}
-          ></div>
-          <button
-            className="control-btn btn-node"
-            onClick={() => onAddNode('process')}
-            title="添加流程节点"
-          >
-            ➕ 流程节点
-          </button>
-          <button
-            className="control-btn btn-node"
-            onClick={() => onAddNode('decision')}
-            title="添加判断节点"
-          >
-            ➕ 判断节点
-          </button>
-          <button className="control-btn btn-node" onClick={() => onAddNode('data')} title="添加数据节点">
-            ➕ 数据节点
-          </button>
-          <button
-            className="control-btn btn-node"
-            onClick={() => onAddNode('terminator')}
-            title="添加开始节点"
-          >
-            ➕ 开始节点
-          </button>
-          <div
-            className="divider"
-            style={{ width: 1, height: 20, background: '#e2e8f0', margin: '0 8px' }}
-          ></div>
-          <button
-            className="control-btn btn-group"
-            onClick={onCreateGroup}
-            title="将选中节点创建为分组 (Ctrl+G)"
-          >
-            📁 创建分组
-          </button>
+          <div className="control-section">
+            <div className="section-title">{!isSidebarCollapsed && '文件'}</div>
+            <button
+              className="control-btn btn-save"
+              onClick={onSave}
+              title="保存到本地版本库 (Ctrl+S)"
+            >
+              <span className="btn-icon">💾</span>
+              {!isSidebarCollapsed && <span className="btn-text">保存</span>}
+            </button>
+            <button
+              className="control-btn btn-export"
+              onClick={onExport}
+              title="导出 JSON 文件"
+            >
+              <span className="btn-icon">📤</span>
+              {!isSidebarCollapsed && <span className="btn-text">导出</span>}
+            </button>
+            <button
+              className="control-btn btn-import"
+              onClick={onImport}
+              title="导入 JSON 文件"
+            >
+              <span className="btn-icon">📥</span>
+              {!isSidebarCollapsed && <span className="btn-text">导入</span>}
+            </button>
+          </div>
+
+          <div className="divider"></div>
+
+          <div className="control-section">
+            <div className="section-title">{!isSidebarCollapsed && '操作'}</div>
+            <button className="control-btn" onClick={undo} title="撤销 (Ctrl+Z)">
+              <span className="btn-icon">↶</span>
+              {!isSidebarCollapsed && <span className="btn-text">撤销</span>}
+            </button>
+            <button className="control-btn" onClick={redo} title="重做 (Ctrl+Y)">
+              <span className="btn-icon">↷</span>
+              {!isSidebarCollapsed && <span className="btn-text">重做</span>}
+            </button>
+          </div>
+
+          <div className="divider"></div>
+
+          <div className="control-section">
+            <div className="section-title">{!isSidebarCollapsed && '节点'}</div>
+            <button
+              className="control-btn btn-node"
+              onClick={() => onAddNode('process')}
+              title="添加流程节点"
+            >
+              <span className="btn-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <rect x="3" y="6" width="18" height="12" rx="2" />
+                </svg>
+              </span>
+              {!isSidebarCollapsed && <span className="btn-text">流程节点</span>}
+            </button>
+            <button
+              className="control-btn btn-node"
+              onClick={() => onAddNode('decision')}
+              title="添加判断节点"
+            >
+              <span className="btn-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12 3L21 12L12 21L3 12L12 3Z" />
+                </svg>
+              </span>
+              {!isSidebarCollapsed && <span className="btn-text">判断节点</span>}
+            </button>
+            <button className="control-btn btn-node" onClick={() => onAddNode('data')} title="添加数据节点">
+              <span className="btn-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M5 19H19L21 5H7L5 19Z" />
+                </svg>
+              </span>
+              {!isSidebarCollapsed && <span className="btn-text">数据节点</span>}
+            </button>
+            <button
+              className="control-btn btn-node"
+              onClick={() => onAddNode('terminator')}
+              title="添加开始节点"
+            >
+              <span className="btn-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <rect x="3" y="6" width="18" height="12" rx="6" />
+                </svg>
+              </span>
+              {!isSidebarCollapsed && <span className="btn-text">开始节点</span>}
+            </button>
+          </div>
+
+          <div className="divider"></div>
+
+          <div className="control-section">
+            <div className="section-title">{!isSidebarCollapsed && '分组'}</div>
+            <button
+              className="control-btn btn-group"
+              onClick={onCreateGroup}
+              title="将选中节点创建为分组 (Ctrl+G)"
+            >
+              <span className="btn-icon">📁</span>
+              {!isSidebarCollapsed && <span className="btn-text">创建分组</span>}
+            </button>
+          </div>
         </div>
       </div>
 
