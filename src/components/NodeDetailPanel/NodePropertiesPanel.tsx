@@ -185,139 +185,178 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({
         }
     };
 
+    const [activeTab, setActiveTab] = useState<'properties' | 'style' | 'data'>('properties');
+
     return (
         <>
-            <div className="info-section">
-                <div className="info-item">
-                    <span className="info-label">名称</span>
-                    <BufferedInput
-                        type="text"
-                        className="info-input"
-                        value={nodeName}
-                        onCommit={(value) => {
-                            setNodeName(value);
-                            commitNodeChanges({ label: value });
-                        }}
-                        placeholder="节点名称"
-                    />
-                </div>
-                <div className="info-item">
-                    <span className="info-label">描述</span>
-                    <textarea
-                        className="info-textarea"
-                        value={nodeDescription}
-                        onChange={e => setNodeDescription(e.target.value)}
-                        onBlur={() => commitNodeChanges({ description: nodeDescription })}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                e.currentTarget.blur();
-                            }
-                        }}
-                        placeholder="节点详细描述..."
-                        rows={3}
-                    />
-                </div>
+            <div className="panel-tabs">
+                <button
+                    className={`tab-item ${activeTab === 'properties' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('properties')}
+                >
+                    属性
+                </button>
+                <button
+                    className={`tab-item ${activeTab === 'style' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('style')}
+                >
+                    外观
+                </button>
+                <button
+                    className={`tab-item ${activeTab === 'data' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('data')}
+                >
+                    数据
+                </button>
             </div>
 
-            <div className="info-section">
-                <div className="info-item">
-                    <span className="info-label">关联节点</span>
-                    <div className="related-nodes-container">
-                        {relatedNodeIds.length > 0 && (
-                            <div className="related-list">
-                                {relatedNodeIds.map(id => {
-                                    const node = allNodes.find(n => n.id === id);
-                                    return (
-                                        <div key={id} className="related-tag">
-                                            <span className="related-tag-text" title={String(node?.data?.label || node?.data?.name || id)}>
-                                                {String(node?.data?.label || node?.data?.name || id)}
-                                            </span>
-                                            <span
-                                                className="related-tag-remove"
-                                                onClick={() => handleRemoveRelatedNode(id)}
-                                                title="移除关联"
-                                            >×</span>
-                                        </div>
-                                    );
-                                })}
+            <div className="tab-content">
+                {activeTab === 'properties' && (
+                    <>
+                        <div className="info-section">
+                            <div className="info-item">
+                                <span className="info-label">名称</span>
+                                <BufferedInput
+                                    type="text"
+                                    className="info-input"
+                                    value={nodeName}
+                                    onCommit={(value) => {
+                                        setNodeName(value);
+                                        commitNodeChanges({ label: value });
+                                    }}
+                                    placeholder="节点名称"
+                                />
                             </div>
-                        )}
-                        <NodeSelector
-                            currentNodeId={selectedElement.data.id}
-                            allNodes={allNodes}
-                            onSelect={handleAddRelatedNode}
-                            excludeIds={relatedNodeIds}
-                        />
-                    </div>
-                </div>
+                            <div className="info-item">
+                                <span className="info-label">描述</span>
+                                <textarea
+                                    className="info-textarea"
+                                    value={nodeDescription}
+                                    onChange={e => setNodeDescription(e.target.value)}
+                                    onBlur={() => commitNodeChanges({ description: nodeDescription })}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            e.currentTarget.blur();
+                                        }
+                                    }}
+                                    placeholder="节点详细描述..."
+                                    rows={3}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="info-section">
+                            <div className="info-item">
+                                <span className="info-label">关联节点</span>
+                                <div className="related-nodes-container">
+                                    {relatedNodeIds.length > 0 && (
+                                        <div className="related-list">
+                                            {relatedNodeIds.map(id => {
+                                                const node = allNodes.find(n => n.id === id);
+                                                return (
+                                                    <div key={id} className="related-tag">
+                                                        <span className="related-tag-text" title={String(node?.data?.label || node?.data?.name || id)}>
+                                                            {String(node?.data?.label || node?.data?.name || id)}
+                                                        </span>
+                                                        <span
+                                                            className="related-tag-remove"
+                                                            onClick={() => handleRemoveRelatedNode(id)}
+                                                            title="移除关联"
+                                                        >×</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                    <NodeSelector
+                                        currentNodeId={selectedElement.data.id}
+                                        allNodes={allNodes}
+                                        onSelect={handleAddRelatedNode}
+                                        excludeIds={relatedNodeIds}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                )}
+
+                {activeTab === 'style' && (
+                    <NodeStyleEditor
+                        nodeType={selectedElement.data.type}
+                        // Dims
+                        width={nodeWidth}
+                        height={nodeHeight}
+                        widthStr={nodeWidthStr}
+                        heightStr={nodeHeightStr}
+                        onWidthChange={(v, s) => {
+                            setNodeWidth(v);
+                            setNodeWidthStr(s);
+                            if (v !== undefined) commitNodeChanges({}, { width: v });
+                        }}
+                        onHeightChange={(v, s) => {
+                            setNodeHeight(v);
+                            setNodeHeightStr(s);
+                            if (v !== undefined) commitNodeChanges({}, { height: v });
+                        }}
+                        onCommitDimension={() => commitNodeChanges()}
+                        // Font
+                        fontSize={nodeFontSize}
+                        fontSizeStr={nodeFontSizeStr}
+                        fontColor={nodeFontColor}
+                        fontFamily={nodeFontFamily}
+                        fontWeight={nodeFontWeight}
+                        onFontSizeChange={(v, s) => {
+                            setNodeFontSize(v);
+                            setNodeFontSizeStr(s);
+                            if (v && !isNaN(v)) commitNodeChanges({}, { fontSize: v });
+                        }}
+                        onCommitFontSize={() => commitNodeChanges()}
+                        onFontColorChange={(v) => { setNodeFontColor(v); commitNodeChanges({}, { color: v }); }}
+                        onFontFamilyChange={(v) => { setNodeFontFamily(v); commitNodeChanges({}, { fontFamily: v }); }}
+                        onFontWeightChange={(v) => { setNodeFontWeight(v); commitNodeChanges({}, { fontWeight: v }); }}
+                        // Bg & Border
+                        backgroundColor={nodeBackgroundColor}
+                        borderColor={nodeBorderColor}
+                        borderWidth={nodeBorderWidth}
+                        onBackgroundColorChange={(v) => { setNodeBackgroundColor(v); commitNodeChanges({}, { backgroundColor: v }); }}
+                        onBorderColorChange={(v) => { setNodeBorderColor(v); commitNodeChanges({}, { borderColor: v }); }}
+                        onBorderWidthChange={(v) => { setNodeBorderWidth(v); commitNodeChanges({}, { borderWidth: v }); }}
+                        // Refs
+                        editingInputRef={editingInputRef}
+                        onInputFocus={(e) => { editingInputRef.current = e.currentTarget; }}
+                        onInputBlur={() => { editingInputRef.current = null; }}
+                        handleKeyDown={handleKeyDown}
+                    />
+                )}
+
+                {activeTab === 'data' && (
+                    <>
+                        <div className="section" style={{ borderTop: 'none', paddingTop: 0, marginTop: 0 }}>
+                            <ScreenshotManager
+                                screenshots={screenshots}
+                                onScreenshotsChange={(newScreenshots) => {
+                                    setScreenshots(newScreenshots);
+                                    commitNodeChanges({ screenshots: newScreenshots });
+                                }}
+                                onViewScreenshot={onViewScreenshot}
+                                onOpenPageSelector={onOpenPageSelector}
+                                getComponentUrl={getIframeUrl}
+                            />
+                        </div>
+
+                        <div className="section">
+                            <DatabaseTableEditor
+                                tables={databaseTables}
+                                onTablesChange={(newTables) => {
+                                    setDatabaseTables(newTables);
+                                    commitNodeChanges({ databaseTables: newTables });
+                                }}
+                            />
+                        </div>
+                    </>
+                )}
             </div>
-
-            <NodeStyleEditor
-                nodeType={selectedElement.data.type}
-                // Dims
-                width={nodeWidth}
-                height={nodeHeight}
-                widthStr={nodeWidthStr}
-                heightStr={nodeHeightStr}
-                onWidthChange={(v, s) => {
-                    setNodeWidth(v);
-                    setNodeWidthStr(s);
-                    if (v !== undefined) commitNodeChanges({}, { width: v });
-                }}
-                onHeightChange={(v, s) => {
-                    setNodeHeight(v);
-                    setNodeHeightStr(s);
-                    if (v !== undefined) commitNodeChanges({}, { height: v });
-                }}
-                onCommitDimension={() => commitNodeChanges()}
-                // Font
-                fontSize={nodeFontSize}
-                fontSizeStr={nodeFontSizeStr}
-                fontColor={nodeFontColor}
-                fontFamily={nodeFontFamily}
-                fontWeight={nodeFontWeight}
-                onFontSizeChange={(v, s) => {
-                    setNodeFontSize(v);
-                    setNodeFontSizeStr(s);
-                    if (v && !isNaN(v)) commitNodeChanges({}, { fontSize: v });
-                }}
-                onCommitFontSize={() => commitNodeChanges()}
-                onFontColorChange={(v) => { setNodeFontColor(v); commitNodeChanges({}, { color: v }); }}
-                onFontFamilyChange={(v) => { setNodeFontFamily(v); commitNodeChanges({}, { fontFamily: v }); }}
-                onFontWeightChange={(v) => { setNodeFontWeight(v); commitNodeChanges({}, { fontWeight: v }); }}
-                // Bg & Border
-                backgroundColor={nodeBackgroundColor}
-                borderColor={nodeBorderColor}
-                borderWidth={nodeBorderWidth}
-                onBackgroundColorChange={(v) => { setNodeBackgroundColor(v); commitNodeChanges({}, { backgroundColor: v }); }}
-                onBorderColorChange={(v) => { setNodeBorderColor(v); commitNodeChanges({}, { borderColor: v }); }}
-                onBorderWidthChange={(v) => { setNodeBorderWidth(v); commitNodeChanges({}, { borderWidth: v }); }}
-                // Refs
-                editingInputRef={editingInputRef}
-                onInputFocus={(e) => { editingInputRef.current = e.currentTarget; }}
-                onInputBlur={() => { editingInputRef.current = null; }}
-                handleKeyDown={handleKeyDown}
-            />
-
-            <ScreenshotManager
-                screenshots={screenshots}
-                onScreenshotsChange={(newScreenshots) => {
-                    setScreenshots(newScreenshots);
-                    commitNodeChanges({ screenshots: newScreenshots });
-                }}
-                onViewScreenshot={onViewScreenshot}
-                onOpenPageSelector={onOpenPageSelector}
-                getComponentUrl={getIframeUrl}
-            />
-
-            <DatabaseTableEditor
-                tables={databaseTables}
-                onTablesChange={(newTables) => {
-                    setDatabaseTables(newTables);
-                    commitNodeChanges({ databaseTables: newTables });
-                }}
-            />
         </>
     );
 });
