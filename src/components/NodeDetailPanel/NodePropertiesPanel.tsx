@@ -1,5 +1,5 @@
 import { memo, useState, useEffect, useRef, useCallback } from 'react';
-import { Node } from '@xyflow/react';
+import { Node, useReactFlow } from '@xyflow/react';
 import { FlowNodeData, Screenshot, DatabaseTable, NodeUpdateParams, NodeUpdateFields } from '../../types/flow';
 import { NodeStyleEditor } from './NodeStyleEditor';
 import { ScreenshotManager } from './ScreenshotManager';
@@ -37,6 +37,8 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({
     const [nodeHeight, setNodeHeight] = useState<number | undefined>(undefined);
     const [nodeWidthStr, setNodeWidthStr] = useState('');
     const [nodeHeightStr, setNodeHeightStr] = useState('');
+
+    const { setCenter, getZoom } = useReactFlow();
 
     // Node Style
     const [nodeFontSize, setNodeFontSize] = useState(14);
@@ -185,6 +187,20 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({
         }
     };
 
+    const handleNodeClick = (nodeId: string) => {
+        const node = allNodes.find(n => n.id === nodeId);
+        if (node) {
+            const { position, measured } = node;
+            const width = measured?.width || 0;
+            const height = measured?.height || 0;
+            const x = position.x + width / 2;
+            const y = position.y + height / 2;
+            const zoom = getZoom();
+
+            setCenter(x, y, { zoom, duration: 1000 });
+        }
+    };
+
     const [activeTab, setActiveTab] = useState<'properties' | 'style' | 'data'>('properties');
 
     return (
@@ -256,7 +272,11 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({
                                                 const node = allNodes.find(n => n.id === id);
                                                 return (
                                                     <div key={id} className="related-tag">
-                                                        <span className="related-tag-text" title={String(node?.data?.label || node?.data?.name || id)}>
+                                                        <span
+                                                            className="related-tag-text clickable"
+                                                            title={String(node?.data?.label || node?.data?.name || id)}
+                                                            onClick={() => handleNodeClick(id)}
+                                                        >
                                                             {String(node?.data?.label || node?.data?.name || id)}
                                                         </span>
                                                         <span

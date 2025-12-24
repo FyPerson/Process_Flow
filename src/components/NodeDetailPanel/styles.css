@@ -64,6 +64,25 @@
     color: #333;
 }
 
+.locate-btn {
+    background: transparent;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.locate-btn:hover {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
 /* 内容区域 */
 .panel-content {
     flex: 1;
@@ -670,6 +689,16 @@ input[type='color']::-webkit-color-swatch {
     text-overflow: ellipsis;
     white-space: nowrap;
     font-weight: 500;
+}
+
+.related-tag-text.clickable {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.related-tag-text.clickable:hover {
+    color: #3b82f6;
+    text-decoration: underline;
 }
 
 .related-tag-remove {
