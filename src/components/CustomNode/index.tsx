@@ -131,19 +131,14 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
         setEditValue(uniqueName);
       }
 
-      setNodes((nodes) =>
-        nodes.map((node) => {
-          if (node.id === id) {
-            return {
-              ...node,
-              data: { ...node.data, name: uniqueName },
-            };
-          }
-          return node;
-        }),
-      );
+      // 触发自定义事件通知父组件更新
+      // 统一通过 FlowCanvas 处理，以便记录历史
+      const event = new CustomEvent('nodeLabelChange', {
+        detail: { id, label: uniqueName }
+      });
+      window.dispatchEvent(event);
     }
-  }, [id, editValue, nodeData.name, setNodes, getNodes]);
+  }, [id, editValue, nodeData.name, getNodes]);
 
   // 自动聚焦和全选
   useEffect(() => {

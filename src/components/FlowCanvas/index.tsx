@@ -109,7 +109,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   // Use shared type
   const [selectedElement, setSelectedElement] = useState<SelectedElement | null>(null);
   const [showPanel, setShowPanel] = useState(false);
-  const { fitView, screenToFlowPosition, getNodes } = useReactFlow<Node<FlowNodeData>, Edge>();
+  const { fitView, screenToFlowPosition, getNodes, getEdges, deleteElements } = useReactFlow<Node<FlowNodeData>, Edge>();
 
   // 使用自定义 Hooks
   const {
@@ -540,17 +540,24 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
     fitView,
   });
 
-  // 监听分组标签更改事件
+  // 监听标签更改事件（分组和普通节点）
   useEffect(() => {
     const handleGroupLabelChange = (e: CustomEvent<{ id: string; label: string }>) => {
       onUpdateGroupLabel(e.detail.id, e.detail.label);
     };
 
+    const handleNodeLabelChange = (e: CustomEvent<{ id: string; label: string }>) => {
+      onNodeUpdate(e.detail.id, { name: e.detail.label });
+    };
+
     window.addEventListener('groupLabelChange', handleGroupLabelChange as EventListener);
+    window.addEventListener('nodeLabelChange', handleNodeLabelChange as EventListener);
+
     return () => {
       window.removeEventListener('groupLabelChange', handleGroupLabelChange as EventListener);
+      window.removeEventListener('nodeLabelChange', handleNodeLabelChange as EventListener);
     };
-  }, [onUpdateGroupLabel]);
+  }, [onUpdateGroupLabel, onNodeUpdate]);
 
 
 
@@ -622,6 +629,30 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
     [onRemoveFromGroup]
   );
 
+  // 删除处理函数
+  const handleDelete = useCallback(() => {
+    // 检查是否有选中的元素 - 使用 getter 获取最新状态，避免依赖变化导致重渲染
+    const currentNodes = getNodes();
+    const currentEdges = getEdges();
+    const selectedNodes = currentNodes.filter((n) => n.selected);
+    const selectedEdges = currentEdges.filter((e) => e.selected);
+
+    if (selectedNodes.length === 0 && selectedEdges.length === 0) {
+      return;
+    }
+
+    // 弹出确认框
+    const confirmMessage = selectedNodes.length > 0
+      ? `确定要删除选中的 ${selectedNodes.length} 个节点吗？\n注意：删除节点也会删除相连的连线。`
+      : `确定要删除选中的 ${selectedEdges.length} 条连线吗？`;
+
+    if (window.confirm(confirmMessage)) {
+      deleteElements({ nodes: selectedNodes, edges: selectedEdges });
+      setSelectedElement(null);
+      setShowPanel(false);
+    }
+  }, [getNodes, getEdges, deleteElements, setSelectedElement, setShowPanel]);
+
   // 键盘快捷键支持
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -680,11 +711,24 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
         }
         return;
       }
+
+      // Backspace - 删除 (带确认)
+      if (e.key === 'Backspace') {
+        const target = e.target as HTMLElement;
+        const isInputElement =
+          target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
+        if (!isInputElement) {
+          e.preventDefault();
+          handleDelete();
+        }
+        return;
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, copyNodes, pasteNodes, onCreateGroup, handleUngroup, selectedElement]); // Added handleUngroup dependency
+  }, [undo, redo, copyNodes, pasteNodes, onCreateGroup, handleUngroup, selectedElement, handleDelete]); // Added handleUngroup and handleDelete dependency
 
   // Determine alignment toolbar visibility (when more than 1 node is selected)
   const showAlignmentToolbar = nodes.filter((n) => n.selected).length > 1;
@@ -748,6 +792,15 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
               <span className="btn-icon">↷</span>
               {!isSidebarCollapsed && <span className="btn-text">重做</span>}
             </button>
+            <button className="control-btn" onClick={handleDelete} title="删除选中元素 (Backspace)">
+              <span className="btn-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M3 6H5H21" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M8 6V4C8 2.89543 8.89543 2 10 2H14C15.1046 2 16 2.89543 16 4V6M19 6V20C19 21.1046 18.1046 22 17 22H7C5.89543 22 5 21.1046 5 20V6H19Z" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              {!isSidebarCollapsed && <span className="btn-text">删除</span>}
+            </button>
           </div>
 
           <div className="divider"></div>
@@ -784,19 +837,19 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
                   <path d="M5 19H19L21 5H7L5 19Z" />
                 </svg>
               </span>
-              {!isSidebarCollapsed && <span className="btn-text">数据节点</span>}
+              {!isSidebarCollapsed && <span className="btn-text">审批节点</span>}
             </button>
             <button
               className="control-btn btn-node"
               onClick={() => onAddNode('terminator')}
-              title="添加开始节点"
+              title="添加起止节点"
             >
               <span className="btn-icon">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <rect x="3" y="6" width="18" height="12" rx="6" />
                 </svg>
               </span>
-              {!isSidebarCollapsed && <span className="btn-text">开始节点</span>}
+              {!isSidebarCollapsed && <span className="btn-text">起止节点</span>}
             </button>
           </div>
 
@@ -860,6 +913,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
           selectionOnDrag={false}
           selectionMode={SelectionMode.Partial}
           selectionKeyCode="Shift" // 按住 Shift + 左键框选
+          deleteKeyCode={null} // 禁用默认删除键，使用自定义 Backspace 处理
           panOnDrag={true} // 左键拖拽平移画布
           style={{ width: '100%', height: '100%' }}
         >

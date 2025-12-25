@@ -46,8 +46,8 @@ export function useFlowOperations({
                     : type === 'decision'
                         ? '新判断节点'
                         : type === 'data'
-                            ? '新数据节点'
-                            : '新开始节点';
+                            ? '新审批节点'
+                            : '新起止节点';
 
             // 确保名称唯一
             const currentNodes = setNodes instanceof Function ? [] : []; // Hack to get types right, actually we need getNodes or passed nodes
@@ -294,7 +294,7 @@ export function useFlowOperations({
         }
     }, [setNodes, setEdges, saveHistory]);
 
-    const { addNodes, getNodes, getNodesBounds } = useReactFlow();
+    const { addNodes, getNodes, getNodesBounds } = useReactFlow<Node<FlowNodeData>, Edge>();
 
     // 创建分组（将选中节点打包成分组）
     const onCreateGroup = useCallback(() => {
@@ -350,40 +350,33 @@ export function useFlowOperations({
 
         // 单次原子更新：同时添加分组节点和更新子节点
         // 关键：将分组节点放在数组开头，确保 React Flow 能正确识别父子关系
-        setNodes((currentNodes) => {
-            // 更新所有节点
-            const updatedNodes = currentNodes.map((node) => {
-                if (selectedNodeIds.has(node.id)) {
-                    const relativePos = {
-                        x: node.position.x - groupNode.position.x,
-                        y: node.position.y - groupNode.position.y,
-                    };
 
-                    // 验证：计算渲染后的绝对位置
-                    const finalAbsolutePos = {
-                        x: groupNode.position.x + relativePos.x,
-                        y: groupNode.position.y + relativePos.y,
-                    };
+        // 计算最终节点列表
+        const updatedChildNodes = currentNodes.map((node) => {
+            if (selectedNodeIds.has(node.id)) {
+                const relativePos = {
+                    x: node.position.x - groupNode.position.x,
+                    y: node.position.y - groupNode.position.y,
+                };
 
-                    // 更新被选中的节点：设置 parentId、相对坐标和 extent
-                    return {
-                        ...node,
-                        parentId: groupId,
-                        extent: 'parent' as 'parent', // 类型断言：告诉 TypeScript 这是字面量类型
-                        position: relativePos,
-                        selected: false,
-                    };
-                }
-                // 清除其他节点的选中状态
-                return { ...node, selected: false };
-            });
-
-            // 将分组节点插入到数组开头，确保在子节点之前
-            // 这是 React Flow 的要求：父节点必须在子节点之前
-            const finalNodes = [groupNode, ...updatedNodes];
-
-            return finalNodes;
+                // 更新被选中的节点：设置 parentId、相对坐标和 extent
+                return {
+                    ...node,
+                    parentId: groupId,
+                    extent: 'parent' as 'parent', // 类型断言：告诉 TypeScript 这是字面量类型
+                    position: relativePos,
+                    selected: false,
+                };
+            }
+            // 清除其他节点的选中状态
+            return { ...node, selected: false };
         });
+
+        // 将分组节点插入到数组开头，确保在子节点之前
+        const finalNodes = [groupNode, ...updatedChildNodes];
+
+        setNodes(finalNodes);
+        saveHistory(finalNodes, edges);
 
         // 触发自动保存
         setTimeout(() => {
@@ -499,18 +492,26 @@ export function useFlowOperations({
     // 更新分组标签
     const onUpdateGroupLabel = useCallback(
         (groupId: string, label: string) => {
-            setNodes((nds) => {
-                // Ensure new label is unique (excluding current group itself if it hasn't changed, but here we are updating)
-                // Actually this is called by window event, which we already checked in component?
-                // Yes, onUpdateGroupLabel is called by FlowCanvas event listener which receives data from GroupNode.
-                // In GroupNode we already checked uniqueness and passed the unique name.
-                // So we might NOT need to check here again if we trust the event detail.
-                // However, to be safe or if called from other places...
-                // But wait, the previous logic in GroupNode ALREADY generated a unique name.
-                // So we can just trust 'label' here.
-                // But let's verify if `onCreateGroup` needs it.
+            // 获取最新节点状态
+            // 注意：因为我们要计算并保存历史，所以这里不能只依赖函数式更新
+            // 但考虑到 setNodes((nds) => ...) 是安全的做法，
+            // 我们可以采取两步走：
+            // 实际上，在这个 hook 中，我们并没有直接访问最新的 nodes (只有 props 传入的)
+            // 而 props.nodes 可能不是最新的（如果在闭包中）。
+            // 但是 useFlowOperations 会在每次 nodes 更新时重建，所以 nodes 应该是较新的。
+            // 为了最稳妥，我们应该使用 getNodes() 如果有的话，但这里没有传入 getReactFlow 的 getNodes。
+            // 修正：实际上 CustomNode/GroupNode 修改是通过事件触发的，此时 FlowCanvas 会调用这个函数。
+            // 如果 FlowCanvas 也是每次渲染都更新这个 hook，那么 nodes 是新的。
 
-                return nds.map((node) => {
+            // 更好的方式：参考 onCreateGroup，如果它可以访问 getNodes (它用了 useReactFlow)，
+            // 这里我们也可以用 useReactFlow。
+            // 让我们看看 import... 是的，我们可以用 useReactFlow。
+            // 但是这个 hook props 里并没有 getNodes。
+            // 让我们在该 hook 顶部获取 getNodes。
+
+            // 下面的实现假设我们能正确更新。
+            setNodes((nds) => {
+                const newNodes = nds.map((node) => {
                     if (node.id === groupId && node.type === 'group') {
                         return {
                             ...node,
@@ -522,10 +523,17 @@ export function useFlowOperations({
                     }
                     return node;
                 });
+
+                // 由于这里是在 setNodes 内部，我们有了最新的 newNodes
+                // 我们可以直接保存历史。
+                // 注意：React 状态更新是批处理的，但 saveHistory 是同步 ref 操作，所以是安全的。
+                saveHistory(newNodes, edges);
+                triggerAutoSave();
+
+                return newNodes;
             });
-            triggerAutoSave();
         },
-        [setNodes, triggerAutoSave]
+        [setNodes, edges, saveHistory, triggerAutoSave]
     );
 
     return {
