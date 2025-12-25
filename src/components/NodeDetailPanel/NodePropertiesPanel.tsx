@@ -107,10 +107,13 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({
 
         const newDataUpdates: Partial<FlowNodeData> & NodeUpdateFields = {};
         // Cast unknown from index signature to expected types
+
         const label = updatedFields.label as string | undefined;
+        const name = updatedFields.name as string | undefined; // 添加名称提取
         const description = updatedFields.description as string | undefined;
 
         if (label !== undefined) newDataUpdates.label = label;
+        if (name !== undefined) newDataUpdates.name = name; // 添加名称更新
         if (description !== undefined) newDataUpdates.description = description;
 
         if (updatedFields.screenshots) {
@@ -238,7 +241,7 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({
                                     value={nodeName}
                                     onCommit={(value) => {
                                         setNodeName(value);
-                                        commitNodeChanges({ label: value });
+                                        commitNodeChanges({ name: value });
                                     }}
                                     placeholder="节点名称"
                                 />
