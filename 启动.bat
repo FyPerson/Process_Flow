@@ -34,7 +34,7 @@ if not exist "node_modules" (
 
 echo.
 echo [信息] 正在启动开发服务器...
-echo [提示] 访问地址: http://localhost:3000
+echo [提示] 访问地址: http://localhost:3001
 echo [提示] 按 Ctrl+C 停止服务器
 echo ========================================
 echo.
