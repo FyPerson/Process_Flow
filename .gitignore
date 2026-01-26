@@ -48,3 +48,8 @@ backup_*/
 # 测试覆盖率
 coverage/
 .nyc_output/
+
+# 本地开发记录（不推送到服务器）
+开发记录.md
+PLAN-*.md
+TODO.md
