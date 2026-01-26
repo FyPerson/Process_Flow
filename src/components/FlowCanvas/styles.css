@@ -79,7 +79,7 @@
 .flow-controls {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
   width: 100%;
 }
 
@@ -87,7 +87,7 @@
 .control-section {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   width: 100%;
 }
 
@@ -199,7 +199,7 @@
   height: 1px !important;
   width: 100% !important;
   background: #e2e8f0 !important;
-  margin: 4px 0 !important;
+  margin: 2px 0 !important;
 }
 
 /* dedicated Canvas Area (Full Size Background) */
@@ -208,7 +208,7 @@
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: calc(100% - 40px); /* 为底部标签栏预留 40px 空间 */
   z-index: 1;
   /* Below sidebar */
   background-color: #f8fafc;

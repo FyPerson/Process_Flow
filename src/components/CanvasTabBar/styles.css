@@ -1,0 +1,300 @@
+/* 标签栏容器 */
+.canvas-tab-bar {
+  position: absolute;
+  bottom: 0;
+  left: 240px; /* 避开左侧侧边栏 */
+  right: 0;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.95);
+  border-top: 1px solid #e2e8f0;
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  z-index: 200; /* 提高 z-index 确保在其他元素之上 */
+  gap: 4px;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 跟随侧边栏动画 */
+  pointer-events: auto; /* 确保可以接收鼠标事件 */
+}
+
+/* 标签滚动容器 */
+.canvas-tabs-container {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  flex: 1;
+  min-width: 0; /* 允许 flex 子项收缩 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.canvas-tabs-container::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* 单个标签 */
+.canvas-tab {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #64748b;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 6px 6px 0 0;
+  position: relative;
+  min-width: 80px;
+  max-width: 150px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.canvas-tab:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.canvas-tab.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+  background: #f8fafc;
+  font-weight: 500;
+}
+
+/* 标签名称 */
+.canvas-tab-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+/* 关闭按钮 */
+.canvas-tab-close {
+  opacity: 0;
+  margin-left: 6px;
+  padding: 2px 4px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.canvas-tab:hover .canvas-tab-close {
+  opacity: 1;
+}
+
+.canvas-tab-close:hover {
+  background: #fecaca;
+  color: #dc2626;
+}
+
+/* 标签编辑输入框 */
+.canvas-tab-input {
+  border: 1px solid #3b82f6;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 13px;
+  outline: none;
+  width: 100%;
+  min-width: 60px;
+  max-width: 120px;
+  background: white;
+}
+
+.canvas-tab-input:focus {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* 滚动按钮 */
+.canvas-tab-scroll-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 10px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.canvas-tab-scroll-btn:hover:not(.disabled) {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.canvas-tab-scroll-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.canvas-tab-scroll-btn.left {
+  margin-right: 4px;
+}
+
+.canvas-tab-scroll-btn.right {
+  margin-left: 4px;
+}
+
+/* 添加按钮 */
+.canvas-tab-add {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 300;
+  transition: all 0.2s;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+.canvas-tab-add:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.canvas-tab-add:active {
+  transform: scale(0.95);
+}
+
+/* 当侧边栏折叠时调整位置 */
+.sidebar-collapsed .canvas-tab-bar {
+  left: 60px;
+}
+
+/* 右键菜单 */
+.canvas-tab-context-menu {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 140px;
+  padding: 4px;
+  z-index: 10000; /* 非常高的 z-index 确保显示在所有元素之上 */
+  animation: contextMenuFadeIn 0.15s ease-out;
+  pointer-events: auto;
+}
+
+@keyframes contextMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: #334155;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.context-menu-item:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.context-menu-item:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.context-menu-item.danger:hover:not(:disabled) {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.context-menu-icon {
+  margin-right: 8px;
+  font-size: 14px;
+}
+
+.context-menu-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 4px 0;
+}
+
+/* 深色主题适配（可选） */
+@media (prefers-color-scheme: dark) {
+  .canvas-tab-bar {
+    background: rgba(30, 41, 59, 0.95);
+    border-top-color: #334155;
+  }
+
+  .canvas-tab {
+    color: #94a3b8;
+  }
+
+  .canvas-tab:hover {
+    background: #334155;
+    color: #f1f5f9;
+  }
+
+  .canvas-tab.active {
+    background: #1e293b;
+    color: #60a5fa;
+    border-bottom-color: #60a5fa;
+  }
+
+  .canvas-tab-input {
+    background: #1e293b;
+    border-color: #60a5fa;
+    color: #f1f5f9;
+  }
+
+  .canvas-tab-scroll-btn {
+    background: #334155;
+    border-color: #475569;
+    color: #94a3b8;
+  }
+
+  .canvas-tab-scroll-btn:hover:not(.disabled) {
+    background: #475569;
+    color: #f1f5f9;
+  }
+
+  .canvas-tab-add {
+    border-color: #475569;
+    color: #64748b;
+  }
+
+  .canvas-tab-add:hover {
+    border-color: #60a5fa;
+    color: #60a5fa;
+    background: rgba(96, 165, 250, 0.1);
+  }
+}

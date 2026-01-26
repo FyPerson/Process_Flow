@@ -21,7 +21,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { FlowNodeData, NodeUpdateParams, EdgeUpdateParams } from '../../types/flow';
+import { FlowNodeData, NodeUpdateParams, EdgeUpdateParams, MultiCanvasProject, CanvasSheet } from '../../types/flow';
 import { CustomNode } from '../CustomNode';
 import { GroupNode } from '../GroupNode';
 import DraggableEdge from '../DraggableEdge';
@@ -33,6 +33,7 @@ import { useFlowHandlers } from '../../hooks/useFlowHandlers';
 import { useFlowOperations } from '../../hooks/useFlowOperations';
 import { useNodeAlignment } from '../../hooks/useNodeAlignment';
 import { AlignmentToolbar } from './AlignmentToolbar';
+import { CanvasTabBar } from '../CanvasTabBar';
 import './styles.css';
 
 // 自定义节点类型
@@ -47,28 +48,61 @@ const edgeTypes = {
 };
 
 interface FlowCanvasProps {
+  sheetId?: string;
   nodes: Node<FlowNodeData>[];
   edges: Edge[];
   onNodesChange?: (changes: NodeChange[]) => void;
   onEdgesChange?: (changes: EdgeChange[]) => void;
   showSubflows?: boolean;
   onToggleSubflows?: () => void;
+  onDataChange?: (sheetId: string, nodes: Node<FlowNodeData>[], edges: Edge[]) => void;
+  getProjectData?: () => MultiCanvasProject;
+  // 多画布标签栏相关
+  sheets?: CanvasSheet[];
+  activeSheetId?: string;
+  onSheetChange?: (sheetId: string) => void;
+  onAddSheet?: () => void;
+  onDeleteSheet?: (sheetId: string) => void;
+  onRenameSheet?: (sheetId: string, newName: string) => void;
+  onDuplicateSheet?: (sheetId: string) => void;
 }
 
 import { OffscreenIndicators } from './OffscreenIndicators';
 
 // 内部组件：使用 useReactFlow hook (使用 memo 优化性能)
 const FlowCanvasContent = memo(function FlowCanvasContent({
+  sheetId,
   initialNodes,
   initialEdges,
   // These props are received but not currently used - prefixed with _ to satisfy ESLint
   showSubflows: _showSubflows,
   onToggleSubflows: _onToggleSubflows,
+  onDataChange,
+  getProjectData: _getProjectData,
+  // 多画布标签栏相关
+  sheets,
+  activeSheetId,
+  onSheetChange,
+  onAddSheet,
+  onDeleteSheet,
+  onRenameSheet,
+  onDuplicateSheet,
 }: {
+  sheetId?: string;
   initialNodes: Node<FlowNodeData>[];
   initialEdges: Edge[];
   showSubflows?: boolean;
   onToggleSubflows?: () => void;
+  onDataChange?: (sheetId: string, nodes: Node<FlowNodeData>[], edges: Edge[]) => void;
+  getProjectData?: () => MultiCanvasProject;
+  // 多画布标签栏相关
+  sheets?: CanvasSheet[];
+  activeSheetId?: string;
+  onSheetChange?: (sheetId: string) => void;
+  onAddSheet?: () => void;
+  onDeleteSheet?: (sheetId: string) => void;
+  onRenameSheet?: (sheetId: string, newName: string) => void;
+  onDuplicateSheet?: (sheetId: string) => void;
 }) {
   // 迁移旧的 edge handle ID
   const migratedEdges = initialEdges.map((edge) => {
@@ -127,29 +161,41 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   const { copyNodes: clipboardCopyNodes, pasteNodes: clipboardPasteNodes } = useFlowClipboard();
 
   // 使用自动保存 Hook（2秒后自动保存）
+  // 注意：disableLocalStorage=true，因为多画布模式下保存由 useMultiCanvas 处理
   const { triggerAutoSave, getFlowData } = useAutoSave(
     nodes,
     edges,
     () => isUndoRedoRef.current,
     'saved-flow-data',
-    2000  // 2秒延迟
+    2000,  // 2秒延迟
+    true   // 禁用 LocalStorage 保存，由多画布系统处理
   );
 
   // 使用节点对齐 Hook
   const { alignNodes } = useNodeAlignment({ setNodes, saveHistory });
 
-  // 当初始数据变化时更新节点和边
-  useEffect(() => {
-    // 只有当传入有效的初始数据且当前 store 为空时才初始化
-    if (initialNodes.length > 0 && nodes.length === 0) {
-      setNodes(initialNodes);
-      setEdges(initialEdges);
-    }
-  }, [initialNodes, initialEdges, setNodes, setEdges, nodes.length]);
+  // 当 nodes/edges 变化时通知父组件（用于多画布数据同步）
+  const onDataChangeRef = useRef(onDataChange);
+  onDataChangeRef.current = onDataChange;
 
+  // 保存当前组件的 sheetId，确保数据同步到正确的画布
+  const currentSheetIdRef = useRef(sheetId);
+  currentSheetIdRef.current = sheetId;
+
+  // 数据同步：始终将当前画布的数据同步到父组件
+  // 由于 onDataChange 接收 sheetId 参数，数据会保存到正确的画布
   useEffect(() => {
-    if (nodes.length > 0 || edges.length > 0) {
+    if (onDataChangeRef.current && currentSheetIdRef.current) {
+      onDataChangeRef.current(currentSheetIdRef.current, nodes, edges);
+    }
+  }, [nodes, edges]);
+
+  // 初始化历史记录（仅在首次加载时）
+  const historyInitialized = useRef(false);
+  useEffect(() => {
+    if (!historyInitialized.current) {
       initHistory(nodes, edges);
+      historyInitialized.current = true;
     }
   }, [nodes, edges, initHistory]);
 
@@ -712,6 +758,15 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
         return;
       }
 
+      // Ctrl+Shift+D 或 Cmd+Shift+D (Mac) - 复制当前画布
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        if (onDuplicateSheet && activeSheetId) {
+          onDuplicateSheet(activeSheetId);
+        }
+        return;
+      }
+
       // Backspace - 删除 (带确认)
       if (e.key === 'Backspace') {
         const target = e.target as HTMLElement;
@@ -728,7 +783,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, copyNodes, pasteNodes, onCreateGroup, handleUngroup, selectedElement, handleDelete]); // Added handleUngroup and handleDelete dependency
+  }, [undo, redo, copyNodes, pasteNodes, onCreateGroup, handleUngroup, selectedElement, handleDelete, onDuplicateSheet, activeSheetId]);
 
   // Determine alignment toolbar visibility (when more than 1 node is selected)
   const showAlignmentToolbar = nodes.filter((n) => n.selected).length > 1;
@@ -737,7 +792,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   return (
-    <div className="flow-canvas-container">
+    <div className={`flow-canvas-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       {/* Sidebar Area */}
       <div className={`flow-sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-header">
@@ -949,15 +1004,55 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
           allNodes={nodes}
         />
       </div>
+
+      {/* 底部标签栏 - 多画布切换 */}
+      {sheets && sheets.length > 0 && onSheetChange && onAddSheet && onDeleteSheet && onRenameSheet && (
+        <CanvasTabBar
+          sheets={sheets}
+          activeSheetId={activeSheetId || ''}
+          onSheetChange={onSheetChange}
+          onAddSheet={onAddSheet}
+          onDeleteSheet={onDeleteSheet}
+          onRenameSheet={onRenameSheet}
+          onDuplicateSheet={onDuplicateSheet}
+        />
+      )}
     </div>
   );
 });
 
 // 外部组件：提供 ReactFlowProvider
-export function FlowCanvas({ nodes: initialNodes, edges: initialEdges }: FlowCanvasProps) {
+export function FlowCanvas({
+  sheetId,
+  nodes: initialNodes,
+  edges: initialEdges,
+  onDataChange,
+  getProjectData,
+  sheets,
+  activeSheetId,
+  onSheetChange,
+  onAddSheet,
+  onDeleteSheet,
+  onRenameSheet,
+  onDuplicateSheet,
+}: FlowCanvasProps) {
+  // 使用 sheetId 作为 key 确保 ReactFlowProvider 和 FlowCanvasContent 都重新挂载
   return (
-    <ReactFlowProvider>
-      <FlowCanvasContent initialNodes={initialNodes} initialEdges={initialEdges} />
+    <ReactFlowProvider key={sheetId}>
+      <FlowCanvasContent
+        sheetId={sheetId}
+        initialNodes={initialNodes}
+        initialEdges={initialEdges}
+        onDataChange={onDataChange}
+        getProjectData={getProjectData}
+        sheets={sheets}
+        activeSheetId={activeSheetId}
+        onSheetChange={onSheetChange}
+        onAddSheet={onAddSheet}
+        onDeleteSheet={onDeleteSheet}
+        onRenameSheet={onRenameSheet}
+        onDuplicateSheet={onDuplicateSheet}
+      />
     </ReactFlowProvider>
   );
 }

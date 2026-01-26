@@ -184,3 +184,83 @@ export interface EdgeData {
   edgeType?: 'straight' | 'smoothstep' | 'step';
   [key: string]: unknown;
 }
+
+// ============================================
+// 多画布功能相关类型
+// ============================================
+
+// 单个画布定义
+export interface CanvasSheet {
+  id: string;
+  name: string;
+  nodes: FlowDefinition['nodes'];
+  connectors: FlowConnector[];
+}
+
+// 多画布项目定义（新的顶层结构）
+export interface MultiCanvasProject {
+  version: 2;                    // 版本标记，用于区分旧数据
+  id: string;
+  name: string;
+  description?: string;
+  activeSheetId: string;         // 当前激活的画布 ID
+  sheets: CanvasSheet[];         // 画布列表
+  createdAt?: number;
+  updatedAt?: number;
+}
+
+// 类型守卫：判断是否为多画布项目
+export function isMultiCanvasProject(data: unknown): data is MultiCanvasProject {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'version' in data &&
+    (data as MultiCanvasProject).version === 2 &&
+    'sheets' in data &&
+    Array.isArray((data as MultiCanvasProject).sheets)
+  );
+}
+
+// 迁移函数：将旧单画布数据转为多画布格式
+export function migrateToMultiCanvas(oldData: FlowDefinition): MultiCanvasProject {
+  const sheetId = `sheet_${Date.now()}`;
+  return {
+    version: 2,
+    id: oldData.id || `project_${Date.now()}`,
+    name: oldData.name || '业务流程图',
+    description: oldData.description,
+    activeSheetId: sheetId,
+    sheets: [
+      {
+        id: sheetId,
+        name: '画布 1',
+        nodes: oldData.nodes || [],
+        connectors: oldData.connectors || [],
+      },
+    ],
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+}
+
+// 创建空白项目
+export function createEmptyProject(): MultiCanvasProject {
+  const sheetId = `sheet_${Date.now()}`;
+  return {
+    version: 2,
+    id: `project_${Date.now()}`,
+    name: '新项目',
+    description: '',
+    activeSheetId: sheetId,
+    sheets: [
+      {
+        id: sheetId,
+        name: '画布 1',
+        nodes: [],
+        connectors: [],
+      },
+    ],
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+}

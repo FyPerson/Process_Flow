@@ -23,6 +23,7 @@ export interface UseAutoSaveReturn {
  * @param isUndoRedoActive 是否正在执行撤销/重做操作
  * @param storageKey LocalStorage 存储键名
  * @param debounceMs 防抖延迟时间（毫秒）
+ * @param disableLocalStorage 是否禁用 LocalStorage 保存（多画布模式下应禁用）
  * @returns 自动保存管理接口
  */
 export function useAutoSave(
@@ -31,6 +32,7 @@ export function useAutoSave(
   isUndoRedoActive: () => boolean,
   storageKey: string = 'saved-flow-data',
   debounceMs: number = 1000,
+  disableLocalStorage: boolean = false,
 ): UseAutoSaveReturn {
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const nodesRef = useRef(nodes);
@@ -169,16 +171,20 @@ export function useAutoSave(
     return convertToFlowData(nodesRef.current, edgesRef.current);
   }, [convertToFlowData]);
 
-  // 保存到 LocalStorage
+  // 保存到 LocalStorage（多画布模式下禁用）
   const saveToStorage = useCallback(
     (flowData: FlowDefinition) => {
+      if (disableLocalStorage) {
+        // 多画布模式下，保存由 useMultiCanvas 处理
+        return;
+      }
       try {
         localStorage.setItem(storageKey, JSON.stringify(flowData));
       } catch (e) {
         console.error('自动保存失败', e);
       }
     },
-    [storageKey],
+    [storageKey, disableLocalStorage],
   );
 
   // 立即保存

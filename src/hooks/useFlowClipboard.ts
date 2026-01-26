@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useCallback } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import { safeDeepCopy } from '../utils/deepCopy';
 
@@ -6,10 +6,31 @@ import { FlowNodeData } from '../types/flow';
 
 const OFFSET_X = 30; // 水平偏移
 const OFFSET_Y = 30; // 垂直偏移
+const CLIPBOARD_KEY = 'flow-clipboard'; // sessionStorage 键名
+
+// 从 sessionStorage 读取剪贴板数据
+function getClipboardData(): Node<FlowNodeData>[] {
+  try {
+    const data = sessionStorage.getItem(CLIPBOARD_KEY);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (e) {
+    console.error('读取剪贴板数据失败', e);
+  }
+  return [];
+}
+
+// 保存剪贴板数据到 sessionStorage
+function setClipboardData(nodes: Node<FlowNodeData>[]): void {
+  try {
+    sessionStorage.setItem(CLIPBOARD_KEY, JSON.stringify(nodes));
+  } catch (e) {
+    console.error('保存剪贴板数据失败', e);
+  }
+}
 
 export function useFlowClipboard() {
-  const clipboardRef = useRef<Node<FlowNodeData>[]>([]);
-
   // 复制节点
   const copyNodes = useCallback((selectedNodes: Node<FlowNodeData>[]) => {
     if (selectedNodes.length === 0) {
@@ -19,8 +40,8 @@ export function useFlowClipboard() {
     // 深拷贝选中的节点
     const copiedNodes = selectedNodes.map((node) => safeDeepCopy(node));
 
-    // 存储到剪贴板
-    clipboardRef.current = copiedNodes;
+    // 存储到 sessionStorage（支持跨画布）
+    setClipboardData(copiedNodes);
   }, []);
 
   // 粘贴节点
@@ -30,7 +51,10 @@ export function useFlowClipboard() {
       edges: Edge[],
       saveHistory: () => void,
     ) => {
-      if (!clipboardRef.current || clipboardRef.current.length === 0) {
+      // 从 sessionStorage 读取剪贴板数据
+      const clipboardData = getClipboardData();
+
+      if (!clipboardData || clipboardData.length === 0) {
         return;
       }
 
@@ -38,7 +62,7 @@ export function useFlowClipboard() {
       const idMap = new Map<string, string>();
 
       // 创建新节点
-      const newNodes = clipboardRef.current.map((node, index) => {
+      const newNodes = clipboardData.map((node, index) => {
         // 生成新 ID
         const newId = `copied_${node.id}_${Date.now()}_${index}`;
         idMap.set(node.id, newId);
