@@ -53,3 +53,19 @@ coverage/
 开发记录.md
 PLAN-*.md
 TODO.md
+项目潜在风险清单.md
+docs/历史/
+
+# 本地素材与数据档案见 E:\业务全景图_assets\
+
+# 部署钩子本地副本
+server-hooks/
+
+# 一次性分析输出
+eslint-*.json
+eslint-*.txt
+lint-report.*
+tsc_errors.log
+
+# 合同/法务文档不应进入代码仓库
+*.docx
