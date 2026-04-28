@@ -1,6 +1,6 @@
 # 依赖
 node_modules/
-package-lock.json
+# package-lock.json: 故意跟踪到仓库，保证多端依赖版本一致（含 better-sqlite3 native 版本）
 
 # 构建输出
 dist/
