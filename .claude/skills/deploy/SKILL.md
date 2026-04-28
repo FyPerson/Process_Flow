@@ -185,7 +185,7 @@ ssh administrator@172.16.0.138 'pm2 logs business-flow --lines 20 --nostream'
 
 ✅ 已修复：当前 [server-hooks/post-receive.ps1](server-hooks/post-receive.ps1) 在调任何 git 命令前，先用 `git rev-parse --local-env-vars` + 一份显式列表清空 `GIT_DIR / GIT_WORK_TREE / GIT_INDEX_FILE / ...`，再用 `--git-dir`/`--work-tree` 显式参数调用 git。错误不再吞，捕获后 throw 出来。
 
-✅ 维护提醒：手动改 ps1 后必须 `cp server-hooks/post-receive.ps1 //172.16.0.138/C$/GitRepos/business-flow.git/hooks/`，文件不在 git 跟踪范围内。
+✅ 维护提醒：手动改 ps1 后必须 `cp server-hooks/post-receive.ps1 //172.16.0.138/C$/GitRepos/business-flow.git/hooks/`，文件不在 git 跟踪范围内。失败时 hook 会同步把详细错误写到 `%TEMP%\business-flow-hook.log`，便于事后排查。
 
 ✅ 防御：步骤 8.3 的 hash 比对依然保留——一旦未来又出现"hook 报告成功但 hash 不动"，立刻能感知到，再走步骤 8.4 手动补救。
 
