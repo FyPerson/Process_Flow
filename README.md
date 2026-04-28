@@ -74,6 +74,10 @@ business-flow-react/
 - [docs/历史/](docs/历史/) — 早期设计稿与功能说明（本地归档）
 - [.claude/skills/deploy/SKILL.md](.claude/skills/deploy/SKILL.md) — `/deploy` 流程定义（提交 → 双 push → hook 校验 → 进程一致性）
 
+## 部署
+
+通过 `/deploy <提交信息>` 触发：自动 bump 版本、双 push、校验 hook 真实生效与 PM2 进程一致性。详见 [.claude/skills/deploy/SKILL.md](.claude/skills/deploy/SKILL.md)。生产地址 http://172.16.0.138:3001/。
+
 ## 使用说明
 
 1. 点击蓝色虚线边框节点可查看详情
