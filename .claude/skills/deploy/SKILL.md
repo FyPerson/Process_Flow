@@ -185,7 +185,10 @@ ssh administrator@172.16.0.138 'pm2 logs business-flow --lines 20 --nostream'
 
 ✅ 已修复：当前 [server-hooks/post-receive.ps1](server-hooks/post-receive.ps1) 在调任何 git 命令前，先用 `git rev-parse --local-env-vars` + 一份显式列表清空 `GIT_DIR / GIT_WORK_TREE / GIT_INDEX_FILE / ...`，再用 `--git-dir`/`--work-tree` 显式参数调用 git。错误不再吞，捕获后 throw 出来。
 
-✅ 维护提醒：手动改 ps1 后必须 `cp server-hooks/post-receive.ps1 //172.16.0.138/C$/GitRepos/business-flow.git/hooks/`，文件不在 git 跟踪范围内。失败时 hook 会同步把详细错误写到 `%TEMP%\business-flow-hook.log`，便于事后排查。
+✅ 维护提醒：
+- 手动改 ps1 后必须 `cp server-hooks/post-receive.ps1 //172.16.0.138/C$/GitRepos/business-flow.git/hooks/`，文件不在 git 跟踪范围内。
+- 失败时 hook 会把详细错误同步写到 `%TEMP%\business-flow-hook.log`，便于事后排查（push 输出有时只显示首行）。
+- ps1 里**不要**设 `$ErrorActionPreference = 'Stop'`：PowerShell 5.1 下它会把 git 的 stderr 进度行也升级成 `NativeCommandError` 触发假失败。改用 `try/catch` + 显式 `throw`。
 
 ✅ 防御：步骤 8.3 的 hash 比对依然保留——一旦未来又出现"hook 报告成功但 hash 不动"，立刻能感知到，再走步骤 8.4 手动补救。
 
