@@ -70,7 +70,7 @@ business-flow-react/
 - [TODO.md](TODO.md) — 候选下一步（本地）
 - [项目潜在风险清单.md](项目潜在风险清单.md) — 2026-04-24 审查报告（本地）
 - [docs/历史/](docs/历史/) — 早期设计稿与功能说明（本地归档）
-- [.claude/skills/deploy/SKILL.md](.claude/skills/deploy/SKILL.md) — `/deploy` 流程定义（提交 + 双 push + 验证）
+- [.claude/skills/deploy/SKILL.md](.claude/skills/deploy/SKILL.md) — `/deploy` 流程定义（提交 → 双 push → hook 校验 → 进程一致性）
 
 ## 使用说明
 
