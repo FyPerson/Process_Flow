@@ -65,6 +65,8 @@ business-flow-react/
 
 ## 文档说明
 
+下列文档分两类：仓库内 / 本地。带"本地"标记的在 `.gitignore` 中，不入仓库。
+
 - [README.md](README.md) — 入口（本文件）
 - [开发记录.md](开发记录.md) — **当前进度的权威来源**（本地，不入仓库）
 - [TODO.md](TODO.md) — 候选下一步（本地）
