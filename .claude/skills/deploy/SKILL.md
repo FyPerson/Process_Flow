@@ -177,13 +177,17 @@ ssh administrator@172.16.0.138 'pm2 logs business-flow --lines 20 --nostream'
 
 ## Gotchas（踩坑记录，持续追加）
 
-### 1. ❌ Hook 报告 "Deployment Complete!" 但代码未更新到部署目录（2026-04-28，首次发现）
+### 1. ❌ Hook 报告 "Deployment Complete!" 但代码未更新到部署目录（2026-04-28 定位根因）
 
-post-receive.ps1 中 `git fetch production 2>&1 | Out-Null` 同时吞掉 stdout、stderr 与退出码判断，fetch 失败也不会报错。已观察到 push 后部署目录 HEAD 仍是旧 commit。
+**表面现象**：post-receive.ps1 输出绿字成功但部署目录 HEAD 不动。
 
-✅ 修复：每次 push server 后必须 ssh 读 `E:\business-flow\.git\refs\heads\main` 与本地 HEAD 对比；不一致就执行步骤 8.4 的手动补救。
+**真正根因**：本项目 `server` remote 是 UNC 路径 `\\172.16.0.138\C$\GitRepos\...`，属于 git 的 local/file transport——hook 实际跑在 **push 客户端**（执行 `git push` 的 Windows 用户），不是服务器 172.16.0.138 上。Git 在调 hook 前会导出 `GIT_DIR=.` 等环境变量；hook 里再调 `git fetch` 会继承这些变量，子进程把 `.` 当 git 目录，于是报 `fatal: not a git repository: '.'`，与 cwd / Set-Location / `git -C` / 映射盘符无关。原 hook 的 `2>&1 | Out-Null` 还把这个错误整段吞掉，伪装成"成功"。
 
-✅ 长期：考虑修改 hook 不要 Out-Null 吞错，让 PowerShell 把错误抛出来。
+✅ 已修复：当前 [server-hooks/post-receive.ps1](server-hooks/post-receive.ps1) 在调任何 git 命令前，先用 `git rev-parse --local-env-vars` + 一份显式列表清空 `GIT_DIR / GIT_WORK_TREE / GIT_INDEX_FILE / ...`，再用 `--git-dir`/`--work-tree` 显式参数调用 git。错误不再吞，捕获后 throw 出来。
+
+✅ 维护提醒：手动改 ps1 后必须 `cp server-hooks/post-receive.ps1 //172.16.0.138/C$/GitRepos/business-flow.git/hooks/`，文件不在 git 跟踪范围内。
+
+✅ 防御：步骤 8.3 的 hash 比对依然保留——一旦未来又出现"hook 报告成功但 hash 不动"，立刻能感知到，再走步骤 8.4 手动补救。
 
 ### 2. ❌ 双 PM2 节点错位：孤儿进程占 3001，PM2 管的进程跑在 3002（2026-04-28 首次发现并修复）
 
