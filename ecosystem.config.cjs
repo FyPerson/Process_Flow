@@ -1,8 +1,9 @@
 // PM2 配置 —— 生产环境用
 // 用法：在 E:\business-flow\ 目录下执行
-//   pm2 start ecosystem.config.cjs --env production
-//   pm2 restart business-flow
-//   pm2 reload business-flow
+//   pm2 start ecosystem.config.cjs              （首次启动）
+//   pm2 restart business-flow --update-env      （重启 + 应用 env 变更，hook 用这个）
+//   pm2 delete business-flow                    （切换启动方式时先 delete 再 start）
+//   pm2 logs business-flow --lines 30 --nostream（查最近日志）
 //
 // 敏感配置（JWT_SECRET / INITIAL_ADMIN_* 等）走服务器本地 `.env` 文件，
 // 不进仓库；server/config.ts 通过 process.env 读取。
