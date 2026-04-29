@@ -6,6 +6,7 @@ node_modules/
 dist/
 build/
 *.local
+*.tsbuildinfo
 
 # 环境变量
 .env

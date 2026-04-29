@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch server/index.ts",
     "build": "tsc -b tsconfig.json && vite build",
-    "start": "NODE_ENV=production tsx server/index.ts",
+    "start": "cross-env NODE_ENV=production tsx server/index.ts",
     "preview": "vite preview",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "format": "prettier --write ."
@@ -39,6 +39,7 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.4.1",
+    "cross-env": "^10.1.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.0.1",
