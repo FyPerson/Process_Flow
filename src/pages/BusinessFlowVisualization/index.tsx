@@ -99,6 +99,12 @@ export function BusinessFlowVisualization() {
         name: name.trim(),
         visibility: 'private',
       });
+      // discarded=true 说明创建成功但用户已切到别的 canvas（极端竞态）
+      // 不要让 URL 飞到这个新建 id，否则会把用户从他正在看的 canvas 拽走
+      if (result.discarded) {
+        console.warn(`[saveAsNew] created canvas ${result.id} but user has navigated away; skip URL update`);
+        return;
+      }
       // URL 写在创建回调里，避免之前"hook canvasId 变 → URL 变 → fetch effect 重跑覆盖内存"的循环
       setSearchParams(
         (prev) => {

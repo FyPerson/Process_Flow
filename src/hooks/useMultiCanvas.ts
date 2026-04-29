@@ -93,15 +93,26 @@ export interface UseMultiCanvasReturn {
   lastSavedAt: number | null;
   /** 拉取服务端画布到内存（覆盖当前 project） */
   loadFromServer: (id: number) => Promise<void>;
-  /** 把当前内存 project 推到服务端；canvasId=null 时报错（请先 createOnServer） */
-  save: () => Promise<{ ok: boolean; conflict?: { currentVersion: number } }>;
-  /** 把当前内存 project 当作新画布创建到服务端，成功后 canvasId 自动指向它 */
+  /** 把当前内存 project 推到服务端；canvasId=null 时报错（请先 createOnServer）
+   * 返回值：
+   * - { ok: true } 正常保存成功
+   * - { ok: true, discarded: true } 已切到别的 canvas，本次结果被丢弃
+   * - { ok: false, conflict } 409 冲突
+   * - { ok: false, skipped: true } 已有保存在飞行中，本次跳过
+   * - { ok: false, discarded: true } 已切到别的 canvas，错误也丢弃
+   */
+  save: () => Promise<
+    | { ok: true; discarded?: boolean }
+    | { ok: false; conflict?: { currentVersion: number }; skipped?: boolean; discarded?: boolean }
+  >;
+  /** 把当前内存 project 当作新画布创建到服务端，成功后 canvasId 自动指向它
+   * discarded=true 表示创建成功但用户已切到别的 canvas，caller 不应写 URL */
   createOnServer: (input: {
     name: string;
     description?: string;
     visibility: 'public' | 'private';
     is_public_to_guest?: boolean;
-  }) => Promise<{ id: number; version: number }>;
+  }) => Promise<{ id: number; version: number; discarded: boolean }>;
   /** 用户在冲突弹框选"丢弃本地、重载服务端"时调用 */
   discardAndReload: () => Promise<void>;
 }
@@ -111,8 +122,10 @@ const autoSaveFilter = (key: string) => {
   return !key.startsWith('__') && key !== 'measured' && key !== 'internals';
 };
 
-/** storage 层 deep equality —— 不依赖 key 顺序，避免 JSON.stringify 在导入数据等
- * 字段顺序不一致的场景下产生假 dirty。仅支持 undefined/null/原始/数组/普通对象 */
+/** storage 层 deep equality —— 等价于 JSON.stringify 比较 + key-order 不敏感。
+ * 关键：value === undefined 的 key 视同不存在（JSON 序列化时本来就被丢掉），
+ * 否则 convertNodesToStorage 产生的 { description: undefined } 会和服务端反序列化后的
+ * 缺失字段判不等，造成永久假 dirty。仅支持 JSON 可序列化值（原始/数组/普通对象） */
 function deepEqualStorage(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (a == null || b == null) return a === b;
@@ -127,11 +140,12 @@ function deepEqualStorage(a: unknown, b: unknown): boolean {
   if (Array.isArray(b)) return false;
   const ao = a as Record<string, unknown>;
   const bo = b as Record<string, unknown>;
-  const aKeys = Object.keys(ao);
-  const bKeys = Object.keys(bo);
+  // 收集"实际有值"（非 undefined）的 key，再比对 —— JSON.stringify 的等价语义
+  const aKeys = Object.keys(ao).filter((k) => ao[k] !== undefined);
+  const bKeys = Object.keys(bo).filter((k) => bo[k] !== undefined);
   if (aKeys.length !== bKeys.length) return false;
   for (const k of aKeys) {
-    if (!Object.prototype.hasOwnProperty.call(bo, k)) return false;
+    if (bo[k] === undefined) return false;
     if (!deepEqualStorage(ao[k], bo[k])) return false;
   }
   return true;
@@ -401,6 +415,8 @@ export function useMultiCanvas(
           if (cancelled) return;
           // 用户在 fetch 期间又切走了 → 丢弃结果
           if (canvasIdRef.current !== canvasIdProp) return;
+          // 真正 ref-first：先同步 ref，再 setState
+          serverVersionRef.current = row.version;
           setProject(row.data);
           setCanvasId(row.id);
           setServerVersion(row.version);
@@ -415,7 +431,11 @@ export function useMultiCanvas(
           setProject(null);
         })
         .finally(() => {
-          if (!cancelled) setIsLoading(false);
+          if (cancelled) return;
+          // 身份校验：旧 fetch 的 finally 不该误关新 canvas 的 loading
+          if (canvasIdRef.current === canvasIdProp) {
+            setIsLoading(false);
+          }
         });
     } else {
       // localStorage 回退（旧逻辑保留，但不再写回）
@@ -681,9 +701,13 @@ export function useMultiCanvas(
   // === P2G 新增：服务端 IO ===
 
   const loadFromServer = useCallback(async (id: number) => {
-    // 进入即把 ref 改成目标 id —— 让其他并发 async（旧 canvas 的 save）回包能识别身份不符并丢弃
+    // 关键：ref + state 必须同步切换。否则 setIsLoading(true) 触发 render 后，
+    // useEffect(() => { canvasIdRef.current = canvasId }) 会用旧 state 把 ref 改回去，
+    // 然后这次 GET 的回包发现 ref !== id → 自己丢弃自己
     canvasIdRef.current = id;
     serverVersionRef.current = null;
+    setCanvasId(id);
+    setServerVersion(null);
     setIsLoading(true);
     setServerError(null);
     setConflict(null);
@@ -705,7 +729,10 @@ export function useMultiCanvas(
       setServerError(err as ApiError);
       throw err;
     } finally {
-      setIsLoading(false);
+      // finally 里也校验身份：旧请求来收尾不该误关新 canvas 的 loading 状态
+      if (canvasIdRef.current === id) {
+        setIsLoading(false);
+      }
     }
   }, [bumpLoadRevision]);
 
@@ -738,6 +765,8 @@ export function useMultiCanvas(
       if (canvasIdRef.current !== capturedCanvasId) {
         return { ok: true as const, discarded: true as const };
       }
+      // 真正 ref-first：先同步 ref，再 setState，避免极短窗口内二次 save 用旧 baseVersion
+      serverVersionRef.current = result.version;
       setServerVersion(result.version);
       setLastSavedAt(Date.now());
       setConflict(null);
@@ -766,7 +795,10 @@ export function useMultiCanvas(
       throw err;
     } finally {
       saveInFlightRef.current = false;
-      setSaving(false);
+      // 身份校验：旧 canvas 的 save 收尾不要把新 canvas 的 saving 状态错置成 false
+      if (canvasIdRef.current === capturedCanvasId) {
+        setSaving(false);
+      }
     }
   }, []);
 
@@ -794,7 +826,10 @@ export function useMultiCanvas(
       setServerError(err as ApiError);
       throw err;
     } finally {
-      setIsLoading(false);
+      // 身份校验：旧 reload 不要误关新 canvas 的 loading
+      if (canvasIdRef.current === capturedCanvasId) {
+        setIsLoading(false);
+      }
     }
   }, [bumpLoadRevision]);
 
@@ -813,6 +848,10 @@ export function useMultiCanvas(
       if (!current) {
         throw new Error('no project to create');
       }
+      // 捕获"进入函数时挂载在哪个 canvas"。createOnServer 通常在 canvasIdRef=null 时调用，
+      // 但用户也可能在已有 canvas 时点"另存到服务器"克隆一份。
+      // POST 期间用户切到别的 canvas → 回包不能改 ref/state 也不能让 caller 写 URL
+      const capturedCanvasId = canvasIdRef.current;
       const capturedSeq = changeSeqRef.current;
       saveInFlightRef.current = true;
       setSaving(true);
@@ -826,6 +865,11 @@ export function useMultiCanvas(
           // 同步 data.name 与外层 name，避免列表名和画布标题不一致
           data: { ...current, name: input.name },
         });
+        // 身份校验：POST 期间用户切走了 → 不污染当前 canvas
+        // discarded=true 让 caller 跳过 setSearchParams（不让 URL 飞到这个新建 id）
+        if (canvasIdRef.current !== capturedCanvasId) {
+          return { ...result, discarded: true as const };
+        }
         // 关键：先同步更新 ref，再 setState。
         // 这样 caller 的 setSearchParams 触发 fetch effect 重跑时，
         // 短路条件（canvasIdRef===prop && serverVersionRef!=null && projectRef!=null）能命中，跳过 refetch
@@ -839,14 +883,21 @@ export function useMultiCanvas(
         if (changeSeqRef.current === capturedSeq) {
           setDirty(false);
         }
-        return result;
+        return { ...result, discarded: false as const };
       } catch (err) {
+        if (canvasIdRef.current !== capturedCanvasId) {
+          // 旧操作的错误不污染新 canvas state，但仍向 caller 透传错误
+          throw err;
+        }
         setServerError(err as ApiError);
         setAutoSaveDisabled(true);
         throw err;
       } finally {
         saveInFlightRef.current = false;
-        setSaving(false);
+        // 身份校验：旧 create 收尾不要误关新 canvas 的 saving
+        if (canvasIdRef.current === capturedCanvasId || canvasIdRef.current === null) {
+          setSaving(false);
+        }
       }
     },
     []
