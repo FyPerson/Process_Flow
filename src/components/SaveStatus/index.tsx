@@ -93,23 +93,15 @@ export function SaveStatus(props: SaveStatusProps) {
       <div className="save-status save-status--conflict">
         <span className="save-status__icon">⚠️</span>
         <span className="save-status__text">
-          检测到冲突（服务端 v{conflict.currentVersion}）
+          有人改过了（服务端 v{conflict.currentVersion}）；本地改动暂未保存
         </span>
         <button
           type="button"
           className="save-status__btn save-status__btn--danger"
           onClick={onDiscardAndReload}
-          title="丢弃本地改动，重新加载服务端版本"
+          title="丢弃本地改动，重新加载服务端版本（不可撤销）"
         >
-          重载服务端
-        </button>
-        <button
-          type="button"
-          className="save-status__btn save-status__btn--primary"
-          onClick={onSave}
-          title="再试一次保存（仍可能再次冲突）"
-        >
-          再次尝试保存
+          丢弃本地，重载服务端
         </button>
       </div>
     );

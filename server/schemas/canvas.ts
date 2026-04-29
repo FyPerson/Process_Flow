@@ -98,10 +98,23 @@ const NodeSchema = z
     subType: z.enum(['start', 'end']).optional(),
     backgroundColor: z.string().max(32).optional(),
     parentId: ShortIdSchema.optional(),
+    // 显隐：前端把节点 hidden 状态保存进 storage（subflow 过滤等场景）
+    hidden: z.boolean().optional(),
     // 分组节点专用
     label: z.string().max(100).optional(),
     color: z.string().max(32).optional(),
     relatedNodeIds: z.array(ShortIdSchema).max(100).optional(),
+    // 分组节点折叠状态 + 折叠前尺寸（前端保存到 storage）
+    collapsed: z.boolean().optional(),
+    expandedSize: z
+      .object({
+        width: z.union([z.number(), z.string().max(32)]),
+        height: z.union([z.number(), z.string().max(32)]),
+      })
+      .strict()
+      .optional(),
+    // 节点描述（普通节点 storage 字段）
+    description: z.string().max(10000).optional(),
     // 元信息（服务端强制重写，client 可传可不传）
     creator_id: z.number().int().optional(),
     created_at: z.number().int().optional(),

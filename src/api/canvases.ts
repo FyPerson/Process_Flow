@@ -34,23 +34,43 @@ async function apiFetch<T>(path: string, init?: RequestInit & { authed?: boolean
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  const res = await fetch(path, { ...init, headers });
-  const ct = res.headers.get('content-type') || '';
-  const body = ct.includes('application/json') ? await res.json() : await res.text();
+  // 网络层失败（断网、CORS、DNS）—— 归一为 ApiError 让上层用相同 try/catch 处理
+  let res: Response;
+  try {
+    res = await fetch(path, { ...init, headers });
+  } catch (e) {
+    const err: ApiError = {
+      status: 0,
+      error: 'network_error',
+      message: e instanceof Error ? e.message : 'network unreachable',
+    };
+    throw err;
+  }
 
-  if (!res.ok) {
+  const ct = res.headers.get('content-type') || '';
+  // JSON 解析失败也归一（服务端可能返了 5xx HTML）
+  let body: unknown;
+  try {
+    body = ct.includes('application/json') ? await res.json() : await res.text();
+  } catch (e) {
     const err: ApiError = {
       status: res.status,
-      error: typeof body === 'object' && body !== null ? body.error || 'unknown' : 'unknown',
+      error: 'invalid_response',
+      message: e instanceof Error ? e.message : 'failed to parse response',
+    };
+    throw err;
+  }
+
+  if (!res.ok) {
+    const obj = typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : null;
+    const err: ApiError = {
+      status: res.status,
+      error: (obj?.error as string) || 'unknown',
       message:
-        typeof body === 'object' && body !== null
-          ? body.message
-          : typeof body === 'string'
-            ? body
-            : undefined,
-      currentVersion:
-        typeof body === 'object' && body !== null ? body.currentVersion : undefined,
-      issues: typeof body === 'object' && body !== null ? body.issues : undefined,
+        (obj?.message as string | undefined) ??
+        (typeof body === 'string' ? body : undefined),
+      currentVersion: obj?.currentVersion as number | undefined,
+      issues: obj?.issues as Array<{ path: string; message: string }> | undefined,
     };
     throw err;
   }

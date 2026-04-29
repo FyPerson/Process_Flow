@@ -75,6 +75,10 @@ export interface UseMultiCanvasReturn {
   // 状态标志（兼容旧调用方）
   isLoading: boolean;
 
+  /** 数据被"整体替换"的次数（fetch / discardAndReload / loadProject / canvasId 切换都递增）。
+   * caller 把这个值拼进 FlowCanvas key 强制 remount，避免 React Flow 内部 state 缓存旧节点 */
+  loadRevision: number;
+
   // === 服务端协作字段（P2G + P2H）===
   canvasId: number | null;
   serverVersion: number | null;
@@ -299,12 +303,21 @@ export function useMultiCanvas(
   const [conflict, setConflict] = useState<{ currentVersion: number } | null>(null);
   const [autoSaveDisabled, setAutoSaveDisabled] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const [loadRevision, setLoadRevision] = useState(0);
+  const bumpLoadRevision = useCallback(() => {
+    setLoadRevision((v) => v + 1);
+  }, []);
 
   // 让 save()/自动保存 effect 始终拿到最新 project（避免闭包陈旧）
   const projectRef = useRef<MultiCanvasProject | null>(null);
   useEffect(() => {
     projectRef.current = project;
   }, [project]);
+
+  // changeSeq：每次 markDirty 递增。save/createOnServer 发请求前捕获当前 seq，
+  // 网络往返后只有 ref 仍等于捕获值才 setDirty(false)；否则保留 dirty，
+  // 让下一个防抖周期把"网络期间产生的新改动"也存进去（防止用户改动被静默吞）
+  const changeSeqRef = useRef(0);
 
   // 计算当前活动画布
   const activeSheet =
@@ -320,6 +333,10 @@ export function useMultiCanvas(
     setServerError(null);
     setConflict(null);
     setAutoSaveDisabled(false);
+    // 切 canvasId 时也清掉 dirty / serverVersion，避免旧 canvas 的脏标记泄漏到新 canvas
+    setDirty(false);
+    setServerVersion(null);
+    setCanvasId(canvasIdProp);
 
     if (canvasIdProp != null) {
       apiGetCanvas(canvasIdProp)
@@ -330,6 +347,7 @@ export function useMultiCanvas(
           setServerVersion(row.version);
           setDirty(false);
           setLastSavedAt(Date.now());
+          bumpLoadRevision();
         })
         .catch((err: ApiError) => {
           if (cancelled) return;
@@ -350,6 +368,7 @@ export function useMultiCanvas(
           } else {
             setProject(migrateToMultiCanvas(parsed as FlowDefinition));
           }
+          bumpLoadRevision();
         } else {
           setProject(null);
         }
@@ -367,6 +386,7 @@ export function useMultiCanvas(
   }, [canvasIdProp, storageKey]);
 
   const markDirty = useCallback(() => {
+    changeSeqRef.current += 1;
     setDirty(true);
   }, []);
 
@@ -378,9 +398,10 @@ export function useMultiCanvas(
         : migrateToMultiCanvas(data);
       setProject(projectData);
       setIsLoading(false);
+      bumpLoadRevision();
       markDirty();
     },
-    [markDirty]
+    [markDirty, bumpLoadRevision]
   );
 
   // 切换画布
@@ -551,13 +572,27 @@ export function useMultiCanvas(
   );
 
   // 更新画布数据（由 FlowCanvasContent 调用）
+  // 关键：对比序列化结果，与当前 sheet 完全相同就不更新 project、不 markDirty。
+  // 避免 React Flow 选中/拖拽中等 UI-only 变化反复触发自动保存（codex 必修 #5）
   const updateSheetData = useCallback(
     (sheetId: string, nodes: Node<FlowNodeData>[], edges: Edge[]) => {
+      const storageNodes = convertNodesToStorage(nodes);
+      const storageEdges = convertEdgesToStorage(edges);
+
+      let changed = false;
       setProject((prev) => {
         if (!prev) return prev;
+        const target = prev.sheets.find((s) => s.id === sheetId);
+        if (!target) return prev;
 
-        const storageNodes = convertNodesToStorage(nodes);
-        const storageEdges = convertEdgesToStorage(edges);
+        const sameNodes =
+          JSON.stringify(target.nodes) === JSON.stringify(storageNodes);
+        const sameEdges =
+          JSON.stringify(target.connectors) === JSON.stringify(storageEdges);
+        if (sameNodes && sameEdges) {
+          return prev;
+        }
+        changed = true;
 
         return {
           ...prev,
@@ -572,7 +607,9 @@ export function useMultiCanvas(
           updatedAt: Date.now(),
         };
       });
-      markDirty();
+      if (changed) {
+        markDirty();
+      }
     },
     [markDirty]
   );
@@ -596,13 +633,14 @@ export function useMultiCanvas(
       setServerVersion(row.version);
       setDirty(false);
       setLastSavedAt(Date.now());
+      bumpLoadRevision();
     } catch (err) {
       setServerError(err as ApiError);
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [bumpLoadRevision]);
 
   const save = useCallback(async () => {
     const current = projectRef.current;
@@ -613,15 +651,21 @@ export function useMultiCanvas(
       throw new Error('no canvasId; call createOnServer first');
     }
 
+    // 捕获发请求时的修改序号；网络往返期间用户继续改 → ref 会变大 → 不清 dirty
+    const capturedSeq = changeSeqRef.current;
+
     setSaving(true);
     setServerError(null);
     try {
       const result = await apiSaveCanvas(canvasId, serverVersion, current);
       setServerVersion(result.version);
-      setDirty(false);
       setLastSavedAt(Date.now());
       setConflict(null);
       setAutoSaveDisabled(false);
+      // 关键：只在序号未变时才清 dirty，否则保留让下个 5s 防抖再保存
+      if (changeSeqRef.current === capturedSeq) {
+        setDirty(false);
+      }
       return { ok: true as const };
     } catch (err) {
       const apiErr = err as ApiError;
@@ -655,13 +699,14 @@ export function useMultiCanvas(
       setConflict(null);
       setAutoSaveDisabled(false);
       setLastSavedAt(Date.now());
+      bumpLoadRevision();
     } catch (err) {
       setServerError(err as ApiError);
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, [canvasId]);
+  }, [canvasId, bumpLoadRevision]);
 
   const createOnServer = useCallback(
     async (input: {
@@ -674,6 +719,7 @@ export function useMultiCanvas(
       if (!current) {
         throw new Error('no project to create');
       }
+      const capturedSeq = changeSeqRef.current;
       setSaving(true);
       setServerError(null);
       try {
@@ -682,14 +728,17 @@ export function useMultiCanvas(
           description: input.description,
           visibility: input.visibility,
           is_public_to_guest: input.is_public_to_guest,
-          data: current,
+          // 同步 data.name 与外层 name，避免列表名和画布标题不一致（codex 建议项 4）
+          data: { ...current, name: input.name },
         });
         setCanvasId(result.id);
         setServerVersion(result.version);
-        setDirty(false);
         setLastSavedAt(Date.now());
         setConflict(null);
         setAutoSaveDisabled(false);
+        if (changeSeqRef.current === capturedSeq) {
+          setDirty(false);
+        }
         return result;
       } catch (err) {
         setServerError(err as ApiError);
@@ -741,6 +790,7 @@ export function useMultiCanvas(
     loadProject,
     getProjectData,
     isLoading,
+    loadRevision,
     canvasId,
     serverVersion,
     dirty,

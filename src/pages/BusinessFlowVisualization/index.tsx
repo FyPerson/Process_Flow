@@ -42,6 +42,7 @@ export function BusinessFlowVisualization() {
     loadProject,
     getProjectData,
     isLoading: isProjectLoading,
+    loadRevision,
     canvasId,
     dirty,
     saving,
@@ -53,20 +54,6 @@ export function BusinessFlowVisualization() {
     createOnServer,
     discardAndReload,
   } = useMultiCanvas({ canvasId: canvasIdFromUrl, storageKey: 'saved-flow-data' });
-
-  // canvasId 从 createOnServer 拿到值后，把 URL 同步过去（让刷新还能定位）
-  useEffect(() => {
-    if (canvasId != null && canvasId !== canvasIdFromUrl) {
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev);
-          next.set('canvasId', String(canvasId));
-          return next;
-        },
-        { replace: true }
-      );
-    }
-  }, [canvasId, canvasIdFromUrl, setSearchParams]);
 
   // beforeunload：dirty 或 saving 时拦截关闭
   useEffect(() => {
@@ -102,23 +89,32 @@ export function BusinessFlowVisualization() {
     }
   }, [save, discardAndReload]);
 
-  // 另存到服务器（首次创建）
+  // 另存到服务器（首次创建）—— 成功后用返回的 id 显式写 URL（单向同步）
   const handleSaveAsNew = useCallback(async () => {
     const defaultName = project?.name || '未命名画布';
     const name = window.prompt('给这个画布起个名字：', defaultName);
     if (!name || !name.trim()) return;
     try {
-      await createOnServer({
+      const result = await createOnServer({
         name: name.trim(),
         visibility: 'private',
       });
+      // URL 写在创建回调里，避免之前"hook canvasId 变 → URL 变 → fetch effect 重跑覆盖内存"的循环
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('canvasId', String(result.id));
+          return next;
+        },
+        { replace: true }
+      );
     } catch (err) {
       const apiErr = err as ApiError;
       window.alert(
         `创建失败：${apiErr?.error || apiErr?.message || '未知错误'}`
       );
     }
-  }, [project?.name, createOnServer]);
+  }, [project?.name, createOnServer, setSearchParams]);
 
   const handleDiscardAndReload = useCallback(async () => {
     try {
@@ -302,40 +298,48 @@ export function BusinessFlowVisualization() {
   }, [activeSheet, filterElements, showSubflows]);
 
   // 初始加载
+  // 默认数据只用于"无 URL canvasId 且 hook 也没拉到本地数据"的场景；
+  // 如果 URL 指定了 canvasId（哪怕拉失败），不要静默回退到默认流程把错误掩盖掉
   useEffect(() => {
     const initializeProject = async () => {
-      // 如果 useMultiCanvas 已经加载了数据，直接使用
-      if (!isProjectLoading && project) {
+      if (isProjectLoading) return;
+
+      if (project) {
         setLoading(false);
         return;
       }
 
-      // 如果没有项目数据，尝试加载默认数据
-      if (!isProjectLoading && !project) {
-        try {
-          console.log('加载默认流程数据');
-          const response = await fetch('/data/complete-business-flow.json');
-          const flowDef: FlowDefinition = await response.json();
-          loadProject(flowDef); // 会自动迁移为多画布格式
-        } catch (error) {
-          console.error('加载默认数据失败:', error);
-          // 创建空项目
-          loadProject(createEmptyProject());
-        }
+      // canvasId 存在 → fetch 失败也应该让用户看到错误，不能用默认数据糊弄
+      if (canvasIdFromUrl != null || serverError) {
         setLoading(false);
+        return;
       }
+
+      // 真正的"全新空场景"才加载默认流程
+      try {
+        console.log('加载默认流程数据');
+        const response = await fetch('/data/complete-business-flow.json');
+        const flowDef: FlowDefinition = await response.json();
+        loadProject(flowDef);
+      } catch (error) {
+        console.error('加载默认数据失败:', error);
+        loadProject(createEmptyProject());
+      }
+      setLoading(false);
     };
 
     initializeProject();
-  }, [isProjectLoading, project, loadProject]);
+  }, [isProjectLoading, project, canvasIdFromUrl, serverError, loadProject]);
 
   // 处理画布数据变更（从 FlowCanvas 回调）
   // sheetId 由 FlowCanvas 组件传入，确保数据保存到正确的画布
+  // readOnly（游客）下吞掉所有 mutation —— 避免 dirty/autosave/beforeunload 被误触发
   const handleDataChange = useCallback(
     (sheetId: string, nodes: Node<FlowNodeData>[], edges: Edge[]) => {
+      if (readOnly) return;
       updateSheetData(sheetId, nodes, edges);
     },
-    [updateSheetData]
+    [readOnly, updateSheetData]
   );
 
   const toggleSubflows = () => {
@@ -346,6 +350,49 @@ export function BusinessFlowVisualization() {
     return (
       <div className="flow-visualization-loading">
         <div className="loading-spinner">加载中...</div>
+      </div>
+    );
+  }
+
+  // canvasId 指定但拉失败 / 拉到 null：显式错误页，不静默回退到默认流程
+  if (canvasIdFromUrl != null && (serverError || !project)) {
+    return (
+      <div className="flow-visualization-loading">
+        <div className="loading-spinner" style={{ maxWidth: 480, textAlign: 'center' }}>
+          <div style={{ fontSize: 16, color: '#fecaca', marginBottom: 12 }}>
+            画布加载失败
+          </div>
+          <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 16 }}>
+            {serverError?.error === 'not_found'
+              ? `画布 #${canvasIdFromUrl} 不存在或已删除`
+              : serverError?.error === 'forbidden'
+                ? '没有权限查看此画布'
+                : `${serverError?.error || '未知错误'}${serverError?.message ? `：${serverError.message}` : ''}`}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setSearchParams(
+                (prev) => {
+                  const next = new URLSearchParams(prev);
+                  next.delete('canvasId');
+                  return next;
+                },
+                { replace: true }
+              );
+            }}
+            style={{
+              padding: '6px 14px',
+              borderRadius: 4,
+              background: '#2563eb',
+              color: '#fff',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            返回首页
+          </button>
+        </div>
       </div>
     );
   }
@@ -391,7 +438,9 @@ export function BusinessFlowVisualization() {
       <div className="flow-content">
         {activeSheet && activeSheetId && (
           <FlowCanvas
-            key={activeSheetId} // 关键：切换画布时强制重新挂载
+            // 关键：切换画布或 hook 整体替换 project（fetch / discardAndReload / loadProject）
+            // 时强制重新挂载，避免 React Flow 内部 useNodesState 缓存旧节点
+            key={`${canvasId ?? 'local'}:${activeSheetId}:${loadRevision}`}
             sheetId={activeSheetId}
             nodes={processedNodes}
             edges={processedEdges}
