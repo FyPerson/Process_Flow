@@ -285,3 +285,15 @@ export const PatchCanvasRequestSchema = z
   .strict();
 
 export type PatchCanvasRequest = z.infer<typeof PatchCanvasRequestSchema>;
+
+// POST /api/canvases/import —— 导入 JSON 为新的 private 画布（方案 §1.3 / §3.1）
+// name 可选：缺省时用 data.name（导入文件里的项目名）
+export const ImportCanvasRequestSchema = z
+  .object({
+    name: z.string().min(1).max(200).optional(),
+    description: z.string().max(2000).optional(),
+    data: MultiCanvasProjectSchema,
+  })
+  .strict();
+
+export type ImportCanvasRequest = z.infer<typeof ImportCanvasRequestSchema>;
