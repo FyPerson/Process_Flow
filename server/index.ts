@@ -10,6 +10,7 @@ import { closeDb, initDb } from './db/index.ts';
 import { httpLogger, logger } from './middleware/logger.ts';
 import { securityMiddleware } from './middleware/security.ts';
 import { authRouter } from './routes/auth.ts';
+import { canvasesRouter } from './routes/canvases.ts';
 import { healthRouter } from './routes/health.ts';
 
 async function bootstrap() {
@@ -35,6 +36,7 @@ async function bootstrap() {
   // 否则 vite middleware 或 SPA fallback 会拦截 /api/* 请求
   app.use(healthRouter);
   app.use(authRouter);
+  app.use(canvasesRouter);
 
   // === 前端资源 ===
   if (config.isProduction) {
