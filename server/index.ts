@@ -5,14 +5,17 @@
 import express from 'express';
 import path from 'node:path';
 import { config } from './config.ts';
+import { bootstrapInitialAdmin } from './db/bootstrap.ts';
 import { closeDb, initDb } from './db/index.ts';
 import { httpLogger, logger } from './middleware/logger.ts';
+import { authRouter } from './routes/auth.ts';
 import { healthRouter } from './routes/health.ts';
 
 async function bootstrap() {
   // === DB 必须在注册路由之前就绪（codex C2 复审建议）===
   // initDb() 失败直接 throw，bootstrap.catch 会让进程 exit(1)，避免带病启动
-  initDb();
+  const db = initDb();
+  await bootstrapInitialAdmin(db);
 
   const app = express();
 
@@ -26,6 +29,7 @@ async function bootstrap() {
   // === API 路由必须在前端资源之前注册 ===
   // 否则 vite middleware 或 SPA fallback 会拦截 /api/* 请求
   app.use(healthRouter);
+  app.use(authRouter);
 
   // === 前端资源 ===
   if (config.isProduction) {

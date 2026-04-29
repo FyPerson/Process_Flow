@@ -1,6 +1,9 @@
 // 服务端运行时配置：所有环境变量入口集中在这里
 // 模式判断：NODE_ENV=production 走静态 dist；否则走 Vite middleware（HMR）
 
+// dotenv 必须在所有 process.env 读取之前加载（敏感配置走 .env，不进仓库）
+import 'dotenv/config';
+
 import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
