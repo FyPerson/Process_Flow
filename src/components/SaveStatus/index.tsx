@@ -40,6 +40,26 @@ function formatRelative(ts: number, now: number): string {
   return `${Math.floor(diff / 3600)} 小时前`;
 }
 
+/** 把 ApiError.error 字面量映射成对用户可行动的中文文案 */
+function formatServerError(err: ApiError): string {
+  switch (err.error) {
+    case 'network_error':
+      return '网络连接失败，请检查网络后重试';
+    case 'invalid_response':
+      return '服务器返回异常，请稍后重试';
+    case 'forbidden':
+      return '没有权限保存此画布';
+    case 'unauthorized':
+      return '登录已过期，请重新登录';
+    case 'not_found':
+      return '画布已被删除或归档';
+    case 'invalid_input':
+      return '内容校验失败，请检查';
+    default:
+      return `保存失败：${err.error}${err.message ? `（${err.message}）` : ''}`;
+  }
+}
+
 export function SaveStatus(props: SaveStatusProps) {
   const {
     canvasId,
@@ -114,9 +134,9 @@ export function SaveStatus(props: SaveStatusProps) {
         <span className="save-status__icon">⚠️</span>
         <span
           className="save-status__text"
-          title={serverError.message || serverError.error}
+          title={`${serverError.error}${serverError.message ? ` - ${serverError.message}` : ''}`}
         >
-          自动保存失败：{serverError.error}
+          {formatServerError(serverError)}
         </span>
         <button
           type="button"

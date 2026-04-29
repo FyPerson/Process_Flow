@@ -111,6 +111,32 @@ const autoSaveFilter = (key: string) => {
   return !key.startsWith('__') && key !== 'measured' && key !== 'internals';
 };
 
+/** storage 层 deep equality —— 不依赖 key 顺序，避免 JSON.stringify 在导入数据等
+ * 字段顺序不一致的场景下产生假 dirty。仅支持 undefined/null/原始/数组/普通对象 */
+function deepEqualStorage(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (a == null || b == null) return a === b;
+  if (typeof a !== 'object' || typeof b !== 'object') return false;
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (!deepEqualStorage(a[i], b[i])) return false;
+    }
+    return true;
+  }
+  if (Array.isArray(b)) return false;
+  const ao = a as Record<string, unknown>;
+  const bo = b as Record<string, unknown>;
+  const aKeys = Object.keys(ao);
+  const bKeys = Object.keys(bo);
+  if (aKeys.length !== bKeys.length) return false;
+  for (const k of aKeys) {
+    if (!Object.prototype.hasOwnProperty.call(bo, k)) return false;
+    if (!deepEqualStorage(ao[k], bo[k])) return false;
+  }
+  return true;
+}
+
 // 安全深拷贝
 function safeDeepCopy<T>(obj: T, filter?: (key: string) => boolean): T {
   if (obj === null || typeof obj !== 'object') {
@@ -319,6 +345,23 @@ export function useMultiCanvas(
   // 让下一个防抖周期把"网络期间产生的新改动"也存进去（防止用户改动被静默吞）
   const changeSeqRef = useRef(0);
 
+  // canvasIdRef：同步反映当前 hook 已挂载的 canvas id（不依赖 React state 异步更新）
+  // 用途：所有 async 操作（save/discardAndReload/loadFromServer）发请求前捕获 capturedCanvasId，
+  // 回包前比对 ref；不一致说明用户已切到别的 canvas → 丢弃结果，避免污染新 canvas 状态
+  const canvasIdRef = useRef<number | null>(null);
+  // serverVersionRef：与上同理，让并发场景能拿到最新版本号
+  const serverVersionRef = useRef<number | null>(null);
+  // saveInFlightRef：同步并发拦截（React state 的 saving 异步，挡不住 timer + 手动同帧触发）
+  const saveInFlightRef = useRef(false);
+
+  // 同步 ref ←→ state（让 async 操作能在 await 之后拿到"当前最新值"，不依赖闭包）
+  useEffect(() => {
+    canvasIdRef.current = canvasId;
+  }, [canvasId]);
+  useEffect(() => {
+    serverVersionRef.current = serverVersion;
+  }, [serverVersion]);
+
   // 计算当前活动画布
   const activeSheet =
     project?.sheets.find((s) => s.id === project.activeSheetId) || null;
@@ -328,6 +371,18 @@ export function useMultiCanvas(
   // - canvasId 非空：从服务端拉
   // - canvasId 为空：从 localStorage 回退（兼容阶段 1 老数据）
   useEffect(() => {
+    // 短路：当 hook 内部已经挂载在同一个 canvas 上（典型场景是 createOnServer 后
+    // caller 把 id 写回 URL 触发的同 id 重入），不要 refetch 覆盖内存数据 ——
+    // 否则会丢掉用户在 create 网络往返期间继续做的本地改动。
+    if (
+      canvasIdProp != null &&
+      canvasIdRef.current === canvasIdProp &&
+      serverVersionRef.current != null &&
+      projectRef.current != null
+    ) {
+      return;
+    }
+
     let cancelled = false;
     setIsLoading(true);
     setServerError(null);
@@ -337,11 +392,15 @@ export function useMultiCanvas(
     setDirty(false);
     setServerVersion(null);
     setCanvasId(canvasIdProp);
+    canvasIdRef.current = canvasIdProp;
+    serverVersionRef.current = null;
 
     if (canvasIdProp != null) {
       apiGetCanvas(canvasIdProp)
         .then((row) => {
           if (cancelled) return;
+          // 用户在 fetch 期间又切走了 → 丢弃结果
+          if (canvasIdRef.current !== canvasIdProp) return;
           setProject(row.data);
           setCanvasId(row.id);
           setServerVersion(row.version);
@@ -351,6 +410,7 @@ export function useMultiCanvas(
         })
         .catch((err: ApiError) => {
           if (cancelled) return;
+          if (canvasIdRef.current !== canvasIdProp) return;
           setServerError(err);
           setProject(null);
         })
@@ -585,10 +645,9 @@ export function useMultiCanvas(
         const target = prev.sheets.find((s) => s.id === sheetId);
         if (!target) return prev;
 
-        const sameNodes =
-          JSON.stringify(target.nodes) === JSON.stringify(storageNodes);
-        const sameEdges =
-          JSON.stringify(target.connectors) === JSON.stringify(storageEdges);
+        // 用 key-order 无关的 deepEqual，避免外部导入数据 / 老存档的字段顺序差异产生假 dirty
+        const sameNodes = deepEqualStorage(target.nodes, storageNodes);
+        const sameEdges = deepEqualStorage(target.connectors, storageEdges);
         if (sameNodes && sameEdges) {
           return prev;
         }
@@ -622,12 +681,19 @@ export function useMultiCanvas(
   // === P2G 新增：服务端 IO ===
 
   const loadFromServer = useCallback(async (id: number) => {
+    // 进入即把 ref 改成目标 id —— 让其他并发 async（旧 canvas 的 save）回包能识别身份不符并丢弃
+    canvasIdRef.current = id;
+    serverVersionRef.current = null;
     setIsLoading(true);
     setServerError(null);
     setConflict(null);
     setAutoSaveDisabled(false);
     try {
       const row = await apiGetCanvas(id);
+      // 用户可能在 GET 期间又切走了
+      if (canvasIdRef.current !== id) return;
+      canvasIdRef.current = row.id;
+      serverVersionRef.current = row.version;
       setProject(row.data);
       setCanvasId(row.id);
       setServerVersion(row.version);
@@ -635,6 +701,7 @@ export function useMultiCanvas(
       setLastSavedAt(Date.now());
       bumpLoadRevision();
     } catch (err) {
+      if (canvasIdRef.current !== id) return;
       setServerError(err as ApiError);
       throw err;
     } finally {
@@ -643,21 +710,34 @@ export function useMultiCanvas(
   }, [bumpLoadRevision]);
 
   const save = useCallback(async () => {
+    // 同步并发拦截：自动保存 timer 与手动点击可能同帧触发；React state 的 saving 异步挡不住
+    if (saveInFlightRef.current) {
+      return { ok: false as const, skipped: true as const };
+    }
+
     const current = projectRef.current;
     if (!current) {
       throw new Error('no project to save');
     }
-    if (canvasId == null || serverVersion == null) {
+    // 用 ref 而非闭包变量，确保拿到此刻最新（callback deps 列表外更新的值也能看到）
+    const capturedCanvasId = canvasIdRef.current;
+    const capturedVersion = serverVersionRef.current;
+    if (capturedCanvasId == null || capturedVersion == null) {
       throw new Error('no canvasId; call createOnServer first');
     }
 
     // 捕获发请求时的修改序号；网络往返期间用户继续改 → ref 会变大 → 不清 dirty
     const capturedSeq = changeSeqRef.current;
 
+    saveInFlightRef.current = true;
     setSaving(true);
     setServerError(null);
     try {
-      const result = await apiSaveCanvas(canvasId, serverVersion, current);
+      const result = await apiSaveCanvas(capturedCanvasId, capturedVersion, current);
+      // 身份校验：用户在 PUT 期间可能切到别的 canvas，那回包不应污染当前 canvas 状态
+      if (canvasIdRef.current !== capturedCanvasId) {
+        return { ok: true as const, discarded: true as const };
+      }
       setServerVersion(result.version);
       setLastSavedAt(Date.now());
       setConflict(null);
@@ -668,6 +748,10 @@ export function useMultiCanvas(
       }
       return { ok: true as const };
     } catch (err) {
+      // 同样身份校验：旧 canvas 的网络错误不该写到新 canvas state
+      if (canvasIdRef.current !== capturedCanvasId) {
+        return { ok: false as const, discarded: true as const };
+      }
       const apiErr = err as ApiError;
       setServerError(apiErr);
       // 任何保存失败都暂停自动保存，避免循环重试 / 用户感知不到
@@ -681,18 +765,23 @@ export function useMultiCanvas(
       }
       throw err;
     } finally {
+      saveInFlightRef.current = false;
       setSaving(false);
     }
-  }, [canvasId, serverVersion]);
+  }, []);
 
   const discardAndReload = useCallback(async () => {
-    if (canvasId == null) {
+    const capturedCanvasId = canvasIdRef.current;
+    if (capturedCanvasId == null) {
       throw new Error('no canvasId to reload');
     }
     setIsLoading(true);
     setServerError(null);
     try {
-      const row = await apiGetCanvas(canvasId);
+      const row = await apiGetCanvas(capturedCanvasId);
+      // 用户在 GET 期间切走了，丢弃结果
+      if (canvasIdRef.current !== capturedCanvasId) return;
+      serverVersionRef.current = row.version;
       setProject(row.data);
       setServerVersion(row.version);
       setDirty(false);
@@ -701,12 +790,13 @@ export function useMultiCanvas(
       setLastSavedAt(Date.now());
       bumpLoadRevision();
     } catch (err) {
+      if (canvasIdRef.current !== capturedCanvasId) return;
       setServerError(err as ApiError);
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, [canvasId, bumpLoadRevision]);
+  }, [bumpLoadRevision]);
 
   const createOnServer = useCallback(
     async (input: {
@@ -715,11 +805,16 @@ export function useMultiCanvas(
       visibility: 'public' | 'private';
       is_public_to_guest?: boolean;
     }) => {
+      // 同步并发拦截：避免双击"另存到服务器"创建两份
+      if (saveInFlightRef.current) {
+        throw new Error('another save in flight');
+      }
       const current = projectRef.current;
       if (!current) {
         throw new Error('no project to create');
       }
       const capturedSeq = changeSeqRef.current;
+      saveInFlightRef.current = true;
       setSaving(true);
       setServerError(null);
       try {
@@ -728,9 +823,14 @@ export function useMultiCanvas(
           description: input.description,
           visibility: input.visibility,
           is_public_to_guest: input.is_public_to_guest,
-          // 同步 data.name 与外层 name，避免列表名和画布标题不一致（codex 建议项 4）
+          // 同步 data.name 与外层 name，避免列表名和画布标题不一致
           data: { ...current, name: input.name },
         });
+        // 关键：先同步更新 ref，再 setState。
+        // 这样 caller 的 setSearchParams 触发 fetch effect 重跑时，
+        // 短路条件（canvasIdRef===prop && serverVersionRef!=null && projectRef!=null）能命中，跳过 refetch
+        canvasIdRef.current = result.id;
+        serverVersionRef.current = result.version;
         setCanvasId(result.id);
         setServerVersion(result.version);
         setLastSavedAt(Date.now());
@@ -745,6 +845,7 @@ export function useMultiCanvas(
         setAutoSaveDisabled(true);
         throw err;
       } finally {
+        saveInFlightRef.current = false;
         setSaving(false);
       }
     },
