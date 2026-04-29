@@ -48,6 +48,14 @@ export interface UseMultiCanvasOptions {
   storageKey?: string;
 }
 
+/** save() 返回值 —— discriminated union
+ * caller 用 switch(result.status) 强制处理所有分支，避免漏处理 conflict/skipped/discarded */
+export type SaveResult =
+  | { status: 'saved' }
+  | { status: 'conflict'; currentVersion: number }
+  | { status: 'skipped' }
+  | { status: 'discarded' };
+
 export interface UseMultiCanvasReturn {
   // 项目数据
   project: MultiCanvasProject | null;
@@ -94,17 +102,15 @@ export interface UseMultiCanvasReturn {
   /** 拉取服务端画布到内存（覆盖当前 project） */
   loadFromServer: (id: number) => Promise<void>;
   /** 把当前内存 project 推到服务端；canvasId=null 时报错（请先 createOnServer）
-   * 返回值：
-   * - { ok: true } 正常保存成功
-   * - { ok: true, discarded: true } 已切到别的 canvas，本次结果被丢弃
-   * - { ok: false, conflict } 409 冲突
-   * - { ok: false, skipped: true } 已有保存在飞行中，本次跳过
-   * - { ok: false, discarded: true } 已切到别的 canvas，错误也丢弃
+   * 返回值是 discriminated union（按 status 分）：
+   * - 'saved'     正常保存成功
+   * - 'conflict'  409，服务端比本地新；caller 应弹冲突 UI
+   * - 'skipped'   有保存在飞行中，本次同步拦下；caller 通常静默
+   * - 'discarded' 用户已切到别的 canvas，旧请求结果不再使用；caller 应静默
+   *
+   * 强制 caller 处理所有分支（switch 没 default 时 TS 会报 missing case）
    */
-  save: () => Promise<
-    | { ok: true; discarded?: boolean }
-    | { ok: false; conflict?: { currentVersion: number }; skipped?: boolean; discarded?: boolean }
-  >;
+  save: () => Promise<SaveResult>;
   /** 把当前内存 project 当作新画布创建到服务端，成功后 canvasId 自动指向它
    * discarded=true 表示创建成功但用户已切到别的 canvas，caller 不应写 URL */
   createOnServer: (input: {
@@ -736,10 +742,10 @@ export function useMultiCanvas(
     }
   }, [bumpLoadRevision]);
 
-  const save = useCallback(async () => {
+  const save = useCallback(async (): Promise<SaveResult> => {
     // 同步并发拦截：自动保存 timer 与手动点击可能同帧触发；React state 的 saving 异步挡不住
     if (saveInFlightRef.current) {
-      return { ok: false as const, skipped: true as const };
+      return { status: 'skipped' };
     }
 
     const current = projectRef.current;
@@ -763,7 +769,7 @@ export function useMultiCanvas(
       const result = await apiSaveCanvas(capturedCanvasId, capturedVersion, current);
       // 身份校验：用户在 PUT 期间可能切到别的 canvas，那回包不应污染当前 canvas 状态
       if (canvasIdRef.current !== capturedCanvasId) {
-        return { ok: true as const, discarded: true as const };
+        return { status: 'discarded' };
       }
       // 真正 ref-first：先同步 ref，再 setState，避免极短窗口内二次 save 用旧 baseVersion
       serverVersionRef.current = result.version;
@@ -775,11 +781,11 @@ export function useMultiCanvas(
       if (changeSeqRef.current === capturedSeq) {
         setDirty(false);
       }
-      return { ok: true as const };
+      return { status: 'saved' };
     } catch (err) {
       // 同样身份校验：旧 canvas 的网络错误不该写到新 canvas state
       if (canvasIdRef.current !== capturedCanvasId) {
-        return { ok: false as const, discarded: true as const };
+        return { status: 'discarded' };
       }
       const apiErr = err as ApiError;
       setServerError(apiErr);
@@ -787,10 +793,7 @@ export function useMultiCanvas(
       setAutoSaveDisabled(true);
       if (apiErr.status === 409 && typeof apiErr.currentVersion === 'number') {
         setConflict({ currentVersion: apiErr.currentVersion });
-        return {
-          ok: false as const,
-          conflict: { currentVersion: apiErr.currentVersion },
-        };
+        return { status: 'conflict', currentVersion: apiErr.currentVersion };
       }
       throw err;
     } finally {

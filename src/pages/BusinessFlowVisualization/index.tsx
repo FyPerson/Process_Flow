@@ -71,15 +71,27 @@ export function BusinessFlowVisualization() {
   const handleSave = useCallback(async () => {
     try {
       const result = await save();
-      if (!result.ok && result.conflict) {
-        const ok = window.confirm(
-          `检测到服务端有更新（v${result.conflict.currentVersion}）。\n\n` +
-            `选择"确定"丢弃本地改动并重载服务端版本；\n` +
-            `选择"取消"保留本地改动（稍后可手动处理）。`
-        );
-        if (ok) {
-          await discardAndReload();
+      switch (result.status) {
+        case 'saved':
+          // 顶栏徽标会显示"已保存（刚刚）"
+          break;
+        case 'conflict': {
+          const ok = window.confirm(
+            `检测到服务端有更新（v${result.currentVersion}）。\n\n` +
+              `选择"确定"丢弃本地改动并重载服务端版本；\n` +
+              `选择"取消"保留本地改动（稍后可手动处理）。`
+          );
+          if (ok) {
+            await discardAndReload();
+          }
+          break;
         }
+        case 'skipped':
+          // 已有保存在飞行中（自动保存 timer 撞手动点击）；顶栏正在显示"保存中…"
+          break;
+        case 'discarded':
+          // 用户已切到别的 canvas，旧请求结果丢弃；UI 已经在新 canvas 上
+          break;
       }
     } catch (err) {
       const apiErr = err as ApiError;
@@ -454,14 +466,15 @@ export function BusinessFlowVisualization() {
             onToggleSubflows={toggleSubflows}
             onDataChange={handleDataChange}
             getProjectData={getProjectData}
-            // 多画布标签栏
+            readOnly={readOnly}
+            // 多画布标签栏 —— readOnly 时所有 mutation 走 no-op，避免游客误以为能改
             sheets={project?.sheets || []}
             activeSheetId={activeSheetId}
             onSheetChange={setActiveSheet}
-            onAddSheet={addSheet}
-            onDeleteSheet={deleteSheet}
-            onRenameSheet={renameSheet}
-            onDuplicateSheet={duplicateSheet}
+            onAddSheet={readOnly ? () => undefined : addSheet}
+            onDeleteSheet={readOnly ? () => undefined : deleteSheet}
+            onRenameSheet={readOnly ? () => undefined : renameSheet}
+            onDuplicateSheet={readOnly ? undefined : duplicateSheet}
           />
         )}
       </div>

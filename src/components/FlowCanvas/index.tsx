@@ -65,6 +65,8 @@ interface FlowCanvasProps {
   onDeleteSheet?: (sheetId: string) => void;
   onRenameSheet?: (sheetId: string, newName: string) => void;
   onDuplicateSheet?: (sheetId: string) => void;
+  /** 只读模式（游客 / 无写权限）—— 禁拖拽/连线/删除/sheet 增删改，但允许平移缩放选中查看 */
+  readOnly?: boolean;
 }
 
 import { OffscreenIndicators } from './OffscreenIndicators';
@@ -87,6 +89,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   onDeleteSheet,
   onRenameSheet,
   onDuplicateSheet,
+  readOnly = false,
 }: {
   sheetId?: string;
   initialNodes: Node<FlowNodeData>[];
@@ -103,6 +106,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   onDeleteSheet?: (sheetId: string) => void;
   onRenameSheet?: (sheetId: string, newName: string) => void;
   onDuplicateSheet?: (sheetId: string) => void;
+  readOnly?: boolean;
 }) {
   // 迁移旧的 edge handle ID
   const migratedEdges = initialEdges.map((edge) => {
@@ -565,11 +569,9 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   });
 
   // 使用 useFlowOperations Hook
+  // 注意：onSave/onExport/onImport 阶段 2 P2H 起不再使用（左侧旧按钮已删）
   const {
     onAddNode,
-    onSave,
-    onExport,
-    onImport,
     onCreateGroup,
     onUngroup,
     onRemoveFromGroup,
@@ -677,6 +679,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
 
   // 删除处理函数
   const handleDelete = useCallback(() => {
+    if (readOnly) return; // 只读模式下直接吞 Backspace 等触发的删除
     // 检查是否有选中的元素 - 使用 getter 获取最新状态，避免依赖变化导致重渲染
     const currentNodes = getNodes();
     const currentEdges = getEdges();
@@ -697,7 +700,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
       setSelectedElement(null);
       setShowPanel(false);
     }
-  }, [getNodes, getEdges, deleteElements, setSelectedElement, setShowPanel]);
+  }, [getNodes, getEdges, deleteElements, setSelectedElement, setShowPanel, readOnly]);
 
   // 键盘快捷键支持
   useEffect(() => {
@@ -807,36 +810,12 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
         </div>
 
         <div className="flow-controls">
-          <div className="control-section">
-            <div className="section-title">{!isSidebarCollapsed && '文件'}</div>
-            <button
-              className="control-btn btn-save"
-              onClick={onSave}
-              title="保存到本地版本库 (Ctrl+S)"
-            >
-              <span className="btn-icon">💾</span>
-              {!isSidebarCollapsed && <span className="btn-text">保存</span>}
-            </button>
-            <button
-              className="control-btn btn-export"
-              onClick={onExport}
-              title="导出 JSON 文件"
-            >
-              <span className="btn-icon">📤</span>
-              {!isSidebarCollapsed && <span className="btn-text">导出</span>}
-            </button>
-            <button
-              className="control-btn btn-import"
-              onClick={onImport}
-              title="导入 JSON 文件"
-            >
-              <span className="btn-icon">📥</span>
-              {!isSidebarCollapsed && <span className="btn-text">导入</span>}
-            </button>
-          </div>
-
-          <div className="divider"></div>
-
+          {/*
+            阶段 2 P2H 整改：删除"保存到本地版本库 / 导出 / 导入"三个旧按钮。
+            - 服务端保存由顶栏 SaveStatus 接管（自动保存 + 手动保存按钮）
+            - 阶段 2 P2I 会以"导出/导入服务端 JSON"形式回归（走 /api/canvases/:id/export 等接口）
+            - 旧的"保存到本地文件夹"功能不再需要，避免和服务端保存语义冲突让用户困惑
+          */}
           <div className="control-section">
             <div className="section-title">{!isSidebarCollapsed && '操作'}</div>
             <button className="control-btn" onClick={undo} title="撤销 (Ctrl+Z)">
@@ -962,14 +941,16 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
             // 确保不设置 markerStart，避免箭头指向错误的方向
             markerStart: undefined,
           }}
-          nodesDraggable={true}
-          nodesConnectable={true} // 开启连线
+          nodesDraggable={!readOnly}
+          nodesConnectable={!readOnly}
           elementsSelectable={true}
+          edgesReconnectable={!readOnly}
           selectionOnDrag={false}
           selectionMode={SelectionMode.Partial}
           selectionKeyCode="Shift" // 按住 Shift + 左键框选
-          deleteKeyCode={null} // 禁用默认删除键，使用自定义 Backspace 处理
-          panOnDrag={true} // 左键拖拽平移画布
+          deleteKeyCode={null} // 禁用默认删除键，使用自定义 Backspace 处理（readOnly 时 handleDelete 也会拦）
+          panOnDrag={true} // 平移和缩放只读用户也可用
+          zoomOnScroll={true}
           style={{ width: '100%', height: '100%' }}
         >
           <Background
@@ -1035,6 +1016,7 @@ export function FlowCanvas({
   onDeleteSheet,
   onRenameSheet,
   onDuplicateSheet,
+  readOnly = false,
 }: FlowCanvasProps) {
   // 使用 sheetId 作为 key 确保 ReactFlowProvider 和 FlowCanvasContent 都重新挂载
   return (
@@ -1052,6 +1034,7 @@ export function FlowCanvas({
         onDeleteSheet={onDeleteSheet}
         onRenameSheet={onRenameSheet}
         onDuplicateSheet={onDuplicateSheet}
+        readOnly={readOnly}
       />
     </ReactFlowProvider>
   );
