@@ -366,4 +366,11 @@ $output = & $sshExe $SshTarget $Command 2>&1
   - 部署目录 `E:\business-flow`、数据目录 `E:\business-flow-data`（仓库工作区**外**）
   - ssh 用户 `administrator`（小写，本机已验证可用，与 Task_Pool 项目要求大写不同）
 - 生产构建模式（v2 起）：每次部署 PM2 restart，用户感知 5-10 秒空白；不再依赖 Vite HMR
-- 数据目录在仓库外的目的：避免 hook `git clean -fd` 误删生产数据库
+
+## 通用规则（不只是这个项目）
+
+下面三条不是"本项目特有"，是**任何用 git hook 自动部署 + 本地存储的项目都该遵守**：
+
+1. **数据目录必须放仓库工作区外**：因为 post-receive hook 通常含 `git clean -fd`，万一 ignore 规则漂了或加了 `-x`，会永久丢失生产数据。本项目用 `E:\business-flow-data\` 而不是 `E:\business-flow\data\`。
+2. **PM2 进程的 NODE_ENV 必须由 ecosystem.config.cjs 显式声明**，不能依赖 npm scripts 的 cross-env—— PM2 启动不走 npm。
+3. **每个进入 main 的 commit 都双 push（origin + server），无论代码还是文档**。三端 HEAD 始终一致才能让 reset/rebase 可预测；省一次 push 是错的优化。
