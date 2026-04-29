@@ -8,6 +8,7 @@ import { config } from './config.ts';
 import { bootstrapInitialAdmin } from './db/bootstrap.ts';
 import { closeDb, initDb } from './db/index.ts';
 import { httpLogger, logger } from './middleware/logger.ts';
+import { securityMiddleware } from './middleware/security.ts';
 import { authRouter } from './routes/auth.ts';
 import { healthRouter } from './routes/health.ts';
 
@@ -23,6 +24,10 @@ async function bootstrap() {
 
   // 请求日志要在所有路由之前 —— 否则未匹配请求/异常没法被记录
   app.use(httpLogger);
+
+  // 安全 headers（helmet）：prod 启用 CSP；dev 关 CSP 保留其他防护
+  // P1E v4.1 codex 强制项之一
+  app.use(securityMiddleware);
 
   app.use(express.json({ limit: '2mb' }));
 
