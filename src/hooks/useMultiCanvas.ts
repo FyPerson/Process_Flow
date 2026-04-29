@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import {
   MultiCanvasProject,
@@ -10,6 +10,12 @@ import {
   migrateToMultiCanvas,
   createEmptyProject,
 } from '../types/flow';
+import {
+  type ApiError,
+  createCanvas as apiCreateCanvas,
+  getCanvas as apiGetCanvas,
+  saveCanvas as apiSaveCanvas,
+} from '../api/canvases';
 
 // 存储节点格式（用于保存）
 interface StorageNode {
@@ -33,6 +39,13 @@ interface StorageNode {
   detailConfig?: unknown;
   subType?: 'start' | 'end';
   backgroundColor?: string;
+}
+
+export interface UseMultiCanvasOptions {
+  // 已选中的画布 id；null 表示尚未挂接服务端画布（兼容老 localStorage 数据）
+  canvasId?: number | null;
+  // 兼容旧 caller：仅作 localStorage 回退键
+  storageKey?: string;
 }
 
 export interface UseMultiCanvasReturn {
@@ -59,8 +72,26 @@ export interface UseMultiCanvasReturn {
   loadProject: (data: MultiCanvasProject | FlowDefinition) => void;
   getProjectData: () => MultiCanvasProject;
 
-  // 状态标志
+  // 状态标志（兼容旧调用方）
   isLoading: boolean;
+
+  // === P2G 新增：服务端协作字段 ===
+  canvasId: number | null;
+  serverVersion: number | null;
+  dirty: boolean;
+  saving: boolean;
+  serverError: ApiError | null;
+  /** 拉取服务端画布到内存（覆盖当前 project） */
+  loadFromServer: (id: number) => Promise<void>;
+  /** 把当前内存 project 推到服务端；canvasId=null 时报错（请先 createOnServer） */
+  save: () => Promise<{ ok: boolean; conflict?: { currentVersion: number } }>;
+  /** 把当前内存 project 当作新画布创建到服务端，成功后 canvasId 自动指向它 */
+  createOnServer: (input: {
+    name: string;
+    description?: string;
+    visibility: 'public' | 'private';
+    is_public_to_guest?: boolean;
+  }) => Promise<{ id: number; version: number }>;
 }
 
 // 过滤保存时不需要的字段
@@ -227,20 +258,75 @@ function convertEdgesToStorage(edges: Edge[]): FlowConnector[] {
   });
 }
 
+/**
+ * 兼容签名：
+ *   useMultiCanvas('saved-flow-data')  // 旧调用方，无服务端 canvasId
+ *   useMultiCanvas({ canvasId: 12 })   // 新模式，挂接服务端画布
+ *   useMultiCanvas({ canvasId: null, storageKey: 'saved-flow-data' })  // 显式回退
+ *
+ * 与旧版的关键差异：
+ * - mutation 不再自动写 localStorage；mutation 改内存 + 标 dirty
+ * - 服务端持久化由 save() 触发（P2H 加保存按钮调用）
+ * - 旧 localStorage 数据仅在 canvasId=null 时作为初始数据加载（用于过渡）
+ */
 export function useMultiCanvas(
-  storageKey: string = 'saved-flow-data'
+  optionsOrStorageKey: UseMultiCanvasOptions | string = {}
 ): UseMultiCanvasReturn {
+  const opts: UseMultiCanvasOptions =
+    typeof optionsOrStorageKey === 'string'
+      ? { storageKey: optionsOrStorageKey, canvasId: null }
+      : optionsOrStorageKey;
+
+  const canvasIdProp = opts.canvasId ?? null;
+  const storageKey = opts.storageKey ?? 'saved-flow-data';
+
   const [project, setProject] = useState<MultiCanvasProject | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [canvasId, setCanvasId] = useState<number | null>(canvasIdProp);
+  const [serverVersion, setServerVersion] = useState<number | null>(null);
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [serverError, setServerError] = useState<ApiError | null>(null);
+
+  // 让 save() 始终拿到最新 project（避免闭包陈旧）
+  const projectRef = useRef<MultiCanvasProject | null>(null);
+  useEffect(() => {
+    projectRef.current = project;
+  }, [project]);
 
   // 计算当前活动画布
   const activeSheet =
     project?.sheets.find((s) => s.id === project.activeSheetId) || null;
   const activeSheetId = project?.activeSheetId || null;
 
-  // 从 LocalStorage 加载数据
+  // === 加载策略 ===
+  // - canvasId 非空：从服务端拉
+  // - canvasId 为空：从 localStorage 回退（兼容阶段 1 老数据）
   useEffect(() => {
-    const loadFromStorage = () => {
+    let cancelled = false;
+    setIsLoading(true);
+    setServerError(null);
+
+    if (canvasIdProp != null) {
+      apiGetCanvas(canvasIdProp)
+        .then((row) => {
+          if (cancelled) return;
+          setProject(row.data);
+          setCanvasId(row.id);
+          setServerVersion(row.version);
+          setDirty(false);
+        })
+        .catch((err: ApiError) => {
+          if (cancelled) return;
+          setServerError(err);
+          setProject(null);
+        })
+        .finally(() => {
+          if (!cancelled) setIsLoading(false);
+        });
+    } else {
+      // localStorage 回退（旧逻辑保留，但不再写回）
       try {
         const savedData = localStorage.getItem(storageKey);
         if (savedData) {
@@ -248,54 +334,39 @@ export function useMultiCanvas(
           if (isMultiCanvasProject(parsed)) {
             setProject(parsed);
           } else {
-            // 迁移旧数据
-            const migrated = migrateToMultiCanvas(parsed as FlowDefinition);
-            setProject(migrated);
-            // 立即保存迁移后的数据
-            localStorage.setItem(storageKey, JSON.stringify(migrated));
+            setProject(migrateToMultiCanvas(parsed as FlowDefinition));
           }
         } else {
-          // 没有保存的数据，尝试加载默认数据
           setProject(null);
         }
-      } catch (error) {
-        console.error('加载项目数据失败:', error);
+      } catch (err) {
+        console.error('加载本地项目数据失败:', err);
         setProject(null);
       } finally {
         setIsLoading(false);
       }
+    }
+
+    return () => {
+      cancelled = true;
     };
+  }, [canvasIdProp, storageKey]);
 
-    loadFromStorage();
-  }, [storageKey]);
+  const markDirty = useCallback(() => {
+    setDirty(true);
+  }, []);
 
-  // 保存到 LocalStorage
-  const saveToStorage = useCallback(
-    (data: MultiCanvasProject) => {
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(data));
-      } catch (error) {
-        console.error('保存项目数据失败:', error);
-      }
-    },
-    [storageKey]
-  );
-
-  // 加载项目（支持自动迁移）
+  // 加载项目（支持自动迁移）—— 不再写 localStorage，仅改内存 + 标 dirty
   const loadProject = useCallback(
     (data: MultiCanvasProject | FlowDefinition) => {
-      let projectData: MultiCanvasProject;
-      if (isMultiCanvasProject(data)) {
-        projectData = data;
-      } else {
-        // 迁移旧数据
-        projectData = migrateToMultiCanvas(data);
-      }
+      const projectData: MultiCanvasProject = isMultiCanvasProject(data)
+        ? data
+        : migrateToMultiCanvas(data);
       setProject(projectData);
-      saveToStorage(projectData);
       setIsLoading(false);
+      markDirty();
     },
-    [saveToStorage]
+    [markDirty]
   );
 
   // 切换画布
@@ -305,16 +376,15 @@ export function useMultiCanvas(
         if (!prev) return prev;
         const sheet = prev.sheets.find((s) => s.id === sheetId);
         if (!sheet) return prev;
-        const updated = {
+        return {
           ...prev,
           activeSheetId: sheetId,
           updatedAt: Date.now(),
         };
-        saveToStorage(updated);
-        return updated;
       });
+      markDirty();
     },
-    [saveToStorage]
+    [markDirty]
   );
 
   // 添加新画布
@@ -332,19 +402,17 @@ export function useMultiCanvas(
         connectors: [],
       };
 
-      const updated = {
+      return {
         ...currentProject,
         sheets: [...currentProject.sheets, newSheet],
         activeSheetId: newId,
         updatedAt: Date.now(),
       };
-
-      saveToStorage(updated);
-      return updated;
     });
+    markDirty();
 
     return newId;
-  }, [saveToStorage]);
+  }, [markDirty]);
 
   // 删除画布
   const deleteSheet = useCallback(
@@ -361,20 +429,18 @@ export function useMultiCanvas(
             ? newSheets[0].id
             : prev.activeSheetId;
 
-        const updated = {
+        return {
           ...prev,
           sheets: newSheets,
           activeSheetId: newActiveId,
           updatedAt: Date.now(),
         };
-
-        saveToStorage(updated);
-        return updated;
       });
+      markDirty();
 
       return true;
     },
-    [project, saveToStorage]
+    [project, markDirty]
   );
 
   // 重命名画布
@@ -382,18 +448,17 @@ export function useMultiCanvas(
     (sheetId: string, newName: string) => {
       setProject((prev) => {
         if (!prev) return prev;
-        const updated = {
+        return {
           ...prev,
           sheets: prev.sheets.map((s) =>
             s.id === sheetId ? { ...s, name: newName } : s
           ),
           updatedAt: Date.now(),
         };
-        saveToStorage(updated);
-        return updated;
       });
+      markDirty();
     },
-    [saveToStorage]
+    [markDirty]
   );
 
   // 复制画布
@@ -407,10 +472,8 @@ export function useMultiCanvas(
       const newId = `sheet_${Date.now()}`;
       const timestamp = Date.now();
 
-      // 创建节点 ID 映射表（旧 ID -> 新 ID）
       const nodeIdMap = new Map<string, string>();
 
-      // 深拷贝节点并生成新 ID
       const newNodes = sourceSheet.nodes.map((node, index) => {
         const newNodeId = `${node.id}_copy_${timestamp}_${index}`;
         nodeIdMap.set(node.id, newNodeId);
@@ -422,12 +485,10 @@ export function useMultiCanvas(
         };
       });
 
-      // 更新节点的 parentId 引用（分组子节点）
       newNodes.forEach((node) => {
         if (node.parentId && nodeIdMap.has(node.parentId)) {
           node.parentId = nodeIdMap.get(node.parentId);
         }
-        // 更新 relatedNodeIds 引用
         if (node.relatedNodeIds && Array.isArray(node.relatedNodeIds)) {
           node.relatedNodeIds = node.relatedNodeIds.map((id: string) =>
             nodeIdMap.get(id) || id
@@ -435,7 +496,6 @@ export function useMultiCanvas(
         }
       });
 
-      // 深拷贝连线并更新引用
       const newConnectors = sourceSheet.connectors.map((connector, index) => {
         const newConnectorId = `${connector.id}_copy_${timestamp}_${index}`;
         const copiedConnector = safeDeepCopy(connector, autoSaveFilter);
@@ -458,25 +518,22 @@ export function useMultiCanvas(
       setProject((prev) => {
         if (!prev) return prev;
 
-        // 在源画布后面插入新画布
         const sourceIndex = prev.sheets.findIndex((s) => s.id === sheetId);
         const newSheets = [...prev.sheets];
         newSheets.splice(sourceIndex + 1, 0, newSheet);
 
-        const updated = {
+        return {
           ...prev,
           sheets: newSheets,
-          activeSheetId: newId, // 自动切换到新画布
+          activeSheetId: newId,
           updatedAt: Date.now(),
         };
-
-        saveToStorage(updated);
-        return updated;
       });
+      markDirty();
 
       return newId;
     },
-    [project, saveToStorage]
+    [project, markDirty]
   );
 
   // 更新画布数据（由 FlowCanvasContent 调用）
@@ -488,7 +545,7 @@ export function useMultiCanvas(
         const storageNodes = convertNodesToStorage(nodes);
         const storageEdges = convertEdgesToStorage(edges);
 
-        const updated = {
+        return {
           ...prev,
           sheets: prev.sheets.map((sheet) => {
             if (sheet.id !== sheetId) return sheet;
@@ -500,18 +557,101 @@ export function useMultiCanvas(
           }),
           updatedAt: Date.now(),
         };
-
-        saveToStorage(updated);
-        return updated;
       });
+      markDirty();
     },
-    [saveToStorage]
+    [markDirty]
   );
 
   // 获取完整项目数据（用于导出等）
   const getProjectData = useCallback((): MultiCanvasProject => {
     return project || createEmptyProject();
   }, [project]);
+
+  // === P2G 新增：服务端 IO ===
+
+  const loadFromServer = useCallback(async (id: number) => {
+    setIsLoading(true);
+    setServerError(null);
+    try {
+      const row = await apiGetCanvas(id);
+      setProject(row.data);
+      setCanvasId(row.id);
+      setServerVersion(row.version);
+      setDirty(false);
+    } catch (err) {
+      setServerError(err as ApiError);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const save = useCallback(async () => {
+    const current = projectRef.current;
+    if (!current) {
+      throw new Error('no project to save');
+    }
+    if (canvasId == null || serverVersion == null) {
+      throw new Error('no canvasId; call createOnServer first');
+    }
+
+    setSaving(true);
+    setServerError(null);
+    try {
+      const result = await apiSaveCanvas(canvasId, serverVersion, current);
+      setServerVersion(result.version);
+      setDirty(false);
+      return { ok: true as const };
+    } catch (err) {
+      const apiErr = err as ApiError;
+      setServerError(apiErr);
+      if (apiErr.status === 409 && typeof apiErr.currentVersion === 'number') {
+        return {
+          ok: false as const,
+          conflict: { currentVersion: apiErr.currentVersion },
+        };
+      }
+      throw err;
+    } finally {
+      setSaving(false);
+    }
+  }, [canvasId, serverVersion]);
+
+  const createOnServer = useCallback(
+    async (input: {
+      name: string;
+      description?: string;
+      visibility: 'public' | 'private';
+      is_public_to_guest?: boolean;
+    }) => {
+      const current = projectRef.current;
+      if (!current) {
+        throw new Error('no project to create');
+      }
+      setSaving(true);
+      setServerError(null);
+      try {
+        const result = await apiCreateCanvas({
+          name: input.name,
+          description: input.description,
+          visibility: input.visibility,
+          is_public_to_guest: input.is_public_to_guest,
+          data: current,
+        });
+        setCanvasId(result.id);
+        setServerVersion(result.version);
+        setDirty(false);
+        return result;
+      } catch (err) {
+        setServerError(err as ApiError);
+        throw err;
+      } finally {
+        setSaving(false);
+      }
+    },
+    []
+  );
 
   return {
     project,
@@ -526,5 +666,13 @@ export function useMultiCanvas(
     loadProject,
     getProjectData,
     isLoading,
+    canvasId,
+    serverVersion,
+    dirty,
+    saving,
+    serverError,
+    loadFromServer,
+    save,
+    createOnServer,
   };
 }
