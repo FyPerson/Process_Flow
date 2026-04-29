@@ -171,3 +171,47 @@
   color: #64748b;
   font-size: 13px;
 }
+/* 账户栏（P1D 新增） */
+.account-bar {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 12px;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+.account-username {
+  font-weight: 500;
+}
+
+.account-role-tag {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(96, 165, 250, 0.15);
+  color: #93c5fd;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+
+.account-guest {
+  color: #fbbf24;
+  font-size: 12px;
+}
+
+.account-action {
+  padding: 4px 10px;
+  font-size: 12px;
+  background: transparent;
+  color: #94a3b8;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.account-action:hover {
+  color: #e2e8f0;
+  border-color: #64748b;
+}

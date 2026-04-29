@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../../auth/AuthContext.tsx';
 import './styles.css';
 
 interface PageLink {
@@ -23,6 +24,7 @@ const SYSTEM_PAGES: PageLink[] = [
 export function Navigation() {
     const location = useLocation();
     const [searchTerm, setSearchTerm] = useState('');
+    const { status, user, isGuest, logout } = useAuth();
 
     const isActive = (path: string) => location.pathname === path;
 
@@ -89,6 +91,25 @@ export function Navigation() {
                     </div>
                 </div>
             </nav>
+
+            <div className="account-bar">
+                {status === 'authenticated' && user ? (
+                    <>
+                        <span className="account-username" title={`${user.role}`}>{user.username}</span>
+                        {user.role === 'admin' && <span className="account-role-tag">admin</span>}
+                        <button type="button" className="account-action" onClick={logout}>
+                            退出
+                        </button>
+                    </>
+                ) : isGuest ? (
+                    <>
+                        <span className="account-guest">游客模式（只读）</span>
+                        <button type="button" className="account-action" onClick={logout}>
+                            登录
+                        </button>
+                    </>
+                ) : null}
+            </div>
         </header>
     );
 }
