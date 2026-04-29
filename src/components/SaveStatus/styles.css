@@ -1,0 +1,124 @@
+/* SaveStatus —— 顶栏保存状态徽标
+   配色与项目深色风格一致；不引入新字体/库 */
+
+.save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  background: rgba(15, 23, 42, 0.6);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.save-status__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.save-status__dot--saved {
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+}
+
+.save-status__dot--dirty {
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
+  animation: save-status-pulse 1.6s ease-in-out infinite;
+}
+
+.save-status__dot--saving {
+  background: #3b82f6;
+  animation: save-status-spin 1s linear infinite;
+}
+
+@keyframes save-status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes save-status-spin {
+  0% { transform: scale(0.6); opacity: 0.6; }
+  50% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.6); opacity: 0.6; }
+}
+
+.save-status__icon {
+  font-size: 14px;
+  flex: none;
+}
+
+.save-status__text {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.save-status__btn {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  background: rgba(148, 163, 184, 0.15);
+  color: #e2e8f0;
+  transition: background 0.15s ease;
+}
+
+.save-status__btn:hover {
+  background: rgba(148, 163, 184, 0.3);
+}
+
+.save-status__btn--primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.save-status__btn--primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.save-status__btn--danger {
+  background: rgba(220, 38, 38, 0.2);
+  border-color: rgba(220, 38, 38, 0.5);
+  color: #fecaca;
+}
+
+.save-status__btn--danger:hover {
+  background: rgba(220, 38, 38, 0.4);
+}
+
+.save-status--saved {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.save-status--unsaved {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.save-status--saving {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.save-status--conflict,
+.save-status--error {
+  border-color: rgba(220, 38, 38, 0.5);
+  background: rgba(220, 38, 38, 0.12);
+  color: #fecaca;
+}
+
+.save-status--readonly {
+  border-color: rgba(148, 163, 184, 0.4);
+  background: rgba(148, 163, 184, 0.08);
+  color: #94a3b8;
+}

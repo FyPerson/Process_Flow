@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { FlowCanvas } from '../../components/FlowCanvas';
+import { SaveStatus } from '../../components/SaveStatus';
 import { Node, Edge } from '@xyflow/react';
 import {
   FlowDefinition,
@@ -7,11 +9,24 @@ import {
   createEmptyProject,
 } from '../../types/flow';
 import { useMultiCanvas } from '../../hooks/useMultiCanvas';
+import { useAuth } from '../../auth/AuthContext';
+import type { ApiError } from '../../api/canvases';
 import './styles.css';
 
 export function BusinessFlowVisualization() {
   const [showSubflows, setShowSubflows] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // URL ?canvasId=12 → 挂接服务端画布；缺省时回退本地 localStorage（阶段 1 老数据）
+  const [searchParams, setSearchParams] = useSearchParams();
+  const canvasIdRaw = searchParams.get('canvasId');
+  const canvasIdFromUrl = useMemo(() => {
+    if (!canvasIdRaw) return null;
+    const n = Number(canvasIdRaw);
+    return Number.isInteger(n) && n > 0 ? n : null;
+  }, [canvasIdRaw]);
+
+  const { readOnly } = useAuth();
 
   // 使用多画布 Hook
   const {
@@ -27,7 +42,94 @@ export function BusinessFlowVisualization() {
     loadProject,
     getProjectData,
     isLoading: isProjectLoading,
-  } = useMultiCanvas('saved-flow-data');
+    canvasId,
+    dirty,
+    saving,
+    autoSaveDisabled,
+    conflict,
+    serverError,
+    lastSavedAt,
+    save,
+    createOnServer,
+    discardAndReload,
+  } = useMultiCanvas({ canvasId: canvasIdFromUrl, storageKey: 'saved-flow-data' });
+
+  // canvasId 从 createOnServer 拿到值后，把 URL 同步过去（让刷新还能定位）
+  useEffect(() => {
+    if (canvasId != null && canvasId !== canvasIdFromUrl) {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('canvasId', String(canvasId));
+          return next;
+        },
+        { replace: true }
+      );
+    }
+  }, [canvasId, canvasIdFromUrl, setSearchParams]);
+
+  // beforeunload：dirty 或 saving 时拦截关闭
+  useEffect(() => {
+    if (!dirty && !saving) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      // 现代浏览器忽略自定义文本，但 returnValue 仍是触发提示的"开关"
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [dirty, saving]);
+
+  // 保存按钮：已挂接服务端画布
+  const handleSave = useCallback(async () => {
+    try {
+      const result = await save();
+      if (!result.ok && result.conflict) {
+        const ok = window.confirm(
+          `检测到服务端有更新（v${result.conflict.currentVersion}）。\n\n` +
+            `选择"确定"丢弃本地改动并重载服务端版本；\n` +
+            `选择"取消"保留本地改动（稍后可手动处理）。`
+        );
+        if (ok) {
+          await discardAndReload();
+        }
+      }
+    } catch (err) {
+      const apiErr = err as ApiError;
+      window.alert(
+        `保存失败：${apiErr?.error || apiErr?.message || '未知错误'}`
+      );
+    }
+  }, [save, discardAndReload]);
+
+  // 另存到服务器（首次创建）
+  const handleSaveAsNew = useCallback(async () => {
+    const defaultName = project?.name || '未命名画布';
+    const name = window.prompt('给这个画布起个名字：', defaultName);
+    if (!name || !name.trim()) return;
+    try {
+      await createOnServer({
+        name: name.trim(),
+        visibility: 'private',
+      });
+    } catch (err) {
+      const apiErr = err as ApiError;
+      window.alert(
+        `创建失败：${apiErr?.error || apiErr?.message || '未知错误'}`
+      );
+    }
+  }, [project?.name, createOnServer]);
+
+  const handleDiscardAndReload = useCallback(async () => {
+    try {
+      await discardAndReload();
+    } catch (err) {
+      const apiErr = err as ApiError;
+      window.alert(
+        `重载失败：${apiErr?.error || apiErr?.message || '未知错误'}`
+      );
+    }
+  }, [discardAndReload]);
 
   // 过滤显示节点和边
   const filterElements = useCallback(
@@ -270,6 +372,20 @@ export function BusinessFlowVisualization() {
             <span className="info-icon">🔗</span>
             连接: {processedEdges.length}
           </span>
+          <SaveStatus
+            canvasId={canvasId}
+            hasProject={!!project}
+            dirty={dirty}
+            saving={saving}
+            autoSaveDisabled={autoSaveDisabled}
+            conflict={conflict}
+            serverError={serverError}
+            lastSavedAt={lastSavedAt}
+            readOnly={readOnly}
+            onSave={handleSave}
+            onSaveAsNew={handleSaveAsNew}
+            onDiscardAndReload={handleDiscardAndReload}
+          />
         </div>
       </div>
       <div className="flow-content">

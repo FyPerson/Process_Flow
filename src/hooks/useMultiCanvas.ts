@@ -75,12 +75,18 @@ export interface UseMultiCanvasReturn {
   // 状态标志（兼容旧调用方）
   isLoading: boolean;
 
-  // === P2G 新增：服务端协作字段 ===
+  // === 服务端协作字段（P2G + P2H）===
   canvasId: number | null;
   serverVersion: number | null;
   dirty: boolean;
   saving: boolean;
   serverError: ApiError | null;
+  /** 出现 409 冲突时记录服务端 currentVersion；用户重载或手动覆盖后清零 */
+  conflict: { currentVersion: number } | null;
+  /** 冲突期间 / 致命错误期间，自动保存被禁用（红字提示用户手动处理） */
+  autoSaveDisabled: boolean;
+  /** 最近一次成功保存的时间戳（用于显示"X 秒前已保存"） */
+  lastSavedAt: number | null;
   /** 拉取服务端画布到内存（覆盖当前 project） */
   loadFromServer: (id: number) => Promise<void>;
   /** 把当前内存 project 推到服务端；canvasId=null 时报错（请先 createOnServer） */
@@ -92,6 +98,8 @@ export interface UseMultiCanvasReturn {
     visibility: 'public' | 'private';
     is_public_to_guest?: boolean;
   }) => Promise<{ id: number; version: number }>;
+  /** 用户在冲突弹框选"丢弃本地、重载服务端"时调用 */
+  discardAndReload: () => Promise<void>;
 }
 
 // 过滤保存时不需要的字段
@@ -288,8 +296,11 @@ export function useMultiCanvas(
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [serverError, setServerError] = useState<ApiError | null>(null);
+  const [conflict, setConflict] = useState<{ currentVersion: number } | null>(null);
+  const [autoSaveDisabled, setAutoSaveDisabled] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
 
-  // 让 save() 始终拿到最新 project（避免闭包陈旧）
+  // 让 save()/自动保存 effect 始终拿到最新 project（避免闭包陈旧）
   const projectRef = useRef<MultiCanvasProject | null>(null);
   useEffect(() => {
     projectRef.current = project;
@@ -307,6 +318,8 @@ export function useMultiCanvas(
     let cancelled = false;
     setIsLoading(true);
     setServerError(null);
+    setConflict(null);
+    setAutoSaveDisabled(false);
 
     if (canvasIdProp != null) {
       apiGetCanvas(canvasIdProp)
@@ -316,6 +329,7 @@ export function useMultiCanvas(
           setCanvasId(row.id);
           setServerVersion(row.version);
           setDirty(false);
+          setLastSavedAt(Date.now());
         })
         .catch((err: ApiError) => {
           if (cancelled) return;
@@ -573,12 +587,15 @@ export function useMultiCanvas(
   const loadFromServer = useCallback(async (id: number) => {
     setIsLoading(true);
     setServerError(null);
+    setConflict(null);
+    setAutoSaveDisabled(false);
     try {
       const row = await apiGetCanvas(id);
       setProject(row.data);
       setCanvasId(row.id);
       setServerVersion(row.version);
       setDirty(false);
+      setLastSavedAt(Date.now());
     } catch (err) {
       setServerError(err as ApiError);
       throw err;
@@ -602,11 +619,17 @@ export function useMultiCanvas(
       const result = await apiSaveCanvas(canvasId, serverVersion, current);
       setServerVersion(result.version);
       setDirty(false);
+      setLastSavedAt(Date.now());
+      setConflict(null);
+      setAutoSaveDisabled(false);
       return { ok: true as const };
     } catch (err) {
       const apiErr = err as ApiError;
       setServerError(apiErr);
+      // 任何保存失败都暂停自动保存，避免循环重试 / 用户感知不到
+      setAutoSaveDisabled(true);
       if (apiErr.status === 409 && typeof apiErr.currentVersion === 'number') {
+        setConflict({ currentVersion: apiErr.currentVersion });
         return {
           ok: false as const,
           conflict: { currentVersion: apiErr.currentVersion },
@@ -617,6 +640,28 @@ export function useMultiCanvas(
       setSaving(false);
     }
   }, [canvasId, serverVersion]);
+
+  const discardAndReload = useCallback(async () => {
+    if (canvasId == null) {
+      throw new Error('no canvasId to reload');
+    }
+    setIsLoading(true);
+    setServerError(null);
+    try {
+      const row = await apiGetCanvas(canvasId);
+      setProject(row.data);
+      setServerVersion(row.version);
+      setDirty(false);
+      setConflict(null);
+      setAutoSaveDisabled(false);
+      setLastSavedAt(Date.now());
+    } catch (err) {
+      setServerError(err as ApiError);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [canvasId]);
 
   const createOnServer = useCallback(
     async (input: {
@@ -642,9 +687,13 @@ export function useMultiCanvas(
         setCanvasId(result.id);
         setServerVersion(result.version);
         setDirty(false);
+        setLastSavedAt(Date.now());
+        setConflict(null);
+        setAutoSaveDisabled(false);
         return result;
       } catch (err) {
         setServerError(err as ApiError);
+        setAutoSaveDisabled(true);
         throw err;
       } finally {
         setSaving(false);
@@ -652,6 +701,32 @@ export function useMultiCanvas(
     },
     []
   );
+
+  // === 自动保存：dirty + canvasId + 未冲突 + 未保存中 → 5s 防抖触发 save() ===
+  const AUTOSAVE_DEBOUNCE_MS = 5000;
+  // saveRef：让定时器拿到最新 save 闭包；不把 save 直接放进 effect deps，避免每次 save 重建定时器
+  const saveRef = useRef(save);
+  useEffect(() => {
+    saveRef.current = save;
+  }, [save]);
+
+  useEffect(() => {
+    if (!dirty) return;
+    if (canvasId == null) return; // 未挂接服务端 → 必须用户手动"另存到服务器"
+    if (saving) return;
+    if (autoSaveDisabled) return;
+
+    const timer = setTimeout(() => {
+      // catch 必须有：避免未挂接 promise 错误飞到 window.onerror
+      saveRef.current().catch((err) => {
+        console.error('自动保存失败:', err);
+      });
+    }, AUTOSAVE_DEBOUNCE_MS);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [dirty, canvasId, saving, autoSaveDisabled, project]);
 
   return {
     project,
@@ -671,8 +746,12 @@ export function useMultiCanvas(
     dirty,
     saving,
     serverError,
+    conflict,
+    autoSaveDisabled,
+    lastSavedAt,
     loadFromServer,
     save,
     createOnServer,
+    discardAndReload,
   };
 }
