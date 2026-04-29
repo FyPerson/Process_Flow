@@ -41,8 +41,10 @@ export const securityMiddleware: RequestHandler[] = config.isProduction
             formAction: ["'self'"],
             // 禁止页面被嵌入到他站 iframe（点击劫持防护）
             frameAncestors: ["'self'"],
-            // 升级所有 http: → https:（如果以后上 HTTPS）
-            upgradeInsecureRequests: [],
+            // 注意：这里曾经设过 upgradeInsecureRequests: [] 让 http→https 自动升级，
+            // 但当前生产是纯 HTTP 部署（172.16.0.138:3001），开启会让浏览器把
+            // /assets/*.js 也强制走 https → SSL 握手失败 → 整个 SPA 白屏。
+            // 等以后真正上 HTTPS 时再加回来。
           },
         },
         // 禁用 helmet 默认的 cross-origin-embedder-policy（会拦 unsplash 等外链图）
