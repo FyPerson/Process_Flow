@@ -795,10 +795,9 @@ export function useMultiCanvas(
       throw err;
     } finally {
       saveInFlightRef.current = false;
-      // 身份校验：旧 canvas 的 save 收尾不要把新 canvas 的 saving 状态错置成 false
-      if (canvasIdRef.current === capturedCanvasId) {
-        setSaving(false);
-      }
+      // saving 是本次 operation 自己打开的全局 UI 状态，不按 canvas 身份关 ——
+      // saveInFlightRef 已保证全局互斥，唯一的 owner 就是当前这次 save，无条件释放
+      setSaving(false);
     }
   }, []);
 
@@ -894,10 +893,9 @@ export function useMultiCanvas(
         throw err;
       } finally {
         saveInFlightRef.current = false;
-        // 身份校验：旧 create 收尾不要误关新 canvas 的 saving
-        if (canvasIdRef.current === capturedCanvasId || canvasIdRef.current === null) {
-          setSaving(false);
-        }
+        // saving 是本次 operation 自己打开的全局 UI 状态，无条件释放
+        // （之前按 canvas id 校验会导致首次 createOnServer 因 captured=null、ref=新id 永久卡 saving=true）
+        setSaving(false);
       }
     },
     []
