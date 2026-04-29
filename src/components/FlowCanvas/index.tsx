@@ -727,7 +727,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
 
       // Ctrl+V 或 Cmd+V (Mac) - 粘贴
       if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
-        if (readOnly) return;
+        if (readOnly) { e.preventDefault(); return; }
         e.preventDefault();
         pasteNodes();
         return;
@@ -735,7 +735,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
 
       // Ctrl+Z 或 Cmd+Z (Mac) - 撤销
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        if (readOnly) return;
+        if (readOnly) { e.preventDefault(); return; }
         e.preventDefault();
         undo();
         return;
@@ -743,7 +743,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
 
       // Ctrl+Y 或 Ctrl+Shift+Z 或 Cmd+Shift+Z (Mac) - 重做
       if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-        if (readOnly) return;
+        if (readOnly) { e.preventDefault(); return; }
         e.preventDefault();
         redo();
         return;
@@ -751,7 +751,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
 
       // Ctrl+G 或 Cmd+G (Mac) - 创建分组
       if ((e.ctrlKey || e.metaKey) && e.key === 'g' && !e.shiftKey) {
-        if (readOnly) return;
+        if (readOnly) { e.preventDefault(); return; }
         e.preventDefault();
         onCreateGroup();
         return;
@@ -759,7 +759,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
 
       // Ctrl+Shift+G 或 Cmd+Shift+G (Mac) - 解散分组
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'G') {
-        if (readOnly) return;
+        if (readOnly) { e.preventDefault(); return; }
         e.preventDefault();
         // 如果选中的是分组节点，则解散该分组
         if (selectedElement?.type === 'node' && selectedElement.node?.type === 'group') {
@@ -771,7 +771,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
 
       // Ctrl+Shift+D 或 Cmd+Shift+D (Mac) - 复制当前画布
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
-        if (readOnly) return;
+        if (readOnly) { e.preventDefault(); return; }
         e.preventDefault();
         if (onDuplicateSheet && activeSheetId) {
           onDuplicateSheet(activeSheetId);
@@ -781,7 +781,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
 
       // Backspace - 删除 (带确认；handleDelete 内部也会再次拦 readOnly)
       if (e.key === 'Backspace') {
-        if (readOnly) return;
+        if (readOnly) { e.preventDefault(); return; }
         const target = e.target as HTMLElement;
         const isInputElement =
           target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
@@ -921,7 +921,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
       {/* Main Canvas Area */}
       <div className="canvas-area">
         <AlignmentToolbar
-          visible={showAlignmentToolbar}
+          visible={!readOnly && showAlignmentToolbar}
           onAlign={alignNodes}
         />
         <ReactFlow

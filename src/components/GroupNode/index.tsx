@@ -85,7 +85,11 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
 
   // 处理折叠/展开（readOnly 时禁用 —— 折叠会写 data.collapsed 和子节点 hidden 状态）
   const handleCollapseToggle = useCallback((e: React.MouseEvent) => {
-    if ((groupData as unknown as { readOnly?: boolean }).readOnly) return;
+    if ((groupData as unknown as { readOnly?: boolean }).readOnly) {
+      // 先 stop 冒泡再 return，避免点击事件冒泡触发外层节点选中等行为
+      e.stopPropagation();
+      return;
+    }
     e.stopPropagation();
     const newCollapsedState = !isCollapsed;
     setIsCollapsed(newCollapsedState);

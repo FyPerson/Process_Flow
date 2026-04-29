@@ -42,11 +42,16 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
 }: NodeDetailPanelProps) {
   // 只读模式：所有"会改变 hook project 状态"的回调统一吞掉
   // 子组件 input/select 仍然可用（视觉一致性），但不会写回 hook
+  // 关键：safe* 必须返回 no-op 函数而非 undefined ——
+  // 否则 GroupPropertiesPanel 的渲染条件 `&& onGroupChange && onUngroup && onRemoveFromGroup`
+  // 会让只读用户看不到分组的子节点列表（七审 #3 回归修复）
   const safeOnNodeChange = readOnly ? (() => undefined) : onNodeChange;
   const safeOnEdgeChange = readOnly ? (() => undefined) : onEdgeChange;
-  const safeOnGroupChange = readOnly ? undefined : onGroupChange;
-  const safeOnUngroup = readOnly ? undefined : onUngroup;
-  const safeOnRemoveFromGroup = readOnly ? undefined : onRemoveFromGroup;
+  const safeOnGroupChange = readOnly
+    ? ((() => undefined) as (id: string, updates: GroupUpdateParams) => void)
+    : onGroupChange;
+  const safeOnUngroup = readOnly ? (() => undefined) : onUngroup;
+  const safeOnRemoveFromGroup = readOnly ? (() => undefined) : onRemoveFromGroup;
 
   // Node Extras to be lifted here because of PageSelector
   const [screenshots, setScreenshots] = useState<Screenshot[]>([]);

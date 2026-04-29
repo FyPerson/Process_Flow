@@ -4,8 +4,12 @@ import { safeDeepCopy } from '../utils/deepCopy';
 import { FlowNodeData, FlowDefinition, FlowConnector } from '../types/flow';
 
 
+// readOnly 是运行时 UI 标记（caller 注入到 node.data / edge.data），不能进 storage
 const autoSaveFilter = (key: string) => {
-  return !key.startsWith('__') && key !== 'measured' && key !== 'internals';
+  return !key.startsWith('__')
+    && key !== 'measured'
+    && key !== 'internals'
+    && key !== 'readOnly';
 };
 
 

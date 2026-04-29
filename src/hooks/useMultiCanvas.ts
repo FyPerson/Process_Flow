@@ -124,8 +124,13 @@ export interface UseMultiCanvasReturn {
 }
 
 // 过滤保存时不需要的字段
+// readOnly 是 caller 注入到 node.data / edge.data 的运行时 UI 标记，不能被 storage 保存
+// （否则 readOnly: true 会进数据库，下一个登录用户加载时这条边/节点会被错认为只读）
 const autoSaveFilter = (key: string) => {
-  return !key.startsWith('__') && key !== 'measured' && key !== 'internals';
+  return !key.startsWith('__')
+    && key !== 'measured'
+    && key !== 'internals'
+    && key !== 'readOnly';
 };
 
 /** storage 层 deep equality —— 等价于 JSON.stringify 比较 + key-order 不敏感。
