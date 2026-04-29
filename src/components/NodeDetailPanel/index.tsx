@@ -24,6 +24,8 @@ interface NodeDetailPanelProps {
   onUngroup?: (groupId: string) => void;
   onRemoveFromGroup?: (nodeId: string) => void;
   allNodes?: Node<FlowNodeData>[];
+  /** 只读模式：所有 onXxxChange 回调被吞掉；UI 仍可点击但改动不持久化 */
+  readOnly?: boolean;
 }
 
 export const NodeDetailPanel = memo(function NodeDetailPanel({
@@ -36,7 +38,15 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
   onUngroup,
   onRemoveFromGroup,
   allNodes = [],
+  readOnly = false,
 }: NodeDetailPanelProps) {
+  // 只读模式：所有"会改变 hook project 状态"的回调统一吞掉
+  // 子组件 input/select 仍然可用（视觉一致性），但不会写回 hook
+  const safeOnNodeChange = readOnly ? (() => undefined) : onNodeChange;
+  const safeOnEdgeChange = readOnly ? (() => undefined) : onEdgeChange;
+  const safeOnGroupChange = readOnly ? undefined : onGroupChange;
+  const safeOnUngroup = readOnly ? undefined : onUngroup;
+  const safeOnRemoveFromGroup = readOnly ? undefined : onRemoveFromGroup;
 
   // Node Extras to be lifted here because of PageSelector
   const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
@@ -92,7 +102,7 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
         }
       }
     };
-    onNodeChange(selectedElement.data.id, updates);
+    safeOnNodeChange(selectedElement.data.id, updates);
 
     setShowPageSelector(false);
   };
@@ -176,15 +186,30 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
         </div>
 
         <div className="panel-content">
+          {/* 只读模式提示 */}
+          {readOnly && (
+            <div
+              style={{
+                padding: '8px 12px',
+                background: 'rgba(245, 158, 11, 0.1)',
+                borderBottom: '1px solid rgba(245, 158, 11, 0.3)',
+                color: '#fbbf24',
+                fontSize: 12,
+              }}
+            >
+              ⚠ 只读模式：所有修改不会被保存
+            </div>
+          )}
+
           {/* Group Node Content */}
-          {isGroupNode && selectedElement.type === 'node' && selectedElement.node && onGroupChange && onUngroup && onRemoveFromGroup && (
+          {isGroupNode && selectedElement.type === 'node' && selectedElement.node && safeOnGroupChange && safeOnUngroup && safeOnRemoveFromGroup && (
             <GroupPropertiesPanel
               groupData={selectedElement.node.data as unknown as GroupNodeData}
               groupNode={selectedElement.node}
               childNodes={childNodes}
-              onGroupChange={onGroupChange}
-              onUngroup={onUngroup}
-              onRemoveFromGroup={onRemoveFromGroup}
+              onGroupChange={safeOnGroupChange}
+              onUngroup={safeOnUngroup}
+              onRemoveFromGroup={safeOnRemoveFromGroup}
               allNodes={allNodes}
             />
           )}
@@ -193,7 +218,7 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
           {isNode && !isGroupNode && selectedElement.type === 'node' && (
             <NodePropertiesPanel
               selectedElement={selectedElement}
-              onNodeChange={onNodeChange}
+              onNodeChange={safeOnNodeChange}
               onViewScreenshot={setViewingScreenshot}
               onOpenPageSelector={() => setShowPageSelector(true)}
               screenshots={screenshots}
@@ -206,7 +231,7 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
           {!isNode && selectedElement.type === 'edge' && (
             <EdgePropertiesPanel
               selectedElement={selectedElement}
-              onEdgeChange={onEdgeChange}
+              onEdgeChange={safeOnEdgeChange}
             />
           )}
 

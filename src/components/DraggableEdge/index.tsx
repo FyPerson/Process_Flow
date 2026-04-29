@@ -271,6 +271,18 @@ export default function DraggableEdge({
 
   const onMouseDown = useCallback(
     (evt: React.MouseEvent) => {
+      // 只读模式：直接吞掉拖动 offset 操作（仍允许选中样式）
+      if ((data as { readOnly?: boolean })?.readOnly) {
+        evt.stopPropagation();
+        // 仍允许选中
+        setEdges((edges) =>
+          edges.map((e) => ({
+            ...e,
+            selected: e.id === id,
+          })),
+        );
+        return;
+      }
       // 阻止冒泡，防止画布拖拽
       evt.stopPropagation();
       // 阻止默认行为

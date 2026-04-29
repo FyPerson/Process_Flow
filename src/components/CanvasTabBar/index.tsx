@@ -11,6 +11,8 @@ interface CanvasTabBarProps {
   onDeleteSheet: (sheetId: string) => void;
   onRenameSheet: (sheetId: string, newName: string) => void;
   onDuplicateSheet?: (sheetId: string) => void;
+  /** 只读：隐藏添加/删除/改名/复制入口；保留切换 tab */
+  readOnly?: boolean;
 }
 
 // 右键菜单状态
@@ -29,6 +31,7 @@ export function CanvasTabBar({
   onDeleteSheet,
   onRenameSheet,
   onDuplicateSheet,
+  readOnly = false,
 }: CanvasTabBarProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -278,8 +281,8 @@ export function CanvasTabBar({
             key={sheet.id}
             className={`canvas-tab ${activeSheetId === sheet.id ? 'active' : ''}`}
             onClick={() => handleTabClick(sheet.id)}
-            onDoubleClick={() => handleDoubleClick(sheet)}
-            onContextMenu={(e) => handleContextMenu(e, sheet.id)}
+            onDoubleClick={readOnly ? undefined : () => handleDoubleClick(sheet)}
+            onContextMenu={readOnly ? undefined : (e) => handleContextMenu(e, sheet.id)}
           >
             {editingId === sheet.id ? (
               <input
@@ -297,7 +300,7 @@ export function CanvasTabBar({
                 <span className="canvas-tab-name" title={sheet.name}>
                   {sheet.name}
                 </span>
-                {sheets.length > 1 && (
+                {!readOnly && sheets.length > 1 && (
                   <button
                     className="canvas-tab-close"
                     onClick={(e) => handleDelete(e, sheet.id)}
@@ -311,14 +314,16 @@ export function CanvasTabBar({
           </div>
         ))}
 
-        {/* 添加按钮 - 放在标签容器内，紧跟在标签后面 */}
-        <button
-          className="canvas-tab-add"
-          onClick={onAddSheet}
-          title="新建画布"
-        >
-          +
-        </button>
+        {/* 添加按钮 - 只读模式隐藏 */}
+        {!readOnly && (
+          <button
+            className="canvas-tab-add"
+            onClick={onAddSheet}
+            title="新建画布"
+          >
+            +
+          </button>
+        )}
       </div>
 
       {/* 右滚动按钮 */}

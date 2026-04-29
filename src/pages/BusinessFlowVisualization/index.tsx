@@ -92,6 +92,11 @@ export function BusinessFlowVisualization() {
         case 'discarded':
           // 用户已切到别的 canvas，旧请求结果丢弃；UI 已经在新 canvas 上
           break;
+        default: {
+          // exhaustive check：SaveResult 加新分支时 TS 会在这里编译报错，强制 caller 处理
+          const _exhaustive: never = result;
+          throw new Error(`unhandled save result: ${JSON.stringify(_exhaustive)}`);
+        }
       }
     } catch (err) {
       const apiErr = err as ApiError;
@@ -195,6 +200,8 @@ export function BusinessFlowVisualization() {
             collapsed: (node as any).collapsed,
             expandedSize: (node as any).expandedSize,
             relatedNodeIds: node.relatedNodeIds || [],
+            // 注入 readOnly 让 GroupNode 自己感知（用于 NodeResizer / 双击改名 / 折叠按钮）
+            readOnly,
           } as any,
           zIndex: -1,
         };
@@ -219,6 +226,8 @@ export function BusinessFlowVisualization() {
           subType: node.subType,
           backgroundColor: node.backgroundColor,
           relatedNodeIds: node.relatedNodeIds,
+          // 注入 readOnly 让 CustomNode 自己感知（用于 NodeResizer / 双击改名）
+          readOnly,
         },
       };
     });
@@ -301,6 +310,8 @@ export function BusinessFlowVisualization() {
           data: {
             ...conn.data,
             notImplemented: conn.notImplemented || false,
+            // 注入 readOnly 让 DraggableEdge 自己感知（拖动 offset 时拦截）
+            readOnly,
           },
         } as Edge;
       });
@@ -313,7 +324,7 @@ export function BusinessFlowVisualization() {
     );
 
     return { processedNodes: visibleNodes, processedEdges: visibleEdges };
-  }, [activeSheet, filterElements, showSubflows]);
+  }, [activeSheet, filterElements, showSubflows, readOnly]);
 
   // 初始加载
   // 默认数据只用于"无 URL canvasId 且 hook 也没拉到本地数据"的场景；

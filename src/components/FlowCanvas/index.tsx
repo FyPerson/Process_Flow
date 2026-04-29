@@ -566,6 +566,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
     isUndoRedoRef,
     isDraggingRef,
     dragHistoryTimerRef,
+    readOnly,
   });
 
   // 使用 useFlowOperations Hook
@@ -588,13 +589,15 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
     fitView,
   });
 
-  // 监听标签更改事件（分组和普通节点）
+  // 监听标签更改事件（分组和普通节点）—— readOnly 时只读模式直接吞掉
   useEffect(() => {
     const handleGroupLabelChange = (e: CustomEvent<{ id: string; label: string }>) => {
+      if (readOnly) return;
       onUpdateGroupLabel(e.detail.id, e.detail.label);
     };
 
     const handleNodeLabelChange = (e: CustomEvent<{ id: string; label: string }>) => {
+      if (readOnly) return;
       onNodeUpdate(e.detail.id, { name: e.detail.label });
     };
 
@@ -605,7 +608,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
       window.removeEventListener('groupLabelChange', handleGroupLabelChange as EventListener);
       window.removeEventListener('nodeLabelChange', handleNodeLabelChange as EventListener);
     };
-  }, [onUpdateGroupLabel, onNodeUpdate]);
+  }, [readOnly, onUpdateGroupLabel, onNodeUpdate]);
 
 
 
@@ -724,6 +727,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
 
       // Ctrl+V 或 Cmd+V (Mac) - 粘贴
       if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        if (readOnly) return;
         e.preventDefault();
         pasteNodes();
         return;
@@ -731,6 +735,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
 
       // Ctrl+Z 或 Cmd+Z (Mac) - 撤销
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        if (readOnly) return;
         e.preventDefault();
         undo();
         return;
@@ -738,6 +743,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
 
       // Ctrl+Y 或 Ctrl+Shift+Z 或 Cmd+Shift+Z (Mac) - 重做
       if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        if (readOnly) return;
         e.preventDefault();
         redo();
         return;
@@ -745,6 +751,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
 
       // Ctrl+G 或 Cmd+G (Mac) - 创建分组
       if ((e.ctrlKey || e.metaKey) && e.key === 'g' && !e.shiftKey) {
+        if (readOnly) return;
         e.preventDefault();
         onCreateGroup();
         return;
@@ -752,6 +759,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
 
       // Ctrl+Shift+G 或 Cmd+Shift+G (Mac) - 解散分组
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'G') {
+        if (readOnly) return;
         e.preventDefault();
         // 如果选中的是分组节点，则解散该分组
         if (selectedElement?.type === 'node' && selectedElement.node?.type === 'group') {
@@ -763,6 +771,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
 
       // Ctrl+Shift+D 或 Cmd+Shift+D (Mac) - 复制当前画布
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
+        if (readOnly) return;
         e.preventDefault();
         if (onDuplicateSheet && activeSheetId) {
           onDuplicateSheet(activeSheetId);
@@ -770,8 +779,9 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
         return;
       }
 
-      // Backspace - 删除 (带确认)
+      // Backspace - 删除 (带确认；handleDelete 内部也会再次拦 readOnly)
       if (e.key === 'Backspace') {
+        if (readOnly) return;
         const target = e.target as HTMLElement;
         const isInputElement =
           target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
@@ -786,7 +796,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, copyNodes, pasteNodes, onCreateGroup, handleUngroup, selectedElement, handleDelete, onDuplicateSheet, activeSheetId]);
+  }, [readOnly, undo, redo, copyNodes, pasteNodes, onCreateGroup, handleUngroup, selectedElement, handleDelete, onDuplicateSheet, activeSheetId]);
 
   // Determine alignment toolbar visibility (when more than 1 node is selected)
   const showAlignmentToolbar = nodes.filter((n) => n.selected).length > 1;
@@ -816,90 +826,95 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
             - 阶段 2 P2I 会以"导出/导入服务端 JSON"形式回归（走 /api/canvases/:id/export 等接口）
             - 旧的"保存到本地文件夹"功能不再需要，避免和服务端保存语义冲突让用户困惑
           */}
-          <div className="control-section">
-            <div className="section-title">{!isSidebarCollapsed && '操作'}</div>
-            <button className="control-btn" onClick={undo} title="撤销 (Ctrl+Z)">
-              <span className="btn-icon">↶</span>
-              {!isSidebarCollapsed && <span className="btn-text">撤销</span>}
-            </button>
-            <button className="control-btn" onClick={redo} title="重做 (Ctrl+Y)">
-              <span className="btn-icon">↷</span>
-              {!isSidebarCollapsed && <span className="btn-text">重做</span>}
-            </button>
-            <button className="control-btn" onClick={handleDelete} title="删除选中元素 (Backspace)">
-              <span className="btn-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M3 6H5H21" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M8 6V4C8 2.89543 8.89543 2 10 2H14C15.1046 2 16 2.89543 16 4V6M19 6V20C19 21.1046 18.1046 22 17 22H7C5.89543 22 5 21.1046 5 20V6H19Z" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
-              {!isSidebarCollapsed && <span className="btn-text">删除</span>}
-            </button>
-          </div>
+          {/* 只读模式下整段"操作/节点/分组"工具组隐藏 —— 没有撤销/重做/删除/添加节点/创建分组 */}
+          {!readOnly && (
+            <>
+              <div className="control-section">
+                <div className="section-title">{!isSidebarCollapsed && '操作'}</div>
+                <button className="control-btn" onClick={undo} title="撤销 (Ctrl+Z)">
+                  <span className="btn-icon">↶</span>
+                  {!isSidebarCollapsed && <span className="btn-text">撤销</span>}
+                </button>
+                <button className="control-btn" onClick={redo} title="重做 (Ctrl+Y)">
+                  <span className="btn-icon">↷</span>
+                  {!isSidebarCollapsed && <span className="btn-text">重做</span>}
+                </button>
+                <button className="control-btn" onClick={handleDelete} title="删除选中元素 (Backspace)">
+                  <span className="btn-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M3 6H5H21" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M8 6V4C8 2.89543 8.89543 2 10 2H14C15.1046 2 16 2.89543 16 4V6M19 6V20C19 21.1046 18.1046 22 17 22H7C5.89543 22 5 21.1046 5 20V6H19Z" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                  {!isSidebarCollapsed && <span className="btn-text">删除</span>}
+                </button>
+              </div>
 
-          <div className="divider"></div>
+              <div className="divider"></div>
 
-          <div className="control-section">
-            <div className="section-title">{!isSidebarCollapsed && '节点'}</div>
-            <button
-              className="control-btn btn-node"
-              onClick={() => onAddNode('process')}
-              title="添加流程节点"
-            >
-              <span className="btn-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <rect x="3" y="6" width="18" height="12" rx="2" />
-                </svg>
-              </span>
-              {!isSidebarCollapsed && <span className="btn-text">流程节点</span>}
-            </button>
-            <button
-              className="control-btn btn-node"
-              onClick={() => onAddNode('decision')}
-              title="添加判断节点"
-            >
-              <span className="btn-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M12 3L21 12L12 21L3 12L12 3Z" />
-                </svg>
-              </span>
-              {!isSidebarCollapsed && <span className="btn-text">判断节点</span>}
-            </button>
-            <button className="control-btn btn-node" onClick={() => onAddNode('data')} title="添加数据节点">
-              <span className="btn-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M5 19H19L21 5H7L5 19Z" />
-                </svg>
-              </span>
-              {!isSidebarCollapsed && <span className="btn-text">审批节点</span>}
-            </button>
-            <button
-              className="control-btn btn-node"
-              onClick={() => onAddNode('terminator')}
-              title="添加起止节点"
-            >
-              <span className="btn-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <rect x="3" y="6" width="18" height="12" rx="6" />
-                </svg>
-              </span>
-              {!isSidebarCollapsed && <span className="btn-text">起止节点</span>}
-            </button>
-          </div>
+              <div className="control-section">
+                <div className="section-title">{!isSidebarCollapsed && '节点'}</div>
+                <button
+                  className="control-btn btn-node"
+                  onClick={() => onAddNode('process')}
+                  title="添加流程节点"
+                >
+                  <span className="btn-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <rect x="3" y="6" width="18" height="12" rx="2" />
+                    </svg>
+                  </span>
+                  {!isSidebarCollapsed && <span className="btn-text">流程节点</span>}
+                </button>
+                <button
+                  className="control-btn btn-node"
+                  onClick={() => onAddNode('decision')}
+                  title="添加判断节点"
+                >
+                  <span className="btn-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M12 3L21 12L12 21L3 12L12 3Z" />
+                    </svg>
+                  </span>
+                  {!isSidebarCollapsed && <span className="btn-text">判断节点</span>}
+                </button>
+                <button className="control-btn btn-node" onClick={() => onAddNode('data')} title="添加数据节点">
+                  <span className="btn-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M5 19H19L21 5H7L5 19Z" />
+                    </svg>
+                  </span>
+                  {!isSidebarCollapsed && <span className="btn-text">审批节点</span>}
+                </button>
+                <button
+                  className="control-btn btn-node"
+                  onClick={() => onAddNode('terminator')}
+                  title="添加起止节点"
+                >
+                  <span className="btn-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <rect x="3" y="6" width="18" height="12" rx="6" />
+                    </svg>
+                  </span>
+                  {!isSidebarCollapsed && <span className="btn-text">起止节点</span>}
+                </button>
+              </div>
 
-          <div className="divider"></div>
+              <div className="divider"></div>
 
-          <div className="control-section">
-            <div className="section-title">{!isSidebarCollapsed && '分组'}</div>
-            <button
-              className="control-btn btn-group"
-              onClick={onCreateGroup}
-              title="将选中节点创建为分组 (Ctrl+G)"
-            >
-              <span className="btn-icon">📁</span>
-              {!isSidebarCollapsed && <span className="btn-text">创建分组</span>}
-            </button>
-          </div>
+              <div className="control-section">
+                <div className="section-title">{!isSidebarCollapsed && '分组'}</div>
+                <button
+                  className="control-btn btn-group"
+                  onClick={onCreateGroup}
+                  title="将选中节点创建为分组 (Ctrl+G)"
+                >
+                  <span className="btn-icon">📁</span>
+                  {!isSidebarCollapsed && <span className="btn-text">创建分组</span>}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -983,6 +998,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
           onUngroup={handleUngroup}
           onRemoveFromGroup={handleRemoveFromGroup}
           allNodes={nodes}
+          readOnly={readOnly}
         />
       </div>
 
@@ -996,6 +1012,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
           onDeleteSheet={onDeleteSheet}
           onRenameSheet={onRenameSheet}
           onDuplicateSheet={onDuplicateSheet}
+          readOnly={readOnly}
         />
       )}
     </div>

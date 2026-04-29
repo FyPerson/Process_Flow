@@ -25,12 +25,13 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
     setIsCollapsed(!!groupData.collapsed);
   }, [groupData.collapsed]);
 
-  // 双击进入编辑模式
+  // 双击进入编辑模式（readOnly 时禁用）
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    if ((groupData as unknown as { readOnly?: boolean }).readOnly) return;
     e.stopPropagation();
     setEditValue(groupData.label || '新分组');
     setIsEditing(true);
-  }, [groupData.label]);
+  }, [groupData]);
 
   // 编辑模式时自动聚焦
   useEffect(() => {
@@ -82,8 +83,9 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
     }
   }, [handleSubmit, groupData.label]);
 
-  // 处理折叠/展开
+  // 处理折叠/展开（readOnly 时禁用 —— 折叠会写 data.collapsed 和子节点 hidden 状态）
   const handleCollapseToggle = useCallback((e: React.MouseEvent) => {
+    if ((groupData as unknown as { readOnly?: boolean }).readOnly) return;
     e.stopPropagation();
     const newCollapsedState = !isCollapsed;
     setIsCollapsed(newCollapsedState);
@@ -192,7 +194,7 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
         updateNodeInternals(id);
       }, 50);
     });
-  }, [id, isCollapsed, setNodes, updateNodeInternals]);
+  }, [id, isCollapsed, setNodes, updateNodeInternals, groupData]);
 
   // Handle 样式：与 CustomNode 保持一致
   const sourceHandleStyle = {
@@ -250,11 +252,11 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
 
   return (
     <>
-      {/* 可调整大小 - 仅在选中时可用 */}
+      {/* 可调整大小 - 仅在选中且非只读时可用 */}
       <NodeResizer
         minWidth={minSize.minWidth}
         minHeight={minSize.minHeight}
-        isVisible={selected}
+        isVisible={selected && !(groupData as unknown as { readOnly?: boolean }).readOnly}
         lineStyle={{
           borderColor: color,
           borderWidth: 2,

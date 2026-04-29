@@ -257,8 +257,9 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
     zIndex: 10, // target handle 的 z-index 稍低
   };
 
-  // 双击开始编辑
+  // 双击开始编辑（readOnly 时不进入编辑态）
   const handleDoubleClick = (e: React.MouseEvent) => {
+    if ((nodeData as { readOnly?: boolean }).readOnly) return;
     e.stopPropagation(); // 防止触发画布的双击事件
     setOriginalValue(nodeData.name); // 保存编辑前的原始值
     setEditValue(nodeData.name); // 重置编辑值为当前值
@@ -328,10 +329,10 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
           </svg>
         </span>
       )}
-      {/* 仅在选中时显示调整大小控制器 */}
+      {/* 仅在选中且非只读时显示调整大小控制器 */}
       <NodeResizer
         color="#3b82f6"
-        isVisible={selected}
+        isVisible={selected && !(nodeData as { readOnly?: boolean }).readOnly}
         minWidth={100}
         minHeight={40}
         // 增大控制手柄大小，使其更容易点击

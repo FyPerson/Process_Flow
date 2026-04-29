@@ -30,6 +30,8 @@ interface UseFlowHandlersProps {
     isUndoRedoRef: React.MutableRefObject<boolean>;
     isDraggingRef: React.MutableRefObject<boolean>;
     dragHistoryTimerRef: React.MutableRefObject<NodeJS.Timeout | null>;
+    /** 只读模式下，所有 mutation handler 直接 return（连线、节点变更、边双击删除等） */
+    readOnly?: boolean;
 }
 
 export function useFlowHandlers({
@@ -48,6 +50,7 @@ export function useFlowHandlers({
     isUndoRedoRef,
     isDraggingRef,
     dragHistoryTimerRef,
+    readOnly = false,
 }: UseFlowHandlersProps) {
 
     // 包装 onNodesChange 以检测删除和位置变化操作
@@ -248,6 +251,7 @@ export function useFlowHandlers({
     // 处理连线
     const onConnect: OnConnect = useCallback(
         (params: Connection) => {
+            if (readOnly) return;
             if (!params.source || !params.target) {
                 return;
             }
@@ -286,12 +290,13 @@ export function useFlowHandlers({
                 return newEdges;
             });
         },
-        [setEdges, nodes, saveHistory, triggerAutoSave],
+        [readOnly, setEdges, nodes, saveHistory, triggerAutoSave],
     );
 
     // 节点数据更新
     const onNodeUpdate = useCallback(
         (nodeId: string, dataUpdates: Partial<FlowNodeData>, updatedStyle?: React.CSSProperties) => {
+            if (readOnly) return;
             setNodes((nds) => {
                 const newNodes = nds.map((node) => {
                     if (node.id === nodeId) {
@@ -364,12 +369,13 @@ export function useFlowHandlers({
                 return prev;
             });
         },
-        [setNodes, edges, saveHistory, triggerAutoSave, setSelectedElement],
+        [readOnly, setNodes, edges, saveHistory, triggerAutoSave, setSelectedElement],
     );
 
     // 连线数据更新
     const onEdgeUpdate = useCallback(
         (newEdge: Edge) => {
+            if (readOnly) return;
             setEdges((eds) => {
                 const newEdges = eds.map((edge) => {
                     if (edge.id === newEdge.id) {
@@ -386,12 +392,13 @@ export function useFlowHandlers({
             });
             setSelectedElement({ type: 'edge', data: newEdge });
         },
-        [setEdges, nodes, saveHistory, triggerAutoSave, setSelectedElement],
+        [readOnly, setEdges, nodes, saveHistory, triggerAutoSave, setSelectedElement],
     );
 
     // 连线双击处理（删除连线）
     const onEdgeDoubleClick = useCallback(
         (_event: React.MouseEvent, edge: Edge) => {
+            if (readOnly) return;
             if (window.confirm('确认删除这条连线吗？')) {
                 setEdges((eds) => {
                     const newEdges = eds.filter((e) => e.id !== edge.id);
@@ -406,7 +413,7 @@ export function useFlowHandlers({
                 setShowPanel(false);
             }
         },
-        [setEdges, nodes, saveHistory, triggerAutoSave, setSelectedElement, setShowPanel],
+        [readOnly, setEdges, nodes, saveHistory, triggerAutoSave, setSelectedElement, setShowPanel],
     );
 
     return {
