@@ -280,15 +280,49 @@ type NodeMetaRow = {
   deprecated_at: number | null;
 };
 
-/** 节点 storage 内容比对 —— 排除元字段（creator/updated/deprecated 由服务端管）*/
+/** key-order 无关的 deep equal，等价于 JSON 序列化语义：
+ * - 跳过 value === undefined 的 key（JSON.stringify 会丢，必须忽略）
+ * - 不依赖键插入顺序
+ * - 仅支持 JSON-safe 值（原始 / 数组 / 普通对象）
+ *
+ * 这是 P2H 期间踩过的坑：JSON.stringify 比较对象时，两端 key 顺序可能不同（V8 引擎里
+ * 字段添加顺序、解析顺序、property descriptor 都会影响）→ 同样语义的对象 stringify 结果
+ * 字面不等 → 误判 modified。
+ */
+function deepEqualJsonShape(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (a == null || b == null) return a === b;
+  if (typeof a !== 'object' || typeof b !== 'object') return false;
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (!deepEqualJsonShape(a[i], b[i])) return false;
+    }
+    return true;
+  }
+  if (Array.isArray(b)) return false;
+  const ao = a as Record<string, unknown>;
+  const bo = b as Record<string, unknown>;
+  // 收集"实际有值"（非 undefined）的 key
+  const aKeys = Object.keys(ao).filter((k) => ao[k] !== undefined);
+  const bKeys = Object.keys(bo).filter((k) => bo[k] !== undefined);
+  if (aKeys.length !== bKeys.length) return false;
+  for (const k of aKeys) {
+    if (bo[k] === undefined) return false;
+    if (!deepEqualJsonShape(ao[k], bo[k])) return false;
+  }
+  return true;
+}
+
+/** 节点 storage 内容比对 —— 排除元字段（creator/updated/deprecated 由服务端管）
+ * 用 key-order 无关的 deepEqual，避免误判 modified */
 function nodeContentEquals(a: StorageNode, b: StorageNode): boolean {
-  // 把元字段剔除后再 JSON 比较
-  const stripMeta = (n: StorageNode): unknown => {
+  const stripMeta = (n: StorageNode): Record<string, unknown> => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { creator_id, created_at, updated_by, updated_at, is_deprecated, ...rest } = n;
     return rest;
   };
-  return JSON.stringify(stripMeta(a)) === JSON.stringify(stripMeta(b));
+  return deepEqualJsonShape(stripMeta(a), stripMeta(b));
 }
 
 export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
@@ -334,7 +368,9 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
 
     const added: Array<{ sheetId: string; node: StorageNode }> = [];
     const removed: Array<{ sheetId: string; node: StorageNode }> = [];
-    const modified: Array<{ sheetId: string; node: StorageNode; baseNode: StorageNode }> = [];
+    // modified 增加 alsoDeprecated 标志：content 变 + 同时 is_deprecated false→true 的节点
+    // 防止"用户同时改内容 + 标废弃"时 deprecated 信号被吞（codex 必修 #2）
+    const modified: Array<{ sheetId: string; node: StorageNode; baseNode: StorageNode; alsoDeprecated: boolean }> = [];
     const deprecatedChanged: Array<{ sheetId: string; node: StorageNode; baseNode: StorageNode }> = [];
 
     for (const [key, { sheetId, node }] of incomingIndex) {
@@ -350,11 +386,14 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
           // 完全一样
           continue;
         }
-        // 检查是否仅 is_deprecated 变化
+        // 检查是否仅 is_deprecated 变化（content 没变 + dep false→true）
         if (contentSame && !baseDep && newDep) {
           deprecatedChanged.push({ sheetId, node, baseNode });
         } else {
-          modified.push({ sheetId, node, baseNode });
+          // content 变（可能也同时 dep 变）
+          // alsoDeprecated: content 变了，但 dep 也从 false→true（content+deprecated 同步）
+          const alsoDeprecated = !contentSame && !baseDep && newDep;
+          modified.push({ sheetId, node, baseNode, alsoDeprecated });
         }
       }
     }
@@ -408,7 +447,22 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
       }
     }
 
-    // 4.3 removed：仅 admin 允许
+    // 4.3 deprecated_changed：检 meta 缺失（codex 建议项）
+    // 标废弃也是写操作，节点必须在 nodes_meta 里有记录
+    for (const { sheetId, node } of deprecatedChanged) {
+      const meta = checkMeta.get(id, sheetId, node.id) as { creator_id: number } | undefined;
+      if (!meta) {
+        return {
+          ok: false,
+          status: 409,
+          error: 'node_meta_missing',
+          currentVersion: row.version,
+        };
+      }
+      // 不校验 creator —— 标废弃是公开权限
+    }
+
+    // 4.4 removed：仅 admin 允许
     if (removed.length > 0 && !isAdmin) {
       return {
         ok: false,
@@ -450,17 +504,22 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
         }
         // 已存在节点：creator/created_at 永远从表里读
         // updated_by/updated_at 在内容修改时更新（modified），标废弃不更新
-        const isModified = modified.some((m) => m.sheetId === sheet.id && m.node.id === node.id);
-        const isDeprecated = deprecatedChanged.some(
+        // is_deprecated：deprecated_changed 节点 + modified 节点的 alsoDeprecated 都设 true
+        const modEntry = modified.find((m) => m.sheetId === sheet.id && m.node.id === node.id);
+        const isModified = !!modEntry;
+        const isDeprecatedChanged = deprecatedChanged.some(
           (d) => d.sheetId === sheet.id && d.node.id === node.id
         );
+        const newDeprecated = isDeprecatedChanged
+          || (modEntry?.alsoDeprecated ?? false)
+          || !!meta.is_deprecated; // 已废弃节点保持已废弃
         return {
           ...node,
           creator_id: meta.creator_id,
           created_at: meta.created_at,
           updated_by: isModified ? user.id : meta.updated_by,
           updated_at: isModified ? now : meta.updated_at,
-          is_deprecated: isDeprecated ? true : !!meta.is_deprecated,
+          is_deprecated: newDeprecated,
         };
       }),
     }));
@@ -493,12 +552,22 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
       insertMeta.run(id, sheetId, node.id, user.id, now, user.id, now);
     }
     // 8.2 modified：UPDATE updated_by/updated_at
+    // 如果 alsoDeprecated（content + deprecated 同时变化），同事务再 UPDATE is_deprecated
     const updateMetaModified = db.prepare(
       `UPDATE nodes_meta SET updated_by=?, updated_at=?
        WHERE canvas_id=? AND sheet_id=? AND node_id=?`
     );
-    for (const { sheetId, node } of modified) {
-      updateMetaModified.run(user.id, now, id, sheetId, node.id);
+    const updateMetaModifiedAndDeprecated = db.prepare(
+      `UPDATE nodes_meta SET updated_by=?, updated_at=?,
+                              is_deprecated=1, deprecated_by=?, deprecated_at=?
+       WHERE canvas_id=? AND sheet_id=? AND node_id=?`
+    );
+    for (const { sheetId, node, alsoDeprecated } of modified) {
+      if (alsoDeprecated) {
+        updateMetaModifiedAndDeprecated.run(user.id, now, user.id, now, id, sheetId, node.id);
+      } else {
+        updateMetaModified.run(user.id, now, id, sheetId, node.id);
+      }
     }
     // 8.3 deprecated_changed：UPDATE is_deprecated + deprecated_by/at（不动 updated_*）
     const updateMetaDeprecated = db.prepare(
