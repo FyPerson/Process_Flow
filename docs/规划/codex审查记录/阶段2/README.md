@@ -11,7 +11,7 @@
 |---|---|---|---|
 | [P2H](./P2H/) | 保存 UI + 自动保存 + 冲突状态机 + readOnly 全入口禁写 | 8 | [P2H/README.md](./P2H/README.md) |
 | [P2I](./P2I/) | 导出/导入 JSON UI + 冲突逃生口本地副本 | 3 | — |
-| P2J | Playwright 端到端验收 | — | [docs/规划/P2J测试/](../../P2J测试/) |
+| [P2J](./P2J/) | Playwright 端到端验收 | — | [P2J/README.md](./P2J/README.md) |
 
 ## 累计
 
