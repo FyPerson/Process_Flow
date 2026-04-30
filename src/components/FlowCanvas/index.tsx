@@ -67,6 +67,8 @@ interface FlowCanvasProps {
   onDuplicateSheet?: (sheetId: string) => void;
   /** 只读模式（游客 / 无写权限）—— 禁拖拽/连线/删除/sheet 增删改，但允许平移缩放选中查看 */
   readOnly?: boolean;
+  /** P2I：从 JSON 文件导入为新画布。caller 实现文件选择 + apiImport + URL 跳新 canvasId */
+  onImport?: () => void;
 }
 
 import { OffscreenIndicators } from './OffscreenIndicators';
@@ -90,6 +92,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   onRenameSheet,
   onDuplicateSheet,
   readOnly = false,
+  onImport,
 }: {
   sheetId?: string;
   initialNodes: Node<FlowNodeData>[];
@@ -107,6 +110,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   onRenameSheet?: (sheetId: string, newName: string) => void;
   onDuplicateSheet?: (sheetId: string) => void;
   readOnly?: boolean;
+  onImport?: () => void;
 }) {
   // 迁移旧的 edge handle ID
   const migratedEdges = initialEdges.map((edge) => {
@@ -823,10 +827,31 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
           {/*
             阶段 2 P2H 整改：删除"保存到本地版本库 / 导出 / 导入"三个旧按钮。
             - 服务端保存由顶栏 SaveStatus 接管（自动保存 + 手动保存按钮）
-            - 阶段 2 P2I 会以"导出/导入服务端 JSON"形式回归（走 /api/canvases/:id/export 等接口）
-            - 旧的"保存到本地文件夹"功能不再需要，避免和服务端保存语义冲突让用户困惑
+            - 阶段 2 P2I：
+              · 导出按钮回归到顶栏 SaveStatus（不在这里），原因是导出仅需 canRead，
+                游客只读模式（左侧工具栏整段隐藏）下也应能导出
+              · 导入按钮放在这里 —— 必须登录用户才能创建新画布，readOnly 时整段隐藏正符合预期
           */}
-          {/* 只读模式下整段"操作/节点/分组"工具组隐藏 —— 没有撤销/重做/删除/添加节点/创建分组 */}
+          {/* 只读模式下整段"文件/操作/节点/分组"工具组隐藏 */}
+          {!readOnly && (
+            <>
+              {onImport && (
+                <div className="control-section">
+                  <div className="section-title">{!isSidebarCollapsed && '文件'}</div>
+                  <button
+                    className="control-btn btn-import"
+                    onClick={onImport}
+                    title="从 JSON 文件导入为新画布（创建一份私有副本）"
+                  >
+                    <span className="btn-icon">📥</span>
+                    {!isSidebarCollapsed && <span className="btn-text">导入</span>}
+                  </button>
+                </div>
+              )}
+
+              {onImport && <div className="divider"></div>}
+            </>
+          )}
           {!readOnly && (
             <>
               <div className="control-section">
@@ -1034,6 +1059,7 @@ export function FlowCanvas({
   onRenameSheet,
   onDuplicateSheet,
   readOnly = false,
+  onImport,
 }: FlowCanvasProps) {
   // 使用 sheetId 作为 key 确保 ReactFlowProvider 和 FlowCanvasContent 都重新挂载
   return (
@@ -1052,6 +1078,7 @@ export function FlowCanvas({
         onRenameSheet={onRenameSheet}
         onDuplicateSheet={onDuplicateSheet}
         readOnly={readOnly}
+        onImport={onImport}
       />
     </ReactFlowProvider>
   );

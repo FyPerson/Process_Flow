@@ -3,16 +3,44 @@ import { useSearchParams } from 'react-router-dom';
 import { FlowCanvas } from '../../components/FlowCanvas';
 import { SaveStatus } from '../../components/SaveStatus';
 import { downloadCanvasFromServer, downloadProjectAsLocal } from '../../utils/canvas-export';
+import { importCanvas } from '../../api/canvases';
 import { Node, Edge } from '@xyflow/react';
 import {
   FlowDefinition,
   FlowNodeData,
+  MultiCanvasProject,
   createEmptyProject,
 } from '../../types/flow';
 import { useMultiCanvas } from '../../hooks/useMultiCanvas';
 import { useAuth } from '../../auth/AuthContext';
 import type { ApiError } from '../../api/canvases';
 import './styles.css';
+
+/** 把导入接口的 ApiError 翻译成对用户可行动的中文文案 */
+function formatImportError(err: ApiError): string {
+  switch (err.error) {
+    case 'invalid_input': {
+      const issues = err.issues ?? [];
+      if (issues.length === 0) {
+        return '导入失败：文件内容格式不符合画布 schema';
+      }
+      // 列前 5 条 issue，避免 alert 过长
+      const lines = issues.slice(0, 5).map((it) => `  · ${it.path}: ${it.message}`);
+      const tail = issues.length > 5 ? `\n  ...（还有 ${issues.length - 5} 条问题）` : '';
+      return `导入失败：文件内容格式问题\n${lines.join('\n')}${tail}`;
+    }
+    case 'unauthorized':
+      return '导入失败：登录已过期，请重新登录';
+    case 'forbidden':
+      return '导入失败：没有创建画布的权限';
+    case 'network_error':
+      return '导入失败：网络连接失败，请检查网络后重试';
+    case 'invalid_response':
+      return '导入失败：服务器返回异常，请稍后重试';
+    default:
+      return `导入失败：${err.error}${err.message ? `（${err.message}）` : ''}`;
+  }
+}
 
 export function BusinessFlowVisualization() {
   const [showSubflows, setShowSubflows] = useState(false);
@@ -175,6 +203,71 @@ export function BusinessFlowVisualization() {
       suffix: conflict ? 'conflict' : 'local',
     });
   }, [getProjectData, canvasId, conflict]);
+
+  // 导入：用户选 JSON 文件 → 上传到 /api/canvases/import → URL 跳到新 canvasId
+  // 注意：dirty 时也允许导入（导入会跳走当前画布，beforeunload 拦截会弹原生提示）
+  const handleImport = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json,.json';
+    input.style.display = 'none';
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      // 客户端先拦文件大小，避免等服务端 413
+      const MAX_BYTES = 2 * 1024 * 1024;
+      if (file.size > MAX_BYTES) {
+        window.alert(
+          `文件超过 2MB（实际 ${(file.size / 1024 / 1024).toFixed(2)}MB），无法导入。\n` +
+            `如有大画布需求请联系管理员调整服务端 body limit。`
+        );
+        return;
+      }
+
+      // 读文件 + JSON.parse
+      let text: string;
+      try {
+        text = await file.text();
+      } catch {
+        window.alert('读取文件失败，请重试');
+        return;
+      }
+      let data: unknown;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        window.alert('文件格式错误：不是合法的 JSON');
+        return;
+      }
+
+      // 调 API（后端 Zod 会做完整校验，前端不重复跑）
+      try {
+        const result = await importCanvas({
+          name: file.name.replace(/\.json$/i, '').slice(0, 200) || '导入的画布',
+          data: data as MultiCanvasProject,
+        });
+        // 跳到新 canvasId（hook 会自动 reset dirty/conflict 等状态）
+        setSearchParams(
+          (prev) => {
+            const next = new URLSearchParams(prev);
+            next.set('canvasId', String(result.id));
+            return next;
+          },
+          { replace: true }
+        );
+      } catch (err) {
+        const apiErr = err as ApiError;
+        window.alert(formatImportError(apiErr));
+      }
+    };
+
+    document.body.appendChild(input);
+    input.click();
+    // 异步移除（让 onchange 有机会触发）
+    setTimeout(() => document.body.removeChild(input), 0);
+  }, [setSearchParams]);
 
   // 过滤显示节点和边
   const filterElements = useCallback(
@@ -506,6 +599,7 @@ export function BusinessFlowVisualization() {
             onDataChange={handleDataChange}
             getProjectData={getProjectData}
             readOnly={readOnly}
+            onImport={readOnly ? undefined : handleImport}
             // 多画布标签栏 —— readOnly 时所有 mutation 走 no-op，避免游客误以为能改
             sheets={project?.sheets || []}
             activeSheetId={activeSheetId}
