@@ -31,6 +31,13 @@ yarn-error.log*
 *.swo
 *~
 
+# Claude Code 运行时文件（per-machine 状态，不该入仓库）
+# - settings.local.json：Claude Code 自动维护的工具权限白名单
+# - scheduled_tasks.lock：当前 session 的定时任务锁（含 pid，会话间不可移植）
+# 注意：.claude/skills/ 是项目共享的 skill 定义，要入仓库
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+
 # 操作系统
 .DS_Store
 Thumbs.db
