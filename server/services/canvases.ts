@@ -236,38 +236,76 @@ export interface SaveCanvasInput {
 
 export type SaveCanvasResult =
   | { ok: true; version: number; merged: false }
-  | { ok: false; status: 409; error: 'conflict'; currentVersion: number };
+  | { ok: false; status: 409; error: 'conflict'; currentVersion: number }
+  | { ok: false; status: 409; error: 'node_id_collision'; currentVersion: number }
+  | { ok: false; status: 409; error: 'node_meta_missing'; currentVersion: number }
+  | { ok: false; status: 403; error: 'forbidden_modify_others_node'; message: string; currentVersion: number }
+  | { ok: false; status: 403; error: 'forbidden_remove_node_non_admin'; message: string; currentVersion: number };
 
 /**
- * 保存画布（方案 §5.2 情况 1）：
+ * 保存画布（方案 §5.2 情况 1 + §5.7 节点级权限严格化）：
  * - baseVersion == currentVersion → 直接保存为 currentVersion+1
  * - 不一致 → 返回 409 让前端走"看对方版本/覆盖"路径
  *
- * 同事务内：
- * 1. SELECT 当前 version + data（用于 nodes_meta 比对）
+ * 同事务内（§5.7 阶段 3 严格化版本）：
+ * 1. SELECT 当前 version + data
  * 2. 比 baseVersion；不等返 409
- * 3. UPDATE canvases.data + version=v+1 + updated_at/updated_by
- * 4. INSERT canvas_versions 新快照
- * 5. 同步 nodes_meta（增加新增节点，更新已有节点）—— §5.7
+ * 3. **计算 deltaB**：按 (sheet_id, node_id) 比对当前服务端 data vs incoming data
+ *    · added: 新增节点（服务端没有）
+ *    · removed: 物理删除节点（服务端有但客户端没有）
+ *    · modified: 节点内容变了（不只是 is_deprecated）
+ *    · deprecated_changed: 仅 is_deprecated false→true 的"标废弃"变化
+ * 4. **权限校验**（按 §5.7 规则）：
+ *    · added → INSERT nodes_meta，creator = 当前用户
+ *    · modified → 校验 creator == 当前用户 OR admin；否则 403
+ *    · deprecated_changed → 任何登录用户允许（标废弃是公开权限）
+ *    · removed → 仅 admin 允许；否则 403
+ * 5. **重写 data 的节点元字段**：服务端从 nodes_meta 强制覆写客户端传的 creator/updated 等字段
+ * 6. UPDATE canvases.data + version=v+1
+ * 7. INSERT canvas_versions 新快照
  *
  * v2.1 阶段加完整合并算法（§5.6）
  */
+type StorageNode = { id: string; is_deprecated?: boolean; [key: string]: unknown };
+type StorageSheet = { id: string; nodes: StorageNode[]; [key: string]: unknown };
+type NodeMetaRow = {
+  node_id: string;
+  sheet_id: string;
+  creator_id: number;
+  created_at: number;
+  updated_by: number;
+  updated_at: number;
+  is_deprecated: number;
+  deprecated_by: number | null;
+  deprecated_at: number | null;
+};
+
+/** 节点 storage 内容比对 —— 排除元字段（creator/updated/deprecated 由服务端管）*/
+function nodeContentEquals(a: StorageNode, b: StorageNode): boolean {
+  // 把元字段剔除后再 JSON 比较
+  const stripMeta = (n: StorageNode): unknown => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { creator_id, created_at, updated_by, updated_at, is_deprecated, ...rest } = n;
+    return rest;
+  };
+  return JSON.stringify(stripMeta(a)) === JSON.stringify(stripMeta(b));
+}
+
 export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
   const db = getDb();
   const { id, baseVersion, data, user } = input;
   const now = Date.now();
-  const dataJson = JSON.stringify(data);
 
   const tx = db.transaction((): SaveCanvasResult => {
-    // BEGIN IMMEDIATE 由 db.transaction 默认提供（写事务）
-    const row = db.prepare('SELECT version FROM canvases WHERE id = ?').get(id) as
-      | { version: number }
+    // 1. 取当前画布（version + data）
+    const row = db.prepare('SELECT version, data FROM canvases WHERE id = ?').get(id) as
+      | { version: number; data: string }
       | undefined;
     if (!row) {
       throw new Error('canvas_not_found');
     }
+    // 2. 版本对齐
     if (row.version !== baseVersion) {
-      // 情况 2/3：返回 409，让前端弹窗（阶段 5 才做合并）
       return {
         ok: false,
         status: 409,
@@ -276,39 +314,215 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
       };
     }
 
+    // 3. 计算 deltaB（按 sheet+node 复合 ID）
+    const baseData = JSON.parse(row.data) as { sheets: StorageSheet[] };
+    const incomingData = data as unknown as { sheets: StorageSheet[] };
+
+    // 索引：(sheetId|nodeId) → node
+    const baseIndex = new Map<string, { sheetId: string; node: StorageNode }>();
+    for (const sheet of baseData.sheets) {
+      for (const node of sheet.nodes) {
+        baseIndex.set(`${sheet.id}|${node.id}`, { sheetId: sheet.id, node });
+      }
+    }
+    const incomingIndex = new Map<string, { sheetId: string; node: StorageNode }>();
+    for (const sheet of incomingData.sheets) {
+      for (const node of sheet.nodes) {
+        incomingIndex.set(`${sheet.id}|${node.id}`, { sheetId: sheet.id, node });
+      }
+    }
+
+    const added: Array<{ sheetId: string; node: StorageNode }> = [];
+    const removed: Array<{ sheetId: string; node: StorageNode }> = [];
+    const modified: Array<{ sheetId: string; node: StorageNode; baseNode: StorageNode }> = [];
+    const deprecatedChanged: Array<{ sheetId: string; node: StorageNode; baseNode: StorageNode }> = [];
+
+    for (const [key, { sheetId, node }] of incomingIndex) {
+      const baseEntry = baseIndex.get(key);
+      if (!baseEntry) {
+        added.push({ sheetId, node });
+      } else {
+        const baseNode = baseEntry.node;
+        const baseDep = !!baseNode.is_deprecated;
+        const newDep = !!node.is_deprecated;
+        const contentSame = nodeContentEquals(baseNode, node);
+        if (contentSame && baseDep === newDep) {
+          // 完全一样
+          continue;
+        }
+        // 检查是否仅 is_deprecated 变化
+        if (contentSame && !baseDep && newDep) {
+          deprecatedChanged.push({ sheetId, node, baseNode });
+        } else {
+          modified.push({ sheetId, node, baseNode });
+        }
+      }
+    }
+    for (const [key, { sheetId, node }] of baseIndex) {
+      if (!incomingIndex.has(key)) {
+        removed.push({ sheetId, node });
+      }
+    }
+
+    // 4. 权限校验（§5.7）
+    const isAdmin = user.role === 'admin';
+
+    // 4.1 added：检查 nodes_meta 没记录（防 ID 撞车）
+    const checkMeta = db.prepare(
+      `SELECT creator_id FROM nodes_meta WHERE canvas_id=? AND sheet_id=? AND node_id=?`
+    );
+    for (const { sheetId, node } of added) {
+      const existing = checkMeta.get(id, sheetId, node.id) as { creator_id: number } | undefined;
+      if (existing) {
+        // ID 撞车 —— 数据完整性问题
+        return {
+          ok: false,
+          status: 409,
+          error: 'node_id_collision',
+          currentVersion: row.version,
+        };
+      }
+    }
+
+    // 4.2 modified：校验 creator == 当前用户 OR admin
+    for (const { sheetId, node } of modified) {
+      const meta = checkMeta.get(id, sheetId, node.id) as { creator_id: number } | undefined;
+      if (!meta) {
+        // 节点在 incoming 里有但 nodes_meta 没记录 —— 数据不一致
+        return {
+          ok: false,
+          status: 409,
+          error: 'node_meta_missing',
+          currentVersion: row.version,
+        };
+      }
+      if (meta.creator_id !== user.id && !isAdmin) {
+        return {
+          ok: false,
+          status: 403,
+          error: 'forbidden_modify_others_node',
+          // 给 caller 一个能定位的信息
+          message: `cannot modify node ${node.id} created by user ${meta.creator_id}`,
+          currentVersion: row.version,
+        };
+      }
+    }
+
+    // 4.3 removed：仅 admin 允许
+    if (removed.length > 0 && !isAdmin) {
+      return {
+        ok: false,
+        status: 403,
+        error: 'forbidden_remove_node_non_admin',
+        message: `cannot remove ${removed.length} node(s); only admin can physically delete (use deprecate instead)`,
+        currentVersion: row.version,
+      };
+    }
+
+    // 4.4 deprecated_changed：任何登录用户都允许（公开权限）—— 不需校验
+
+    // 5. 服务端从 nodes_meta 重写 incoming data 的元字段（防客户端篡改）
+    // 一次性查所有相关 nodes_meta
+    const allMetaRows = db.prepare(
+      `SELECT node_id, sheet_id, creator_id, created_at, updated_by, updated_at,
+              is_deprecated, deprecated_by, deprecated_at
+       FROM nodes_meta WHERE canvas_id=?`
+    ).all(id) as NodeMetaRow[];
+    const metaIndex = new Map<string, NodeMetaRow>();
+    for (const m of allMetaRows) {
+      metaIndex.set(`${m.sheet_id}|${m.node_id}`, m);
+    }
+    // 逐节点重写
+    const rewrittenSheets = incomingData.sheets.map((sheet) => ({
+      ...sheet,
+      nodes: sheet.nodes.map((node) => {
+        const meta = metaIndex.get(`${sheet.id}|${node.id}`);
+        if (!meta) {
+          // 是 added 节点；用当前用户和 now（同步 nodes_meta 在下一步做）
+          return {
+            ...node,
+            creator_id: user.id,
+            created_at: now,
+            updated_by: user.id,
+            updated_at: now,
+            is_deprecated: !!node.is_deprecated, // 客户端传的初始值
+          };
+        }
+        // 已存在节点：creator/created_at 永远从表里读
+        // updated_by/updated_at 在内容修改时更新（modified），标废弃不更新
+        const isModified = modified.some((m) => m.sheetId === sheet.id && m.node.id === node.id);
+        const isDeprecated = deprecatedChanged.some(
+          (d) => d.sheetId === sheet.id && d.node.id === node.id
+        );
+        return {
+          ...node,
+          creator_id: meta.creator_id,
+          created_at: meta.created_at,
+          updated_by: isModified ? user.id : meta.updated_by,
+          updated_at: isModified ? now : meta.updated_at,
+          is_deprecated: isDeprecated ? true : !!meta.is_deprecated,
+        };
+      }),
+    }));
+    const rewrittenData = { ...incomingData, sheets: rewrittenSheets };
+    const dataJson = JSON.stringify(rewrittenData);
+
     const newVersion = row.version + 1;
 
-    // 写主表
+    // 6. 写主表
     db.prepare(
       `UPDATE canvases
          SET data = ?, version = ?, updated_by = ?, updated_at = ?
        WHERE id = ?`
     ).run(dataJson, newVersion, user.id, now, id);
 
-    // 追加版本快照
+    // 7. 追加版本快照
     db.prepare(
       `INSERT INTO canvas_versions (canvas_id, version, data, saved_by, saved_at)
        VALUES (?, ?, ?, ?, ?)`
     ).run(id, newVersion, dataJson, user.id, now);
 
-    // 同步 nodes_meta：仅新增（新节点）和更新（已存在）
-    // 完整规则见 §5.7（含越权检查、标废弃、admin 物理删等）—— 阶段 3 再补严格版
-    // 当前 MVP 简化：所有当前 data 中的节点都 INSERT OR IGNORE，已存在的不动
+    // 8. 同步 nodes_meta —— 严格化版本
+    // 8.1 added：INSERT
     const insertMeta = db.prepare(
-      `INSERT OR IGNORE INTO nodes_meta
+      `INSERT INTO nodes_meta
          (canvas_id, sheet_id, node_id, creator_id, created_at, updated_by, updated_at, is_deprecated)
        VALUES (?, ?, ?, ?, ?, ?, ?, 0)`
     );
-    for (const sheet of data.sheets) {
-      for (const node of sheet.nodes) {
-        insertMeta.run(id, sheet.id, node.id, user.id, now, user.id, now);
-      }
+    for (const { sheetId, node } of added) {
+      insertMeta.run(id, sheetId, node.id, user.id, now, user.id, now);
+    }
+    // 8.2 modified：UPDATE updated_by/updated_at
+    const updateMetaModified = db.prepare(
+      `UPDATE nodes_meta SET updated_by=?, updated_at=?
+       WHERE canvas_id=? AND sheet_id=? AND node_id=?`
+    );
+    for (const { sheetId, node } of modified) {
+      updateMetaModified.run(user.id, now, id, sheetId, node.id);
+    }
+    // 8.3 deprecated_changed：UPDATE is_deprecated + deprecated_by/at（不动 updated_*）
+    const updateMetaDeprecated = db.prepare(
+      `UPDATE nodes_meta SET is_deprecated=1, deprecated_by=?, deprecated_at=?
+       WHERE canvas_id=? AND sheet_id=? AND node_id=?`
+    );
+    for (const { sheetId, node } of deprecatedChanged) {
+      updateMetaDeprecated.run(user.id, now, id, sheetId, node.id);
+    }
+    // 8.4 removed：DELETE annotations + nodes_meta（同事务）
+    const deleteAnnotations = db.prepare(
+      `DELETE FROM annotations WHERE canvas_id=? AND sheet_id=? AND node_id=?`
+    );
+    const deleteMeta = db.prepare(
+      `DELETE FROM nodes_meta WHERE canvas_id=? AND sheet_id=? AND node_id=?`
+    );
+    for (const { sheetId, node } of removed) {
+      deleteAnnotations.run(id, sheetId, node.id);
+      deleteMeta.run(id, sheetId, node.id);
     }
 
     return { ok: true, version: newVersion, merged: false };
   });
 
-  // .immediate(): BEGIN IMMEDIATE，避免两个并发 PUT 同时通过版本检查
   return tx.immediate();
 }
 

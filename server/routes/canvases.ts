@@ -231,10 +231,26 @@ canvasesRouter.put(
         user: req.user!,
       });
       if (!result.ok) {
+        // 多种 §5.7 错误：409（version 冲突 / ID 撞车 / meta 缺失）/ 403（越权改/删别人节点）
+        if (result.status === 403) {
+          res.status(403).json({
+            error: result.error,
+            message: result.message,
+            currentVersion: result.currentVersion,
+          });
+          return;
+        }
+        // 409 系列
+        const message =
+          result.error === 'conflict'
+            ? 'canvas was modified by another user; reload and retry'
+            : result.error === 'node_id_collision'
+              ? 'node ID collision detected (server already has a node with this id)'
+              : 'node meta inconsistency (a modified node has no record in nodes_meta)';
         res.status(409).json({
-          error: 'conflict',
+          error: result.error,
           currentVersion: result.currentVersion,
-          message: 'canvas was modified by another user; reload and retry',
+          message,
         });
         return;
       }
