@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 // v3 双进程架构：Vite 跑 5173 + proxy /api 到 Express 3001
 // 之前 v2 是 Express 单进程嵌 Vite middleware，但 Windows 上 createViteServer
-// 在 middlewareMode 下有概率卡住启动序列。详见 docs/规划/codex审查记录/dev-hang/
+// 在 middlewareMode 下有概率卡住启动序列。详见 docs/规划/codex审查记录/横切问题/dev-hang/
 export default defineConfig({
   plugins: [react()],
   server: {

@@ -6,7 +6,7 @@
 //
 // 之前 v2 是单进程（dev 里嵌 Vite middleware），但 createViteServer({middlewareMode:true})
 // 在 Windows 上有概率卡住启动序列（[db] ready 后无任何输出 60-90 秒），已多次踩坑。
-// 详见 docs/规划/codex审查记录/dev-hang/00-诊断-dev 启动 hang 根因.md
+// 详见 docs/规划/codex审查记录/横切问题/dev-hang/00-诊断-dev 启动 hang 根因.md
 
 import express from 'express';
 import path from 'node:path';

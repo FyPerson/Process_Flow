@@ -428,39 +428,47 @@ cat /tmp/codex-result.md
 #### 步骤 4：归档 + 清理（一次性做完，不留尾巴）
 
 ```bash
-# 4.1 归档到仓库（路径规则：docs/规划/codex审查记录/<阶段>/<NN>-<轮次>-<commit>-<主题>.md）
-STAGE="P2I"          # 阶段标识，与目录名一致
-ROUND="01"           # 该阶段内审查编号（01/02/03...）
-TOPIC="一审"         # 一审/二审/整体审/终审 等
-COMMIT="abc1234"     # 被审的 commit hash 前缀
-SUBJECT="导入导出 UI 首次审查"  # 主题描述
+# 4.1 归档到仓库
+# 两级层次：第一级 = 阶段N/ 或 横切问题/，第二级 = 子阶段（PNX）或 横切主题
+# 阶段子阶段：docs/规划/codex审查记录/阶段<N>/<PNX>/<NN>-<轮次>-<commit>-<主题>.md
+# 横切主题：docs/规划/codex审查记录/横切问题/<主题>/<NN>-<轮次>-<主题>.md
+LEVEL1="阶段3"        # 阶段2 / 阶段3 / 横切问题
+SUBDIR="P3A"          # 阶段下子阶段（P2H/P2I/P3A）或横切主题（dev-hang/R1-hook修复）
+ROUND="01"            # 该子目录内审查编号（01/02/03...）
+TOPIC="代码审查"      # 设计取舍/一审/二审/代码审查/整体审/终审 等
+COMMIT="abc1234"      # 被审的 commit hash 前缀（横切主题可省略）
+SUBJECT="P3A 节点级权限服务端"  # 主题描述
 
-mkdir -p "docs/规划/codex审查记录/$STAGE"
-mv /tmp/codex-result.md "docs/规划/codex审查记录/$STAGE/$ROUND-$TOPIC-$COMMIT-$SUBJECT.md"
+mkdir -p "docs/规划/codex审查记录/$LEVEL1/$SUBDIR"
+mv /tmp/codex-result.md "docs/规划/codex审查记录/$LEVEL1/$SUBDIR/$ROUND-$TOPIC-$COMMIT-$SUBJECT.md"
 
 # 4.2 清理 /tmp 中间文件（prompt + stdout，无保留价值）
 rm /tmp/codex-prompt.txt /tmp/codex-stdout.log
 
-# 4.3 更新跨阶段总索引（首次进入新阶段才需要更新表格行）
-# 编辑 docs/规划/codex审查记录/README.md，给该阶段加一行
-# （如果该阶段已有行，仅在阶段结束写 <阶段>/README.md 时再回来更新评级和经验链接）
+# 4.3 更新一级 README（首次进入新阶段/新横切主题才需要）
+# 阶段：编辑 docs/规划/codex审查记录/阶段<N>/README.md，给子阶段表格加一行
+# 横切：编辑 docs/规划/codex审查记录/横切问题/README.md，给"已根治"或"进行中"表格加一行
+# 总 README（codex审查记录/README.md）只在新建一级目录时更新一次，不随子审查更新
 ```
 
-### 阶段叙事（阶段结束时）
+### 阶段 / 横切主题叙事（结束时）
 
-阶段所有审查跑完后，写一份 `docs/规划/codex审查记录/<阶段>/README.md`：
+子阶段所有审查跑完后，写一份 `docs/规划/codex审查记录/<一级>/<子目录>/README.md`：
 - 时间线表格（轮次 × commit × 主题 × 评级演化）
 - 关键经验沉淀（可复用到其他项目的设计经验）
 - 残留风险（写进 `docs/规划/多人协作-方案.md` 风险章节，并在此简短记录指针）
 
-参考 [docs/规划/codex审查记录/P2H/README.md](../../../docs/规划/codex审查记录/P2H/README.md) 是已经做好的样例。
+参考 [docs/规划/codex审查记录/阶段2/P2H/README.md](../../../docs/规划/codex审查记录/阶段2/P2H/README.md) 是已经做好的样例。
 
-### 跨阶段总索引
+### 阶段 vs 横切问题怎么选
 
-[docs/规划/codex审查记录/README.md](../../../docs/规划/codex审查记录/README.md) **只**做"阶段表格索引"，不复制阶段内细节。
-- 加新阶段：append 一行表格
-- 阶段评级变化：更新对应行的"评级"列
-- 不要把阶段经验沉淀写进总索引（那是阶段 README 的职责）
+**阶段**：开发新功能（新增节点权限语义、批注 CRUD、admin 后台等）。子目录形如 `阶段3/P3A/`。
+
+**横切问题**：环境/工具链问题，跨阶段反复出现，根治修复独立于阶段功能。子目录形如 `横切问题/dev-hang/`。判定标准见 `横切问题/README.md`。
+
+### 跨级总索引
+
+[docs/规划/codex审查记录/README.md](../../../docs/规划/codex审查记录/README.md) 只做"一级目录索引"（阶段2/阶段3/横切问题）。子阶段表格交给一级 README，子阶段经验交给子阶段 README。三级分工，不要写串。
 
 ### 命令兜底参考
 
