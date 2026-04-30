@@ -383,3 +383,86 @@ $output = & $sshExe $SshTarget $Command 2>&1
 1. **数据目录必须放仓库工作区外**：因为 post-receive hook 通常含 `git clean -fd`，万一 ignore 规则漂了或加了 `-x`，会永久丢失生产数据。本项目用 `E:\business-flow-data\` 而不是 `E:\business-flow\data\`。
 2. **PM2 进程的 NODE_ENV 必须由 ecosystem.config.cjs 显式声明**，不能依赖 npm scripts 的 cross-env—— PM2 启动不走 npm。
 3. **每个进入 main 的 commit 都双 push（origin + server），无论代码还是文档**。三端 HEAD 始终一致才能让 reset/rebase 可预测；省一次 push 是错的优化。
+
+---
+
+## codex 审查归档流程
+
+每次跑 codex 审查时**必须**走以下闭环，避免 `/tmp` 累积 + 审查结果丢失。
+（背景：阶段 2 P2H 期间跑了 8 轮审查，过程中 prompt + stdout.log 在 `/tmp` 累积 ~3MB，结果文件没归档到仓库 → 后续清理时差点误删）。
+
+### 标准流程（4 步）
+
+#### 步骤 1：写 prompt 到 `/tmp/codex-prompt.txt`
+```bash
+cat > /tmp/codex-prompt.txt << 'PROMPT'
+（审查范围、重点、输出格式...）
+PROMPT
+```
+
+#### 步骤 2：跑 codex 后台执行
+```bash
+codex exec --skip-git-repo-check --sandbox read-only --color never \
+  -o /tmp/codex-result.md \
+  "$(cat /tmp/codex-prompt.txt)" \
+  < /dev/null > /tmp/codex-stdout.log 2>&1
+```
+**关键点**：
+- `< /dev/null` 必须有，否则 codex 等 stdin 会卡 20+ 分钟（已踩坑）
+- `-o /tmp/codex-result.md` 把审查结论直接写文件
+- `> /tmp/codex-stdout.log 2>&1` 把过程噪音收纳进文件，不污染对话
+- 用 `run_in_background: true` 跑，配合 ScheduleWakeup 4-5 分钟后兜底检查
+
+#### 步骤 3：读结果给用户
+```bash
+cat /tmp/codex-result.md
+```
+（用 Read 工具读，不是 cat 在 Bash 里输出，避免占对话上下文）
+
+把审查结论给用户，用户拍板下一步动作。
+
+#### 步骤 4：归档 + 清理（一次性做完，不留尾巴）
+
+```bash
+# 4.1 归档到仓库（路径规则：docs/规划/codex审查记录/<阶段>/<NN>-<轮次>-<commit>-<主题>.md）
+STAGE="P2I"          # 阶段标识，与目录名一致
+ROUND="01"           # 该阶段内审查编号（01/02/03...）
+TOPIC="一审"         # 一审/二审/整体审/终审 等
+COMMIT="abc1234"     # 被审的 commit hash 前缀
+SUBJECT="导入导出 UI 首次审查"  # 主题描述
+
+mkdir -p "docs/规划/codex审查记录/$STAGE"
+mv /tmp/codex-result.md "docs/规划/codex审查记录/$STAGE/$ROUND-$TOPIC-$COMMIT-$SUBJECT.md"
+
+# 4.2 清理 /tmp 中间文件（prompt + stdout，无保留价值）
+rm /tmp/codex-prompt.txt /tmp/codex-stdout.log
+
+# 4.3 更新跨阶段总索引（首次进入新阶段才需要更新表格行）
+# 编辑 docs/规划/codex审查记录/README.md，给该阶段加一行
+# （如果该阶段已有行，仅在阶段结束写 <阶段>/README.md 时再回来更新评级和经验链接）
+```
+
+### 阶段叙事（阶段结束时）
+
+阶段所有审查跑完后，写一份 `docs/规划/codex审查记录/<阶段>/README.md`：
+- 时间线表格（轮次 × commit × 主题 × 评级演化）
+- 关键经验沉淀（可复用到其他项目的设计经验）
+- 残留风险（写进 `docs/规划/多人协作-方案.md` 风险章节，并在此简短记录指针）
+
+参考 [docs/规划/codex审查记录/P2H/README.md](../../../docs/规划/codex审查记录/P2H/README.md) 是已经做好的样例。
+
+### 跨阶段总索引
+
+[docs/规划/codex审查记录/README.md](../../../docs/规划/codex审查记录/README.md) **只**做"阶段表格索引"，不复制阶段内细节。
+- 加新阶段：append 一行表格
+- 阶段评级变化：更新对应行的"评级"列
+- 不要把阶段经验沉淀写进总索引（那是阶段 README 的职责）
+
+### 命令兜底参考
+
+如果按上面步骤忘了哪一步，至少做最后一个清理：
+```bash
+ls /tmp/codex-* 2>/dev/null  # 看有没有遗留
+# 有 result.md 没归档 → 先归档再删
+# 有 prompt + stdout 但 result 已归档 → 直接 rm
+```
