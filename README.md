@@ -78,6 +78,19 @@ business-flow-react/
 
 通过 `/deploy <提交信息>` 触发：自动 bump 版本、双 push、校验 hook 真实生效与 PM2 进程一致性。详见 [.claude/skills/deploy/SKILL.md](.claude/skills/deploy/SKILL.md)。生产地址 http://172.16.0.138:3001/。
 
+### 生产登录凭证（测试阶段，明文记录）
+
+| 字段 | 值 |
+|---|---|
+| 用户名 | `admin` |
+| 密码 | `nZoEOVOiWBQ` |
+| 角色 | `admin` |
+
+⚠️ **风险提示**：
+- 当前处于阶段 2 测试期，账号仅在内部 5 并发用户中流转，明文记录可接受
+- **暂未实现"修改密码"UI**（阶段 3 加权限管理时一并做）；后端 API `POST /api/auth/change-password` 已存在，可以走 curl 改
+- 正式上线前必须：① 改密 ② 轮换 JWT_SECRET（清空 server 端 .env 重新生成）③ 把本节凭证从 README 移除
+
 ## 使用说明
 
 1. 点击蓝色虚线边框节点可查看详情
