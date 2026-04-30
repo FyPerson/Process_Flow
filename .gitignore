@@ -59,8 +59,8 @@ docs/历史/
 
 # 本地素材与数据档案见 E:\业务全景图_assets\
 
-# 部署钩子本地副本
-server-hooks/
+# 部署钩子本地副本（根目录的本地拷贝；scripts/server-hooks/ 是入仓库的模板）
+/server-hooks/
 
 # 一次性分析输出
 eslint-*.json

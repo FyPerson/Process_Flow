@@ -1,31 +1,36 @@
 ---
 name: deploy
-description: 提交代码并部署到生产服务器（业务全景图项目）。当用户输入 /deploy、/deploy <提交信息>、或说"帮我部署"时触发。基于 server-side post-receive hook + 生产构建模式（vite build + Express serve dist + PM2 restart），自动管理语义版本号，并验证 hook 是否真的生效。
+description: 提交代码并部署到生产服务器（业务全景图项目）。当用户输入 /deploy、/deploy <提交信息>、或说"帮我部署"时触发。基于客户端 deploy.ps1 脚本（v2 架构，2026-04-30 替代 hook 内 ssh）+ 生产构建模式（vite build + Express serve dist + PM2 restart），自动管理语义版本号，并强制验证部署生效。
 disable-model-invocation: true
 ---
 
 # 部署到生产服务器
 
-## 项目部署模式（v2 生产构建模式 —— 与一般项目不同，先读一遍）
+## 项目部署模式（v2 客户端 deploy 脚本模式 —— 2026-04-30 起，先读一遍）
 
-本项目走 **server-side hook 自动部署 + 生产构建** 模式：
+本项目走 **代码同步走 hook + 服务端 install/build/restart 走客户端 deploy 脚本** 的两段式部署：
 
 - 远端 `server` = `\\172.16.0.138\C$\GitRepos\business-flow.git`（bare repo）
-- 推到 bare repo 时触发 `hooks/post-receive`（PowerShell）
-- hook **跑在 push 客户端**（git local/file transport 特性，不是服务器进程）：
-  1. 用 `--git-dir`/`--work-tree` 显式指定 UNC 路径，把代码同步到 `\\172.16.0.138\E$\business-flow`
-  2. 通过 `ssh administrator@172.16.0.138` 在 server 端执行 `npm install --omit=dev` + `npm install --include=dev` + `npm run build`
-  3. 通过 ssh 执行 `pm2 restart business-flow --update-env`
-- 部署目标：PM2 进程名 `business-flow`，由 [ecosystem.config.cjs](ecosystem.config.cjs) 配置（NODE_ENV=production / DATA_DIR=E:/business-flow-data / PORT=3001）
+- 推到 bare repo 时触发 `hooks/post-receive`（PowerShell），**只做 fetch + reset 同步代码到 worktree**：
+  · 用 `--git-dir`/`--work-tree` 显式指定 UNC 路径，把代码同步到 `\\172.16.0.138\E$\business-flow`
+  · **绝不再调 ssh**（避免 Gotcha #12 派生 PowerShell 静默失败）
+  · 末尾打印明确提示："Code synced. Next step: powershell -File scripts/deploy.ps1"
+- 客户端 [`scripts/deploy.ps1`](../../../scripts/deploy.ps1) 由用户**在主 PowerShell** 跑（不是 hook 派生的子进程）：
+  · ssh + npm install --omit=dev + npm install --include=dev + npm run build + pm2 restart --update-env
+  · 自动验证 PM2 真重启（uptime < 1m）+ /api/health 探活（mode=production + dbWritable）
+  · 任何验证失败 → exit 1（不再"假绿字"）
+- 部署目标：PM2 进程名 `business-flow`，由 [ecosystem.config.cjs](../../../ecosystem.config.cjs) 配置（NODE_ENV=production / DATA_DIR=E:/business-flow-data / PORT=3001）
 - 服务端 Express + tsx 运行 server/index.ts，serve `dist/`（vite build 产物）+ `/api/*`
+
+**为什么要 v2 客户端 deploy 脚本**：v1 hook 内调 ssh 会在 git push 派生的 PowerShell 子进程里**静默失败** —— exit 0、stdout 看似成功，但 server 端 PM2 实际没真重启。已在阶段 1 / 阶段 2 P2H / P2I 共 3 次踩坑。详见 Gotcha #12（已解决）。
 
 **与之前 Vite HMR 模式的差异**：
 - ❌ 不再依赖 HMR 自动 reload；每次部署 PM2 重启，**用户感知 5-10 秒空白**
 - ✅ 多人协作场景下 HMR 会打断在编辑的用户，build 模式避免；且 build 阶段就能拒绝 TS / vite 错误
 - ❌ 部署多 30-60 秒（npm install + vite build）
 - ✅ 生产环境不带 dev server 痕迹，启动更轻
-
-⚠ **核心警告**：hook 输出 "Deployment Complete!" **不代表代码真的部署成功**。必须在 push 后通过 ssh 读部署目录 HEAD 与 PM2 进程的 commit hash 来验证。详见步骤 8/9。
+- ❌（v2 取舍）失去"push 即部署"的便利性，必须额外跑 deploy.ps1
+- ✅（v2 取舍）部署结果可信（不再"假绿字"），且失败立即 exit 1
 
 ## 执行步骤
 
@@ -38,8 +43,11 @@ disable-model-invocation: true
 5. **显示部署预览，等待用户确认**
 6. 如需升级，修改 `package.json` 的 `version` 字段
 7. `git add` 相关文件并 `git commit`
-8. **执行双 push 与验证**（见下方"步骤 8 详解"）
-9. 验证生产环境（HTTP + 进程一致性，见下方"步骤 9 详解"）
+8. **执行双 push**：`git push origin main` + `git push server main`（hook 自动 fetch+reset 同步代码）
+9. **执行客户端 deploy 脚本**：`powershell -File scripts/deploy.ps1`
+   · 仅 server/ 改动可加 `-SkipBuild` 跳过前端 build 节省 30s
+   · 仅 docs/.claude/README.md 改动**不需要**跑 deploy.ps1（无运行时影响）
+   · 脚本会自动验 PM2 uptime + /api/health；任何验证失败 exit 1
 10. 更新项目状态文档（见下方"步骤 10 详解"）
 11. 输出部署结果与可选的 `/remember` 提醒
 
@@ -66,7 +74,7 @@ disable-model-invocation: true
 是否继续部署？
 ```
 
-## 步骤 8 详解：双 push + hook 生效验证
+## 步骤 8 详解：双 push（同步代码 + 触发 hook fetch+reset）
 
 ### 8.1 先 push origin（无副作用）
 
@@ -76,98 +84,79 @@ git push origin main
 
 GitHub 是纯备份，不触发任何部署，先推确保备份成功。
 
-### 8.2 再 push server（触发 hook）
+### 8.2 再 push server（触发 hook 同步代码）
 
 ```bash
 git push server main
 ```
 
-会看到 hook 的 PowerShell 输出。**不要相信"Deployment Complete!"**，继续验证。
+v2 hook 输出形如：
 
-### 8.3 验证 hook 是否真的生效（必做）
-
-记录本地 push 的 commit hash：
-```bash
-LOCAL_HEAD=$(git rev-parse HEAD)
+```
+[1/2] Fetching...
+[2/2] Resetting + cleaning...
+  + Code synced: <hash> <commit message>
+=============================================
+  Code synced. Build + restart NOT done by hook.
+=============================================
+Next step: powershell -File scripts/deploy.ps1
 ```
 
-ssh 到生产读部署目录的 HEAD：
-```bash
-ssh administrator@172.16.0.138 'type E:\business-flow\.git\refs\heads\main'
+**hook 不再调 ssh，所以也不再有"假成功"风险**。fetch+reset 失败会 exit 1。
+
+如果改动**只涉及 docs/ / .claude/ / README.md 等非运行时文件**，到此就行（不需要跑 deploy.ps1）。
+
+如果改动涉及 `src/` / `server/` / `package.json` / `ecosystem.config.cjs` —— 进入步骤 9 跑 deploy.ps1。
+
+## 步骤 9 详解：客户端 deploy.ps1（install + build + pm2 restart + 强制验证）
+
+### 9.1 在主 PowerShell 跑 deploy 脚本
+
+**关键：必须在你自己的主 PowerShell 跑，不是 git push 的派生子进程**（否则会触发 Gotcha #12）。
+
+```powershell
+powershell -File scripts/deploy.ps1
 ```
 
-**对比两个 hash**：
-- 一致 → hook 生效，进入步骤 9
-- 不一致 → hook 报告了"假成功"，执行下面的补救
+仅 server/ 改动可加 `-SkipBuild` 跳过前端 build 节省 30s：
 
-### 8.4 hook 假成功补救流程
-
-手动复现 hook 该做的事（已知 hook 中 `2>&1 | Out-Null` 会吞错，导致 fetch 失败也不报错）：
-
-```bash
-ssh administrator@172.16.0.138 'git -C E:\business-flow fetch production && git -C E:\business-flow reset --hard production/main && git -C E:\business-flow clean -fd'
+```powershell
+powershell -File scripts/deploy.ps1 -SkipBuild
 ```
 
-再次读 HEAD 验证一致。
+### 9.2 deploy.ps1 内置 5 步流程
 
-## 步骤 9 详解：生产环境验证
+脚本会自动执行 + 验证，**任何步骤失败 exit 1**（不再"假绿字"）：
 
-### 9.1 HTTP 探活
+1. **前置检查**：本地 HEAD 已 push 到 server remote（`git branch -r --contains HEAD` 含 `server/main`）
+2. **ssh 远端**：`cd E:\business-flow && npm install --omit=dev && npm install --include=dev && npm run build && pm2 restart business-flow --update-env`
+3. **等 PM2 启动 3 秒**
+4. **验 PM2 真重启**：`pm2 list` 解析 uptime 列；`uptime < 1m` 视为真重启，否则 exit 1
+5. **/api/health 探活**：`{"ok":true,"version":"X.Y.Z","mode":"production","dbWritable":true}`
+   · `ok != true` → exit 1
+   · `mode != 'production'` → exit 1（PM2 没读到 NODE_ENV）
+   · `dbWritable != true` → exit 1（DB 异常）
+
+### 9.3 deploy.ps1 失败时怎么办
+
+- **前置检查失败**：忘记 `git push server main`，先做完
+- **ssh 远端失败**：可能 server 端 npm install 网络问题（参 Gotcha #9 prebuild 缓存）；查 ssh 输出
+- **PM2 uptime >= 1m**：极少见。手动 `ssh administrator@172.16.0.138 'pm2 restart business-flow --update-env'` 强制重启
+- **health 探活失败**：进程崩溃。`ssh administrator@172.16.0.138 'pm2 logs business-flow --lines 50 --nostream'` 看错误
+
+### 9.4 进程一致性检查（防孤儿 PM2，仅在 deploy.ps1 验证不过时手动跑）
 
 ```bash
-curl -sS -o /dev/null -w 'HTTP %{http_code} | %{size_download} bytes | %{time_total}s\n' http://172.16.0.138:3001/
-```
-
-期待：`HTTP 200`，几十毫秒以内。
-
-### 9.2 进程一致性检查（防孤儿 PM2 复发）
-
-```bash
-ssh administrator@172.16.0.138 'netstat -ano | findstr ":3001"' 
+ssh administrator@172.16.0.138 'netstat -ano | findstr ":3001"'
 ```
 
 记下监听 3001 的 pid。再查 PM2：
 
 ```bash
-ssh administrator@172.16.0.138 'pm2 jlist' 
+ssh administrator@172.16.0.138 'pm2 list'
 ```
 
-从 jlist 中找 `business-flow` 的 pid。**两个 pid 必须一致**——否则说明又出现了孤儿进程，PM2 管的不是真正服务用户的那个。详见 Gotcha #2 的修复方法。
-
-### 9.3 PM2 运行健康检查（取代旧版 HMR 检查）
-
-```bash
-ssh administrator@172.16.0.138 'pm2 logs business-flow --lines 30 --nostream'
-```
-
-期待看到：
-- `[server] [db] ready`（带 journalMode=wal、foreignKeys=1）
-- `[server] production mode, serving dist`
-- `[server] listening`（mode=production、port=3001）
-- 之后是 `request completed` JSON 行（pino 结构化日志）
-
-不应该出现：
-- 任何 ERROR 级别日志
-- `Error: ENOENT` / `Cannot find module` / `Database` 异常
-- `[vite]` 开头的日志（生产模式不应有 vite 痕迹，如有则说明 NODE_ENV 没生效）
-
-### 9.4 /api/health 端到端验证（v2 生产模式新增）
-
-```bash
-curl -sS http://172.16.0.138:3001/api/health
-```
-
-期待 JSON 响应：
-```json
-{"ok":true,"version":"X.Y.Z","mode":"production","dbWritable":true,"timestamp":...}
-```
-
-**关键字段**：
-- `ok: true` + `dbWritable: true` —— DB 连接和 WAL 文件都活
-- `mode: "production"` —— **必须**是 production，否则说明 PM2 没读到 NODE_ENV
-- `version: "X.Y.Z"` —— 与本地 `package.json` 一致，确认部署的是新代码
-
-如果 `mode: "development"` → ecosystem.config.cjs 的 env 没生效，需要 `pm2 restart business-flow --update-env`。
+从 list 中找 `business-flow` 的 pid。**两个 pid 必须一致**——否则说明又出现了孤儿进程（详见 Gotcha #2）。
 
 ## 步骤 10 详解：更新项目状态文档
 

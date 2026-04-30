@@ -33,28 +33,33 @@ Write-Host "  Business Flow - Deploy (client-side script)" -ForegroundColor Cyan
 Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host ""
 
-# 1. 前置检查：本地 HEAD 必须已 push 到 server（否则用户白跑 deploy）
+# 1. 前置检查：本地 HEAD 必须 == server/main HEAD（精确比对，不能字符串包含）
+# 用 git ls-remote 直接读 server 端 refs/heads/main 的 hash，比 git branch -r --contains 精确：
+# - --contains 是子集检查，如果 server 有更新的 commit（比 local 更前），也会"包含"local，
+#   但实际部署应该用 server HEAD 不是 local HEAD
+# - ls-remote 直接拿到 server 当前指向的 hash，可以严格 ==
 if (-not $Force) {
-    Write-Host "[1/5] 检查本地 HEAD 是否已 push 到 server..." -ForegroundColor Yellow
+    Write-Host "[1/5] 检查本地 HEAD 与 server HEAD 一致..." -ForegroundColor Yellow
     $localHead = (& git rev-parse HEAD).Trim()
     Write-Host "  本地 HEAD: $localHead"
 
-    # 看 server remote 是否包含这个 commit
-    $serverHasCommit = $false
-    try {
-        $branches = & git branch -r --contains $localHead 2>$null
-        if ($branches -match 'server/main') {
-            $serverHasCommit = $true
-        }
-    } catch {}
+    $serverRef = & git ls-remote server refs/heads/main 2>$null
+    if ($LASTEXITCODE -ne 0 -or -not $serverRef) {
+        Write-Host "  ✗ git ls-remote server 失败；请先确认 server remote 配置：" -ForegroundColor Red
+        Write-Host "    git remote -v  (应能看到 server -> \\172.16.0.138\C\$\GitRepos\business-flow.git)" -ForegroundColor Red
+        exit 1
+    }
+    $serverHead = ($serverRef -split '\s+')[0].Trim()
+    Write-Host "  Server HEAD: $serverHead"
 
-    if (-not $serverHasCommit) {
-        Write-Host "  ✗ server remote 没有这个 commit，请先跑：" -ForegroundColor Red
-        Write-Host "    git push origin main && git push server main" -ForegroundColor Red
+    if ($localHead -ne $serverHead) {
+        Write-Host "  ✗ HEAD 不一致，请先跑：" -ForegroundColor Red
+        Write-Host "    git push origin main" -ForegroundColor Red
+        Write-Host "    git push server main" -ForegroundColor Red
         Write-Host "    然后再跑本脚本" -ForegroundColor Red
         exit 1
     }
-    Write-Host "  ✓ commit 已在 server" -ForegroundColor Green
+    Write-Host "  ✓ HEAD 一致" -ForegroundColor Green
 }
 
 # 2. ssh 到 server 跑 npm install + build + pm2 restart
@@ -88,49 +93,69 @@ Write-Host ""
 Write-Host "[3/5] 等 PM2 启动 3 秒..." -ForegroundColor Yellow
 Start-Sleep -Seconds 3
 
-# 4. 验 PM2 真重启了（uptime 必须 < 30 秒）
+# 4. 验 PM2 真重启了（uptime 必须 < 1m）
 # 不用 pm2 jlist —— 输出含重复 key（username vs USERNAME 等环境变量大小写冲突）
 # ConvertFrom-Json 会报 "duplicated keys"。改用 pm2 list 文本 + 正则
+# 关键（codex 兜底审 #1）：所有验证失败必须 exit 1，不能只 WARN 还说部署完成 —— 否则复刻了
+# 旧 hook"假绿字"问题，只是位置从 hook 搬到了 deploy 脚本
 Write-Host ""
 Write-Host "[4/5] 验证 PM2 进程已重启..." -ForegroundColor Yellow
 $pm2Output = & $sshExe $SshTarget "pm2 list" 2>&1
+$pm2Exit = $LASTEXITCODE
+if ($pm2Exit -ne 0) {
+    Write-Host "  ✗ pm2 list 失败 (exit $pm2Exit)" -ForegroundColor Red
+    Write-Host "    server 端 PM2 异常，请手动 ssh 检查" -ForegroundColor Red
+    exit 1
+}
 # pm2 list 表格行：│ 3 │ business-flow │ ... │ 0s │ ... │
 # 找含 PM2AppName 的那一行，从中找出第一个匹配 \d+(s|m|h|d) 的串作为 uptime
 $targetLine = $pm2Output | Where-Object { $_ -match [regex]::Escape($PM2AppName) } | Select-Object -First 1
-if ($targetLine) {
-    Write-Host "  原始行: $targetLine" -ForegroundColor Gray
-    if ($targetLine -match '\b(\d+)([smhd])\b') {
-        $uptimeNum = [int]$matches[1]
-        $uptimeUnit = $matches[2]
-        Write-Host "  uptime: $uptimeNum$uptimeUnit"
-        if ($uptimeUnit -eq 's' -or ($uptimeUnit -eq 'm' -and $uptimeNum -eq 0)) {
-            Write-Host "  ✓ 进程真重启（uptime $uptimeNum$uptimeUnit < 1m）" -ForegroundColor Green
-        } else {
-            Write-Host "  ⚠ 进程未真重启？uptime=$uptimeNum$uptimeUnit" -ForegroundColor Yellow
-            Write-Host "    建议手动 ssh administrator@172.16.0.138 'pm2 restart $PM2AppName' 强制重启" -ForegroundColor Yellow
-        }
-    } else {
-        Write-Host "  ⚠ 找不到 uptime 字段（行里没有 \d+[smhd] 模式）" -ForegroundColor Yellow
-    }
-} else {
-    Write-Host "  ⚠ pm2 list 输出里找不到 $PM2AppName 行" -ForegroundColor Yellow
+if (-not $targetLine) {
+    Write-Host "  ✗ pm2 list 输出里找不到 $PM2AppName 行" -ForegroundColor Red
+    Write-Host "    PM2 应用可能未注册；尝试：ssh ... pm2 start ecosystem.config.cjs" -ForegroundColor Red
+    exit 1
 }
+Write-Host "  原始行: $targetLine" -ForegroundColor Gray
+if (-not ($targetLine -match '\b(\d+)([smhd])\b')) {
+    Write-Host "  ✗ 找不到 uptime 字段（行里没有 \d+[smhd] 模式）" -ForegroundColor Red
+    exit 1
+}
+$uptimeNum = [int]$matches[1]
+$uptimeUnit = $matches[2]
+Write-Host "  uptime: $uptimeNum$uptimeUnit"
+$reallyRestarted = ($uptimeUnit -eq 's') -or ($uptimeUnit -eq 'm' -and $uptimeNum -eq 0)
+if (-not $reallyRestarted) {
+    Write-Host "  ✗ 进程未真重启（uptime=$uptimeNum$uptimeUnit >= 1m）" -ForegroundColor Red
+    Write-Host "    PM2 restart 失败但 ssh 命令返回 0；这是新位置的'假绿字'风险" -ForegroundColor Red
+    Write-Host "    手动强制重启：ssh administrator@172.16.0.138 'pm2 restart $PM2AppName'" -ForegroundColor Red
+    exit 1
+}
+Write-Host "  ✓ 进程真重启（uptime $uptimeNum$uptimeUnit < 1m）" -ForegroundColor Green
 
-# 5. health 探活
+# 5. health 探活（mode 必须 == 'production'，dbWritable 必须 == true）
 Write-Host ""
 Write-Host "[5/5] /api/health 探活..." -ForegroundColor Yellow
 try {
     $health = Invoke-RestMethod -Uri 'http://172.16.0.138:3001/api/health' -TimeoutSec 10
-    if ($health.ok -and $health.dbWritable) {
-        Write-Host "  ✓ health OK: mode=$($health.mode) version=$($health.version) dbWritable=$($health.dbWritable)" -ForegroundColor Green
-    } else {
-        Write-Host "  ⚠ health 异常: $($health | ConvertTo-Json -Compress)" -ForegroundColor Yellow
-    }
 } catch {
     Write-Host "  ✗ health 探活失败: $_" -ForegroundColor Red
+    exit 1
 }
+if (-not $health.ok) {
+    Write-Host "  ✗ health.ok != true" -ForegroundColor Red
+    exit 1
+}
+if ($health.mode -ne 'production') {
+    Write-Host "  ✗ health.mode='$($health.mode)' 不是 production（PM2 ecosystem.config.cjs 没生效？）" -ForegroundColor Red
+    exit 1
+}
+if (-not $health.dbWritable) {
+    Write-Host "  ✗ health.dbWritable != true（数据库异常）" -ForegroundColor Red
+    exit 1
+}
+Write-Host "  ✓ health OK: mode=$($health.mode) version=$($health.version) dbWritable=$($health.dbWritable)" -ForegroundColor Green
 
 Write-Host ""
 Write-Host "=============================================" -ForegroundColor Green
-Write-Host "  部署完成" -ForegroundColor Green
+Write-Host "  部署完成（PM2 真重启 + health 探活全过）" -ForegroundColor Green
 Write-Host "=============================================" -ForegroundColor Green

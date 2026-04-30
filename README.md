@@ -76,7 +76,25 @@ business-flow-react/
 
 ## 部署
 
-通过 `/deploy <提交信息>` 触发：自动 bump 版本、双 push、校验 hook 真实生效与 PM2 进程一致性。详见 [.claude/skills/deploy/SKILL.md](.claude/skills/deploy/SKILL.md)。生产地址 http://172.16.0.138:3001/。
+**v2 部署流程（2026-04-30 起）**：三步走，不可省（见 [.claude/skills/deploy/SKILL.md](.claude/skills/deploy/SKILL.md)）：
+
+```bash
+# 1. push 到 GitHub 备份
+git push origin main
+
+# 2. push 到生产 bare repo（hook 自动 fetch+reset 同步代码到 worktree）
+git push server main
+
+# 3. 在主 PowerShell（不是 git push 派生的）跑 deploy 脚本
+#    脚本内部：ssh + npm install + build + pm2 restart + 强制验证 PM2/health
+powershell -File scripts/deploy.ps1
+# 仅 server/ 改动可加 -SkipBuild 跳过前端 build：
+powershell -File scripts/deploy.ps1 -SkipBuild
+```
+
+**为什么要分两步**：v1 hook 自动 ssh 在 git push 派生 PowerShell 子进程里**会静默失败**（exit 0 但 PM2 没真重启，已踩坑 3 次）。v2 把 ssh 搬到客户端 deploy.ps1，主 PowerShell 跑确保可靠。仅改 docs/ / .claude/ / README.md **不需要** deploy.ps1。
+
+或者用 `/deploy <提交信息>` 让 SKILL 自动管理版本号 + 双 push + 调 deploy.ps1。生产地址 http://172.16.0.138:3001/。
 
 ### 生产登录凭证（测试阶段，明文记录）
 
