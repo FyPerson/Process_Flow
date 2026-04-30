@@ -30,6 +30,10 @@ export interface SaveStatusProps {
   onSaveAsNew: () => void;
   /** 冲突时点"丢弃本地、重载服务端" */
   onDiscardAndReload: () => void;
+  /** 导出服务端版本（GET /api/canvases/:id/export）；canvasId=null 时不应可见 */
+  onExportServer?: () => void;
+  /** 导出当前内存版本（冲突逃生口；用 hook 内的 project 序列化）*/
+  onExportLocal?: () => void;
 }
 
 function formatRelative(ts: number, now: number): string {
@@ -74,7 +78,22 @@ export function SaveStatus(props: SaveStatusProps) {
     onSave,
     onSaveAsNew,
     onDiscardAndReload,
+    onExportServer,
+    onExportLocal,
   } = props;
+
+  // 导出按钮：在所有状态都可见的复用片段（包括 readOnly）。
+  // 仅当已挂接服务端画布时显示（canvasId != null）—— 没挂接时没什么可"导出服务端版本"
+  const exportServerButton = canvasId != null && onExportServer ? (
+    <button
+      type="button"
+      className="save-status__btn"
+      onClick={onExportServer}
+      title="下载当前画布的服务端 JSON 副本"
+    >
+      导出
+    </button>
+  ) : null;
 
   // 让"X 秒前"自己刷新；只在 lastSavedAt 存在时跑定时器
   const [now, setNow] = useState(() => Date.now());
@@ -85,9 +104,11 @@ export function SaveStatus(props: SaveStatusProps) {
   }, [lastSavedAt]);
 
   if (readOnly) {
+    // 游客只读模式：保留导出能力（导出仅需 canRead 权限，不需要写权限）
     return (
       <div className="save-status save-status--readonly" title="游客只读模式">
-        只读
+        <span>只读</span>
+        {exportServerButton}
       </div>
     );
   }
@@ -103,11 +124,15 @@ export function SaveStatus(props: SaveStatusProps) {
       <div className="save-status save-status--saving">
         <span className="save-status__dot save-status__dot--saving" />
         <span className="save-status__text">保存中…</span>
+        {exportServerButton}
       </div>
     );
   }
 
   // 优先级 2：冲突
+  // 这里两个导出按钮都给：
+  //   - "导出本地副本"用内存数据（用户改动还没保存的版本，要保的就是这份）
+  //   - "导出服务端版本"才是 server 当前 JSON（用户也可能想存一份做对比）
   if (autoSaveDisabled && conflict) {
     return (
       <div className="save-status save-status--conflict">
@@ -115,6 +140,17 @@ export function SaveStatus(props: SaveStatusProps) {
         <span className="save-status__text">
           有人改过了（服务端 v{conflict.currentVersion}）；本地改动暂未保存
         </span>
+        {onExportLocal && (
+          <button
+            type="button"
+            className="save-status__btn"
+            onClick={onExportLocal}
+            title="下载当前内存中的本地版本（含未保存改动）作为备份"
+          >
+            导出本地副本
+          </button>
+        )}
+        {exportServerButton}
         <button
           type="button"
           className="save-status__btn save-status__btn--danger"
@@ -145,16 +181,28 @@ export function SaveStatus(props: SaveStatusProps) {
         >
           重试
         </button>
+        {exportServerButton}
       </div>
     );
   }
 
   // 优先级 4：canvasId=null & 有改动 → 必须"另存到服务器"
+  // 这种状态下没有 canvasId，没法导出服务端版本；但可以导出本地副本（如果 caller 提供了 onExportLocal）
   if (canvasId == null) {
     return (
       <div className="save-status save-status--unsaved">
         <span className="save-status__dot save-status__dot--dirty" />
         <span className="save-status__text">未保存到服务器</span>
+        {onExportLocal && (
+          <button
+            type="button"
+            className="save-status__btn"
+            onClick={onExportLocal}
+            title="下载当前内存中的画布副本"
+          >
+            导出本地副本
+          </button>
+        )}
         <button
           type="button"
           className="save-status__btn save-status__btn--primary"
@@ -179,6 +227,7 @@ export function SaveStatus(props: SaveStatusProps) {
         >
           保存
         </button>
+        {exportServerButton}
       </div>
     );
   }
@@ -190,6 +239,7 @@ export function SaveStatus(props: SaveStatusProps) {
       <span className="save-status__text">
         已保存{lastSavedAt ? `（${formatRelative(lastSavedAt, now)}）` : ''}
       </span>
+      {exportServerButton}
     </div>
   );
 }

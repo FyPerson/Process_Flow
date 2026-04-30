@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { FlowCanvas } from '../../components/FlowCanvas';
 import { SaveStatus } from '../../components/SaveStatus';
+import { downloadCanvasFromServer, downloadProjectAsLocal } from '../../utils/canvas-export';
 import { Node, Edge } from '@xyflow/react';
 import {
   FlowDefinition,
@@ -149,6 +150,31 @@ export function BusinessFlowVisualization() {
       );
     }
   }, [discardAndReload]);
+
+  // 导出服务端版本（GET /api/canvases/:id/export，带 Authorization）
+  const handleExportServer = useCallback(async () => {
+    if (canvasId == null) return;
+    try {
+      await downloadCanvasFromServer(canvasId);
+    } catch (err) {
+      const apiErr = err as ApiError;
+      window.alert(
+        `导出失败：${apiErr?.error || apiErr?.message || '未知错误'}`
+      );
+    }
+  }, [canvasId]);
+
+  // 导出本地副本（用当前内存 project，不经过服务端）
+  // 用途：冲突逃生口（服务端比本地新，要保的就是本地未保存的改动）+ canvasId=null 时的初始数据备份
+  const handleExportLocal = useCallback(() => {
+    const current = getProjectData();
+    if (!current) return;
+    downloadProjectAsLocal(current, {
+      canvasId,
+      // 冲突时打 conflict 标，已挂接服务端但未保存时打 local 标，未挂接画布时打 local
+      suffix: conflict ? 'conflict' : 'local',
+    });
+  }, [getProjectData, canvasId, conflict]);
 
   // 过滤显示节点和边
   const filterElements = useCallback(
@@ -461,6 +487,8 @@ export function BusinessFlowVisualization() {
             onSave={handleSave}
             onSaveAsNew={handleSaveAsNew}
             onDiscardAndReload={handleDiscardAndReload}
+            onExportServer={handleExportServer}
+            onExportLocal={handleExportLocal}
           />
         </div>
       </div>
