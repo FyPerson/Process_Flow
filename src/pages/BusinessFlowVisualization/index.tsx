@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { FlowCanvas } from '../../components/FlowCanvas';
 import { SaveStatus } from '../../components/SaveStatus';
@@ -205,16 +205,44 @@ export function BusinessFlowVisualization() {
   }, [getProjectData, canvasId, conflict]);
 
   // 导入：用户选 JSON 文件 → 上传到 /api/canvases/import → URL 跳到新 canvasId
-  // 注意：dirty 时也允许导入（导入会跳走当前画布，beforeunload 拦截会弹原生提示）
+  //
+  // 关键边界（codex 八审 P2I 必修）：
+  // 1) setSearchParams 是 SPA 内部路由变化，**不触发 beforeunload**；
+  //    所以 dirty/saving/conflict 时必须**显式 confirm**，否则用户的未保存改动会静默丢
+  // 2) 重复点击保护：用 ref 同步拦，避免文件选择器/上传过程中再次进入
+  const importInFlightRef = useRef(false);
   const handleImport = useCallback(() => {
+    if (importInFlightRef.current) return;
+
+    // 1) 未保存/保存中/冲突保护：跳走前显式 confirm
+    if (dirty || saving || conflict) {
+      const reason = conflict
+        ? '当前画布存在版本冲突未处理'
+        : saving
+          ? '当前画布正在保存'
+          : '当前画布有未保存的改动';
+      const ok = window.confirm(
+        `${reason}。\n\n导入会跳到新画布，这些改动将丢失（不可撤销）。\n确定继续导入吗？`
+      );
+      if (!ok) return;
+    }
+
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'application/json,.json';
     input.style.display = 'none';
 
+    importInFlightRef.current = true;
+    const release = () => { importInFlightRef.current = false; };
+    // 用户取消文件选择（可能不触发 onchange）也释放锁
+    input.oncancel = release;
+
     input.onchange = async () => {
       const file = input.files?.[0];
-      if (!file) return;
+      if (!file) {
+        release();
+        return;
+      }
 
       // 客户端先拦文件大小，避免等服务端 413
       const MAX_BYTES = 2 * 1024 * 1024;
@@ -223,6 +251,7 @@ export function BusinessFlowVisualization() {
           `文件超过 2MB（实际 ${(file.size / 1024 / 1024).toFixed(2)}MB），无法导入。\n` +
             `如有大画布需求请联系管理员调整服务端 body limit。`
         );
+        release();
         return;
       }
 
@@ -232,6 +261,7 @@ export function BusinessFlowVisualization() {
         text = await file.text();
       } catch {
         window.alert('读取文件失败，请重试');
+        release();
         return;
       }
       let data: unknown;
@@ -239,6 +269,7 @@ export function BusinessFlowVisualization() {
         data = JSON.parse(text);
       } catch {
         window.alert('文件格式错误：不是合法的 JSON');
+        release();
         return;
       }
 
@@ -260,6 +291,8 @@ export function BusinessFlowVisualization() {
       } catch (err) {
         const apiErr = err as ApiError;
         window.alert(formatImportError(apiErr));
+      } finally {
+        release();
       }
     };
 
@@ -267,7 +300,7 @@ export function BusinessFlowVisualization() {
     input.click();
     // 异步移除（让 onchange 有机会触发）
     setTimeout(() => document.body.removeChild(input), 0);
-  }, [setSearchParams]);
+  }, [setSearchParams, dirty, saving, conflict]);
 
   // 过滤显示节点和边
   const filterElements = useCallback(
