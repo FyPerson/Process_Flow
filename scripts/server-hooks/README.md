@@ -24,3 +24,23 @@
 
 server bare repo 的硬路径（`\\172.16.0.138\E$\business-flow` 等）在 .ps1 里硬编码。
 如果新部署到不同 server，需要改这些字符串。
+
+## 防双份漂移（重要）
+
+**`scripts/server-hooks/` 是唯一模板源**。bare repo 里 `\\172.16.0.138\C$\GitRepos\business-flow.git\hooks\` 的副本是**部署时同步出去**的拷贝。
+
+每次改完模板，**必须同步到 bare repo**：
+```bash
+cp scripts/server-hooks/post-receive.ps1 //172.16.0.138/C$/GitRepos/business-flow.git/hooks/
+cp scripts/server-hooks/post-receive //172.16.0.138/C$/GitRepos/business-flow.git/hooks/
+```
+
+然后**用 cmp 验证两端一致**（避免一边改了一边忘）：
+```bash
+cmp scripts/server-hooks/post-receive.ps1 //172.16.0.138/C$/GitRepos/business-flow.git/hooks/post-receive.ps1
+# 无输出 = 一致
+# differ at byte X = 漂移，重新 cp
+```
+
+如果只改了模板没同步：模板入仓库被审查到，bare repo 仍在跑旧版 → 实际行为和文档不一致。
+如果只改了 bare repo 没同步回模板：仓库和实际部署不一致，下个开发者按模板部署会拿到旧版。
