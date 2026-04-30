@@ -124,9 +124,23 @@ export function getDb(): DatabaseType {
   return dbInstance;
 }
 
-/** 优雅关闭（进程退出时调用） */
+/** 优雅关闭（进程退出时调用）
+ * 关闭前强制 wal_checkpoint(TRUNCATE)：把 wal 内容合并回主库 + 清空 wal 文件
+ *
+ * 不这么做的代价：进程被 kill -9 / Ctrl+C 等不优雅关闭时，wal 越积越大。
+ * 之前踩过：dev 反复 kill 重启后，wal 778KB / 主库 4KB（200 倍），
+ * 下次启动时 better-sqlite3 需要重放 wal 才能 ready，可能在某些情况下让首次 query
+ * 慢到肉眼可见。
+ */
 export function closeDb(): void {
   if (dbInstance) {
+    try {
+      // TRUNCATE 模式比 PASSIVE/FULL 更彻底，物理截断 wal
+      // 失败不阻塞进程退出（最差情况只是 wal 暂时大）
+      dbInstance.pragma('wal_checkpoint(TRUNCATE)');
+    } catch (err) {
+      logger.warn({ err: (err as Error).message }, '[db] wal_checkpoint on close failed');
+    }
     dbInstance.close();
     dbInstance = null;
   }

@@ -1,6 +1,12 @@
-// Express 入口 —— 单进程同时承担 API + 前端资源
-// dev:  Express + Vite middleware（HMR 保留）
-// prod: Express + static dist（vite build 产物）
+// Express 入口
+//
+// === v3 架构（2026-04-30 双进程）===
+// dev:  Express 跑 3001（仅 API），Vite 跑 5173 单独进程并 proxy /api → 3001
+// prod: Express 跑 3001（serve dist + /api/*）—— 单进程不变
+//
+// 之前 v2 是单进程（dev 里嵌 Vite middleware），但 createViteServer({middlewareMode:true})
+// 在 Windows 上有概率卡住启动序列（[db] ready 后无任何输出 60-90 秒），已多次踩坑。
+// 详见 docs/规划/codex审查记录/dev-hang/00-诊断-dev 启动 hang 根因.md
 
 import express from 'express';
 import path from 'node:path';
@@ -14,54 +20,57 @@ import { canvasesRouter } from './routes/canvases.ts';
 import { healthRouter } from './routes/health.ts';
 
 async function bootstrap() {
+  const startedAt = Date.now();
+
   // === DB 必须在注册路由之前就绪（codex C2 复审建议）===
   // initDb() 失败直接 throw，bootstrap.catch 会让进程 exit(1)，避免带病启动
+  const t0 = Date.now();
   const db = initDb();
+  logger.info({ ms: Date.now() - t0 }, '[startup] initDb done');
+
+  const t1 = Date.now();
   await bootstrapInitialAdmin(db);
+  logger.info({ ms: Date.now() - t1 }, '[startup] bootstrapInitialAdmin done');
 
+  const t2 = Date.now();
   const app = express();
-
   app.disable('x-powered-by');
 
-  // 请求日志要在所有路由之前 —— 否则未匹配请求/异常没法被记录
   app.use(httpLogger);
-
-  // 安全 headers（helmet）：prod 启用 CSP；dev 关 CSP 保留其他防护
-  // P1E v4.1 codex 强制项之一
   app.use(securityMiddleware);
-
   app.use(express.json({ limit: '2mb' }));
 
-  // === API 路由必须在前端资源之前注册 ===
-  // 否则 vite middleware 或 SPA fallback 会拦截 /api/* 请求
+  // === API 路由 ===
   app.use(healthRouter);
   app.use(authRouter);
   app.use(canvasesRouter);
+  logger.info({ ms: Date.now() - t2 }, '[startup] middlewares + routes registered');
 
-  // === 前端资源 ===
+  // === 前端资源（仅生产模式 serve dist；dev 模式由独立 Vite 进程处理）===
   if (config.isProduction) {
-    // 生产模式：serve dist + SPA fallback
+    const t3 = Date.now();
     const distDir = path.join(config.projectRoot, 'dist');
     app.use(express.static(distDir));
     app.get('*splat', (_req, res) => {
       res.sendFile(path.join(distDir, 'index.html'));
     });
-    logger.info({ distDir }, '[server] production mode, serving dist');
+    logger.info({ distDir, ms: Date.now() - t3 }, '[startup] production static serve registered');
   } else {
-    // 开发模式：嵌入 Vite middleware，保留 HMR
-    const { createServer: createViteServer } = await import('vite');
-    const vite = await createViteServer({
-      root: config.projectRoot,
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-    logger.info('[server] development mode, vite middleware active (HMR enabled)');
+    logger.info(
+      '[startup] dev mode: API only on this process. Frontend served by separate Vite (npm run dev:vite, default port 5173)'
+    );
   }
 
+  const t4 = Date.now();
   app.listen(config.port, config.host, () => {
     logger.info(
-      { host: config.host, port: config.port, mode: config.isProduction ? 'production' : 'development' },
+      {
+        host: config.host,
+        port: config.port,
+        mode: config.isProduction ? 'production' : 'development',
+        listenMs: Date.now() - t4,
+        totalStartupMs: Date.now() - startedAt,
+      },
       '[server] listening'
     );
   });
