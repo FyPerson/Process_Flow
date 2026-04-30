@@ -70,14 +70,32 @@ export function useFlowClipboard() {
         const newId = `n_${baseTs}_${index}`;
         idMap.set(node.id, newId);
 
+        const copied = safeDeepCopy(node);
+        // P3D-1 codex 必修 5：粘贴 = 当前用户的本地新节点。
+        // 必须清掉源节点的 creator_*/updated_*/deprecated_*（否则用户复制别人的节点
+        // 粘贴出来会"短暂继承别人 creator"，UX 反直觉），并打 __localNew
+        // 让 canEditNodeData 立刻放行。is_deprecated 同理重置 ——
+        // 粘贴出的副本是新节点，不应继承废弃状态。
+        const cleanData = { ...(copied.data || {}) } as Record<string, unknown>;
+        const META_KEYS_TO_RESET = [
+          'creator_id', 'creator_username', 'created_at',
+          'updated_by', 'updated_at',
+          'is_deprecated', 'deprecated_by', 'deprecated_at', 'deprecated_by_username',
+        ];
+        for (const key of META_KEYS_TO_RESET) {
+          delete cleanData[key];
+        }
+        cleanData.__localNew = true;
+
         return {
-          ...safeDeepCopy(node),
+          ...copied,
           id: newId,
           position: {
             x: node.position.x + OFFSET_X,
             y: node.position.y + OFFSET_Y,
           },
           selected: true, // 选中新创建的节点
+          data: cleanData as unknown as FlowNodeData,
         };
       });
 

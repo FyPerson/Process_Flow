@@ -123,6 +123,9 @@ const NodeSchema = z
     updated_by: z.number().int().optional(),
     updated_at: z.number().int().optional(),
     is_deprecated: z.boolean().optional(),
+    // P3D-1：creator_username 由 GET 时 JOIN users hydrate；save 时 strip 掉。
+    // 客户端若伪造此字段，stripServerAttributionForSaveInput 会清掉，无法绕过。
+    creator_username: z.string().max(64).nullable().optional(),
     // 废弃元信息（GET 时 hydrate 自 nodes_meta + users JOIN；save 时 stripMeta 丢弃）
     // 未废弃节点这三字段在响应里直接 omit；废弃但历史无 username 时仅 omit username
     deprecated_by: z.number().int().nullable().optional(),

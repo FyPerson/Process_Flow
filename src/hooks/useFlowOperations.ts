@@ -105,6 +105,11 @@ export function useFlowOperations({
                     detailConfig: defaultDetailConfig,
                     ...(isDecision ? { backgroundColor: '#FFFFFF' } : {}),
                     ...(isTerminator ? { subType: 'start' as const } : {}),
+                    // P3D-1：本地新增节点标记，让 canEditNodeData() 立刻放行
+                    // 不入 storage（autoSaveFilter 排除 __ 前缀 + schema .strict() 拒绝）
+                    // 保存到服务端后，节点会拿到 nodes_meta 真正的 creator_id，
+                    // 下次加载就不需要 __localNew 了
+                    __localNew: true,
                 },
             };
 
@@ -342,6 +347,8 @@ export function useFlowOperations({
                 name: uniqueLabel,
                 type: 'group',
                 expandable: false,
+                // P3D-1：本地新增分组标记
+                __localNew: true,
             },
             zIndex: -1,
         };

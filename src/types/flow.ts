@@ -53,11 +53,18 @@ export interface FlowNodeData {
   detailConfig?: NodeDetailConfig;
   backgroundColor?: string; // 节点背景色（对于判断节点，只用于SVG填充）
   relatedNodeIds?: string[]; // 关联的其他节点 ID (手动维护，用于高亮显示)
+  // P3D-1 节点元信息（GET 时 hydrate 自 nodes_meta + users JOIN）
+  // canEditNodeData() 用 creator_id 判断"是否当前用户创建"
+  creator_id?: number;
+  creator_username?: string;
   // P3C 废弃元信息（从服务端 hydrate；前端不直接写，由"标记废弃"按钮 → autosave 触发）
   is_deprecated?: boolean;
   deprecated_by?: number;
   deprecated_at?: number;
   deprecated_by_username?: string;
+  // P3D-1 运行时标记：本地新增节点（拖出/粘贴/创建分组），canEditNodeData() 据此放行
+  // 不进 storage（autoSaveFilter 排除 __ 前缀 + 服务端 schema .strict() 拒绝）
+  __localNew?: boolean;
   [key: string]: unknown;
 }
 
@@ -127,6 +134,7 @@ export interface FlowDefinition {
     // 节点元信息（服务端从 nodes_meta 表 hydrate；前端只读）
     // ============================================
     creator_id?: number;
+    creator_username?: string; // P3D-1：JOIN users 来的；用户已删时为 undefined
     created_at?: number;
     updated_by?: number;
     updated_at?: number;

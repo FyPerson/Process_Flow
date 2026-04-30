@@ -39,6 +39,11 @@ interface StorageNode {
   detailConfig?: unknown;
   subType?: 'start' | 'end';
   backgroundColor?: string;
+  // P3C/P3D-1 元信息（服务端 stripServerAttributionForSaveInput 会清掉伪造值，
+  // 客户端原样回传是为了让本地 dirty 判断稳定 + 切 sheet 不丢 creator）
+  creator_id?: number;
+  creator_username?: string;
+  is_deprecated?: boolean;
 }
 
 export interface UseMultiCanvasOptions {
@@ -162,6 +167,47 @@ function deepEqualStorage(a: unknown, b: unknown): boolean {
   return true;
 }
 
+// P3D-1 codex 三审 Finding 1：dirty 比较前 strip 服务端独占 meta，
+// 否则 getCanvasFull hydrate 的 created_at/updated_by/updated_at 等字段会
+// 在 convertNodesToStorage 后被过滤掉 → 节点结构看起来"少了字段"→ 假 dirty。
+//
+// 只 strip "纯派生显示用"字段，**保留** is_deprecated（参与 storage 内容）。
+// 与服务端 stripHydratedNodeMetaForCompareOrHydrate 含义对称，但前端不需要
+// strip is_deprecated（前端 storage 里 is_deprecated 是真实状态字段）。
+const SERVER_OWNED_META_KEYS = [
+  'creator_id',
+  'creator_username',
+  'created_at',
+  'updated_by',
+  'updated_at',
+  'deprecated_by',
+  'deprecated_at',
+  'deprecated_by_username',
+] as const;
+
+function stripServerOwnedMeta(node: unknown): unknown {
+  if (node === null || typeof node !== 'object' || Array.isArray(node)) return node;
+  const o = node as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const key of Object.keys(o)) {
+    if ((SERVER_OWNED_META_KEYS as readonly string[]).includes(key)) continue;
+    out[key] = o[key];
+  }
+  return out;
+}
+
+/** 节点数组 dirty 比较 —— strip 服务端独占 meta 后再 deepEqual */
+function deepEqualStorageNodes(a: unknown, b: unknown): boolean {
+  if (!Array.isArray(a) || !Array.isArray(b)) return deepEqualStorage(a, b);
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (!deepEqualStorage(stripServerOwnedMeta(a[i]), stripServerOwnedMeta(b[i]))) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // 安全深拷贝
 function safeDeepCopy<T>(obj: T, filter?: (key: string) => boolean): T {
   if (obj === null || typeof obj !== 'object') {
@@ -215,9 +261,13 @@ function convertNodesToStorage(nodes: Node<FlowNodeData>[]): StorageNode[] {
         expandedSize: groupData.expandedSize as { width: number; height: number },
         relatedNodeIds: (groupData.relatedNodeIds as string[]) || [],
         // P3C：is_deprecated 必须传回服务端，让 deltaB 能识别 false→true。
-        // deprecated_by/at/username 是服务端回填的元信息，不写回（autoSaveFilter 默认不会带，
-        // 但服务端的 stripMeta 也会防御性地丢弃）。
         is_deprecated: groupData.is_deprecated as boolean | undefined,
+        // P3D-1 codex 必修 3：creator_id/creator_username 必须反向透传 ——
+        // 否则切 sheet 后内部 setNodes 触发 onDataChange→ project 同步丢失这两字段，
+        // 下次 React Flow 节点重新构造时拿不到 creator，canEditNodeData() 失去依据。
+        // deprecated_by/at/username 是派生显示字段，不需回传（getCanvasFull 从 meta 重新 hydrate）。
+        creator_id: groupData.creator_id as number | undefined,
+        creator_username: groupData.creator_username as string | undefined,
       };
     }
 
@@ -248,6 +298,9 @@ function convertNodesToStorage(nodes: Node<FlowNodeData>[]): StorageNode[] {
       relatedNodeIds: node.data.relatedNodeIds,
       // P3C：is_deprecated 必须回传服务端（参见上方分组节点说明）
       is_deprecated: node.data.is_deprecated as boolean | undefined,
+      // P3D-1 codex 必修 3：creator_id/creator_username 反向透传（同分组节点说明）
+      creator_id: node.data.creator_id as number | undefined,
+      creator_username: node.data.creator_username as string | undefined,
     };
   });
 }
@@ -614,6 +667,20 @@ export function useMultiCanvas(
         nodeIdMap.set(node.id, newNodeId);
 
         const copiedNode = safeDeepCopy(node, autoSaveFilter);
+        // P3D-1 codex 三审 Finding 2：duplicateSheet 复制画布时是"本地新增节点"路径
+        // （codex 必修 5 第四个来源）。strip 源节点归属字段 → 让服务端 saveCanvas
+        // added 路径重新分配为操作者。
+        //
+        // 关键不变量：__localNew 是 React Flow data 上的运行时标记，**不能进 storage**
+        // （否则 saveCanvas 会把它发给服务端，schema .strict() 拒绝）。
+        // duplicateSheet 直接操作 storage 节点，所以这里**不打** __localNew；
+        // 让 BFV 节点构造时根据 creator_id 缺失自动打（见 BusinessFlowVisualization）。
+        const stripped = copiedNode as unknown as Record<string, unknown>;
+        for (const key of SERVER_OWNED_META_KEYS) {
+          delete stripped[key];
+        }
+        delete stripped.is_deprecated;
+
         return {
           ...copiedNode,
           id: newNodeId,
@@ -687,7 +754,9 @@ export function useMultiCanvas(
         if (!target) return prev;
 
         // 用 key-order 无关的 deepEqual，避免外部导入数据 / 老存档的字段顺序差异产生假 dirty
-        const sameNodes = deepEqualStorage(target.nodes, storageNodes);
+        // P3D-1 codex 三审 Finding 1：节点比较前 strip 服务端独占 meta（created_at/updated_*等），
+        // 否则刚 GET 的画布会因为反向通路缺字段被判 dirty → 触发空保存涨版本号。
+        const sameNodes = deepEqualStorageNodes(target.nodes, storageNodes);
         const sameEdges = deepEqualStorage(target.connectors, storageEdges);
         if (sameNodes && sameEdges) {
           return prev;

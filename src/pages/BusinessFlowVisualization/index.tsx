@@ -354,6 +354,15 @@ export function BusinessFlowVisualization() {
             relatedNodeIds: node.relatedNodeIds || [],
             // 注入 readOnly 让 GroupNode 自己感知（用于 NodeResizer / 双击改名 / 折叠按钮）
             readOnly,
+            // P3D-1：节点元信息透传（canEditNodeData 据 creator_id 判定可编辑）
+            creator_id: node.creator_id,
+            creator_username: node.creator_username,
+            // P3D-1 codex 二审 Finding 1：creator_id 缺失派生 __localNew。
+            // duplicateSheet 把 storage 节点 strip 后塞进 project，creator_id=undefined；
+            // BFV 在 React Flow data 上派生 __localNew=true 让 canEditNodeData 立刻放行；
+            // storage 不存 __localNew（migration 0002 + getCanvasFull 权威 hydrate 保证
+            // 持久化节点必有 creator_id，不会误判）。
+            __localNew: typeof node.creator_id !== 'number',
             // P3C：废弃元信息透传到 data（GroupNode 用于半透明 + 角标 + tooltip）
             is_deprecated: node.is_deprecated,
             deprecated_by: node.deprecated_by,
@@ -385,6 +394,11 @@ export function BusinessFlowVisualization() {
           relatedNodeIds: node.relatedNodeIds,
           // 注入 readOnly 让 CustomNode 自己感知（用于 NodeResizer / 双击改名）
           readOnly,
+          // P3D-1：节点元信息透传（canEditNodeData 据 creator_id 判定可编辑）
+          creator_id: node.creator_id,
+          creator_username: node.creator_username,
+          // P3D-1 codex 二审 Finding 1：creator_id 缺失派生 __localNew（同分组节点说明）
+          __localNew: typeof node.creator_id !== 'number',
           // P3C：废弃元信息透传到 data（CustomNode 用于半透明 + 角标 + tooltip）
           is_deprecated: node.is_deprecated,
           deprecated_by: node.deprecated_by,
