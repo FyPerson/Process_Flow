@@ -376,7 +376,10 @@ export type SaveCanvasResult =
   | { ok: false; status: 409; error: 'node_id_collision'; currentVersion: number }
   | { ok: false; status: 409; error: 'node_meta_missing'; currentVersion: number }
   | { ok: false; status: 403; error: 'forbidden_modify_others_node'; message: string; currentVersion: number }
-  | { ok: false; status: 403; error: 'forbidden_remove_node_non_admin'; message: string; currentVersion: number };
+  // §5.7 修订：删除规则按画布 visibility 区分
+  // - public：仅 admin 能删（普通用户对任何节点都禁删，含自己创建的，应使用"标废弃"）
+  // - private：admin + owner 都能删
+  | { ok: false; status: 403; error: 'forbidden_remove_node'; message: string; currentVersion: number };
 
 /**
  * 保存画布（方案 §5.2 情况 1 + §5.7 节点级权限严格化）：
@@ -395,7 +398,9 @@ export type SaveCanvasResult =
  *    · added → INSERT nodes_meta，creator = 当前用户
  *    · modified → 校验 creator == 当前用户 OR admin；否则 403
  *    · deprecated_changed → 任何登录用户允许（标废弃是公开权限）
- *    · removed → 仅 admin 允许；否则 403
+ *    · removed → 按 visibility 区分：public 仅 admin / private admin+owner；否则 403
+ *      （§5.7 修订：private 画布仅 owner 能看见且能改，让 owner 能"清理"自己节点是合理的；
+ *       public 画布所有人都能看，普通用户不能物理删除别人或自己的节点 —— 用"标废弃"代替）
  * 5. **重写 data 的节点元字段**：服务端从 nodes_meta 强制覆写客户端传的 creator/updated 等字段
  * 6. UPDATE canvases.data + version=v+1
  * 7. INSERT canvas_versions 新快照
@@ -535,9 +540,12 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
   const now = Date.now();
 
   const tx = db.transaction((): SaveCanvasResult => {
-    // 1. 取当前画布（version + data）
-    const row = db.prepare('SELECT version, data FROM canvases WHERE id = ?').get(id) as
-      | { version: number; data: string }
+    // 1. 取当前画布（version + data + visibility + owner_id）
+    // §5.7 修订：visibility/owner_id 用于 removed 规则区分（private owner 能删 / public 仅 admin）
+    const row = db.prepare(
+      'SELECT version, data, visibility, owner_id FROM canvases WHERE id = ?'
+    ).get(id) as
+      | { version: number; data: string; visibility: Visibility; owner_id: number | null }
       | undefined;
     if (!row) {
       throw new Error('canvas_not_found');
@@ -666,15 +674,24 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
       // 不校验 creator —— 标废弃是公开权限
     }
 
-    // 4.4 removed：仅 admin 允许
-    if (removed.length > 0 && !isAdmin) {
-      return {
-        ok: false,
-        status: 403,
-        error: 'forbidden_remove_node_non_admin',
-        message: `cannot remove ${removed.length} node(s); only admin can physically delete (use deprecate instead)`,
-        currentVersion: row.version,
-      };
+    // 4.4 removed：按 visibility 区分（§5.7 修订）
+    // - admin：任何画布都允许
+    // - private 画布 owner：允许（私有空间，owner 想清理自己节点合理）
+    // - 其他（public 普通用户 / 非 owner private 用户）：禁，必须用"标废弃"
+    if (removed.length > 0) {
+      const isPrivateOwner = row.visibility === 'private' && row.owner_id === user.id;
+      if (!isAdmin && !isPrivateOwner) {
+        return {
+          ok: false,
+          status: 403,
+          error: 'forbidden_remove_node',
+          message:
+            row.visibility === 'public'
+              ? `cannot remove ${removed.length} node(s) on public canvas; only admin can physically delete (use deprecate instead)`
+              : `cannot remove ${removed.length} node(s); only admin or canvas owner can physically delete`,
+          currentVersion: row.version,
+        };
+      }
     }
 
     // 4.4 deprecated_changed：任何登录用户都允许（公开权限）—— 不需校验
