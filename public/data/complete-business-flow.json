@@ -1007,7 +1007,7 @@
       }
     },
     {
-      "id": "copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0",
+      "id": "n_001",
       "name": "合同原件回传",
       "type": "process",
       "position": {
@@ -1036,7 +1036,7 @@
       }
     },
     {
-      "id": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724490232_0",
+      "id": "n_002",
       "name": "合同原件验收",
       "type": "process",
       "position": {
@@ -1065,7 +1065,7 @@
       }
     },
     {
-      "id": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0",
+      "id": "n_003",
       "name": "合同归档",
       "type": "process",
       "position": {
@@ -1094,7 +1094,7 @@
       }
     },
     {
-      "id": "copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0",
+      "id": "n_004",
       "name": "合同借阅登记",
       "type": "process",
       "position": {
@@ -1123,7 +1123,7 @@
       }
     },
     {
-      "id": "copied_copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0_1764724543337_0",
+      "id": "n_005",
       "name": "合同归还",
       "type": "process",
       "position": {
@@ -1203,7 +1203,7 @@
       "backgroundColor": "#FFFFFF"
     },
     {
-      "id": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0",
+      "id": "n_006",
       "name": "施工班组信息修改",
       "type": "process",
       "position": {
@@ -1232,7 +1232,7 @@
       }
     },
     {
-      "id": "copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0_1764741131513_0",
+      "id": "n_007",
       "name": "施工班组成立",
       "type": "process",
       "position": {
@@ -1379,7 +1379,7 @@
       }
     },
     {
-      "id": "copied_copied_new_node_1764741166080_1764741234386_0_1764741288703_0",
+      "id": "n_008",
       "name": "建立(生成)\n项目信息",
       "type": "process",
       "position": {
@@ -1404,7 +1404,7 @@
         "databaseTables": []
       },
       "relatedNodeIds": [
-        "copied_copied_copied_new_node_1764741166080_1764741234386_0_1764741288703_0_1765177323745_0"
+        "n_009"
       ]
     },
     {
@@ -1964,7 +1964,7 @@
       }
     },
     {
-      "id": "copied_copied_copied_new_node_1764741166080_1764741234386_0_1764741288703_0_1765177323745_0",
+      "id": "n_009",
       "name": "项目执行",
       "type": "process",
       "position": {
@@ -2068,7 +2068,7 @@
       }
     },
     {
-      "id": "copied_copied_new_node_1765179247638_1765179904196_0_1765179925766_0",
+      "id": "n_010",
       "name": "商业险管理",
       "type": "process",
       "position": {
@@ -2094,7 +2094,7 @@
       }
     },
     {
-      "id": "copied_copied_copied_new_node_1765179247638_1765179904196_0_1765179955495_0_1765179973705_0",
+      "id": "n_011",
       "name": "自营项目计提费用",
       "type": "process",
       "position": {
@@ -2120,7 +2120,7 @@
       }
     },
     {
-      "id": "copied_copied_copied_copied_new_node_1765179247638_1765179904196_0_1765179955495_0_1765179973705_0_1765180034697_0",
+      "id": "n_012",
       "name": "安全生产费管理",
       "type": "process",
       "position": {
@@ -2146,7 +2146,7 @@
       }
     },
     {
-      "id": "copied_copied_copied_copied_copied_new_node_1765179247638_1765179904196_0_1765179955495_0_1765179973705_0_1765180034697_0_1765180134972_0",
+      "id": "n_013",
       "name": "紧密型公共费用",
       "type": "process",
       "position": {
@@ -2172,7 +2172,7 @@
       }
     },
     {
-      "id": "copied_copied_copied_copied_copied_copied_new_node_1765179247638_1765179904196_0_1765179955495_0_1765179973705_0_1765180034697_0_1765180134972_0_1765181997315_0",
+      "id": "n_014",
       "name": "保底费用管理",
       "type": "process",
       "position": {
@@ -2198,7 +2198,7 @@
       }
     },
     {
-      "id": "copied_copied_copied_copied_copied_copied_copied_new_node_1765179247638_1765179904196_0_1765179955495_0_1765179973705_0_1765180034697_0_1765180134972_0_1765181997315_0_1765182014108_0",
+      "id": "n_015",
       "name": "紧密型预收预付",
       "type": "process",
       "position": {
@@ -2224,7 +2224,7 @@
       }
     },
     {
-      "id": "copied_copied_copied_copied_copied_copied_copied_copied_new_node_1765179247638_1765179904196_0_1765179955495_0_1765179973705_0_1765180034697_0_1765180134972_0_1765181997315_0_1765182014108_0_1765182031785_0",
+      "id": "n_016",
       "name": "费用返还管理",
       "type": "process",
       "position": {
@@ -2250,7 +2250,7 @@
       }
     },
     {
-      "id": "copied_copied_copied_copied_copied_copied_copied_copied_copied_new_node_1765179247638_1765179904196_0_1765179955495_0_1765179973705_0_1765180034697_0_1765180134972_0_1765181997315_0_1765182014108_0_1765182031785_0_1765182048236_0",
+      "id": "n_017",
       "name": "个体户代办支付",
       "type": "process",
       "position": {
@@ -2276,7 +2276,7 @@
       }
     },
     {
-      "id": "copied_copied_copied_copied_copied_copied_copied_copied_copied_new_node_1765179247638_1765179904196_0_1765179955495_0_1765179973705_0_1765180034697_0_1765180134972_0_1765181997315_0_1765182014108_0_1765182031785_0_1765182060573_0",
+      "id": "n_018",
       "name": "建单工伤管理",
       "type": "process",
       "position": {
@@ -2302,7 +2302,7 @@
       }
     },
     {
-      "id": "copied_copied_copied_copied_copied_copied_copied_copied_copied_copied_new_node_1765179247638_1765179904196_0_1765179955495_0_1765179973705_0_1765180034697_0_1765180134972_0_1765181997315_0_1765182014108_0_1765182031785_0_1765182060573_0_1765182072983_0",
+      "id": "n_019",
       "name": "分成费用管理",
       "type": "process",
       "position": {
@@ -3452,7 +3452,7 @@
       }
     },
     {
-      "id": "edge-new_node_1764661330750-copied_new_node_1764661330750_1764662693371_0-1764662701348",
+      "id": "e_001",
       "sourceID": "new_node_1764661330750",
       "targetID": "copied_new_node_1764661330750_1764662693371_0",
       "sourceHandle": "bottom",
@@ -3609,7 +3609,7 @@
       }
     },
     {
-      "id": "edge-copied_new_node_1764661330750_1764662693371_0-new_node_1764663516455-1764663519378",
+      "id": "e_002",
       "sourceID": "copied_new_node_1764661330750_1764662693371_0",
       "targetID": "new_node_1764663516455",
       "sourceHandle": "bottom",
@@ -3647,7 +3647,7 @@
       }
     },
     {
-      "id": "edge-new_node_1764663516455-copied_new_node_1764663516455_1764663531096_0-1764663542839",
+      "id": "e_003",
       "sourceID": "new_node_1764663516455",
       "targetID": "copied_new_node_1764663516455_1764663531096_0",
       "sourceHandle": "bottom",
@@ -3685,7 +3685,7 @@
       }
     },
     {
-      "id": "edge-copied_new_node_1764663516455_1764663531096_0-new_node_1764663550821-1764663556596",
+      "id": "e_004",
       "sourceID": "copied_new_node_1764663516455_1764663531096_0",
       "targetID": "new_node_1764663550821",
       "sourceHandle": "bottom",
@@ -3877,7 +3877,7 @@
       }
     },
     {
-      "id": "edge-new_node_1764664496576-copied_new_node_1764664508481_1764665088931_0-1764665133823",
+      "id": "e_005",
       "sourceID": "new_node_1764664496576",
       "targetID": "copied_new_node_1764664508481_1764665088931_0",
       "sourceHandle": "bottom",
@@ -3916,7 +3916,7 @@
       }
     },
     {
-      "id": "edge-new_node_1764577808748-copied_new_node_1764663516455_1764663531096_0-1764665202745",
+      "id": "e_006",
       "sourceID": "new_node_1764577808748",
       "targetID": "copied_new_node_1764663516455_1764663531096_0",
       "sourceHandle": "bottom",
@@ -3956,9 +3956,9 @@
       }
     },
     {
-      "id": "edge-copied_new_node_1764664508481_1764665088931_0-copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0-1764724082629",
+      "id": "e_007",
       "sourceID": "copied_new_node_1764664508481_1764665088931_0",
-      "targetID": "copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0",
+      "targetID": "n_001",
       "sourceHandle": "left",
       "targetHandle": "right-target",
       "style": {
@@ -3994,9 +3994,9 @@
       }
     },
     {
-      "id": "edge-copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0-copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724490232_0-1764724515367",
-      "sourceID": "copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0",
-      "targetID": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724490232_0",
+      "id": "e_008",
+      "sourceID": "n_001",
+      "targetID": "n_002",
       "sourceHandle": "left",
       "targetHandle": "right-target",
       "style": {
@@ -4032,9 +4032,9 @@
       }
     },
     {
-      "id": "edge-copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724490232_0-copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0-1764724516968",
-      "sourceID": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724490232_0",
-      "targetID": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0",
+      "id": "e_009",
+      "sourceID": "n_002",
+      "targetID": "n_003",
       "sourceHandle": "left",
       "targetHandle": "right",
       "style": {
@@ -4070,9 +4070,9 @@
       }
     },
     {
-      "id": "edge-copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0-copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0-1764724552239",
-      "sourceID": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0",
-      "targetID": "copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0",
+      "id": "e_010",
+      "sourceID": "n_003",
+      "targetID": "n_004",
       "sourceHandle": "left",
       "targetHandle": "right",
       "style": {
@@ -4108,9 +4108,9 @@
       }
     },
     {
-      "id": "edge-copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0-copied_copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0_1764724543337_0-1764724561634",
-      "sourceID": "copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0",
-      "targetID": "copied_copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0_1764724543337_0",
+      "id": "e_011",
+      "sourceID": "n_004",
+      "targetID": "n_005",
       "sourceHandle": "left",
       "targetHandle": "right",
       "style": {
@@ -4146,9 +4146,9 @@
       }
     },
     {
-      "id": "edge-copied_copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0_1764724543337_0-copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0-1764724568017",
-      "sourceID": "copied_copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0_1764724533242_0_1764724543337_0",
-      "targetID": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764724498792_0",
+      "id": "e_012",
+      "sourceID": "n_005",
+      "targetID": "n_003",
       "sourceHandle": "top-source",
       "targetHandle": "top-target",
       "style": {
@@ -4263,9 +4263,9 @@
       }
     },
     {
-      "id": "edge-new_node_1764740447090-copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0-1764741101087",
+      "id": "e_013",
       "sourceID": "new_node_1764740447090",
-      "targetID": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0",
+      "targetID": "n_006",
       "sourceHandle": "left",
       "targetHandle": "bottom",
       "label": "否",
@@ -4302,9 +4302,9 @@
       }
     },
     {
-      "id": "edge-new_node_1764740447090-copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0_1764741131513_0-1764741140230",
+      "id": "e_014",
       "sourceID": "new_node_1764740447090",
-      "targetID": "copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0_1764741131513_0",
+      "targetID": "n_007",
       "sourceHandle": "bottom",
       "targetHandle": "top-source",
       "label": "是",
@@ -4341,8 +4341,8 @@
       }
     },
     {
-      "id": "edge-copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0_1764741131513_0-new_node_1764741166080-1764741181059",
-      "sourceID": "copied_copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0_1764741131513_0",
+      "id": "e_015",
+      "sourceID": "n_007",
       "targetID": "new_node_1764741166080",
       "sourceHandle": "bottom",
       "targetHandle": "top-target",
@@ -4455,7 +4455,7 @@
       }
     },
     {
-      "id": "edge-new_node_1764741211062-copied_new_node_1764741166080_1764741234386_0-1764741260379",
+      "id": "e_016",
       "sourceID": "new_node_1764741211062",
       "targetID": "copied_new_node_1764741166080_1764741234386_0",
       "sourceHandle": "left",
@@ -4494,7 +4494,7 @@
       }
     },
     {
-      "id": "edge-copied_new_node_1764741166080_1764741234386_0-new_node_1764741166080-1764741271671",
+      "id": "e_017",
       "sourceID": "copied_new_node_1764741166080_1764741234386_0",
       "targetID": "new_node_1764741166080",
       "sourceHandle": "right",
@@ -4532,9 +4532,9 @@
       }
     },
     {
-      "id": "edge-new_node_1764741211062-copied_copied_new_node_1764741166080_1764741234386_0_1764741288703_0-1764741292829",
+      "id": "e_018",
       "sourceID": "new_node_1764741211062",
-      "targetID": "copied_copied_new_node_1764741166080_1764741234386_0_1764741288703_0",
+      "targetID": "n_008",
       "sourceHandle": "bottom",
       "targetHandle": "top-source",
       "label": "是",
@@ -4569,7 +4569,7 @@
       }
     },
     {
-      "id": "edge-copied_new_node_1764664508481_1764665088931_0-new_node_1764746972085-1764746976659",
+      "id": "e_019",
       "sourceID": "copied_new_node_1764664508481_1764665088931_0",
       "targetID": "new_node_1764746972085",
       "sourceHandle": "bottom",
@@ -4645,7 +4645,7 @@
       }
     },
     {
-      "id": "edge-new_node_1764663991571-copied_new_node_1764663516455_1764747042603_0-1764747056193",
+      "id": "e_020",
       "sourceID": "new_node_1764663991571",
       "targetID": "copied_new_node_1764663516455_1764747042603_0",
       "sourceHandle": "left",
@@ -4684,7 +4684,7 @@
       }
     },
     {
-      "id": "edge-copied_new_node_1764663516455_1764747042603_0-new_node_1764663550821-1764747057671",
+      "id": "e_021",
       "sourceID": "copied_new_node_1764663516455_1764747042603_0",
       "targetID": "new_node_1764663550821",
       "sourceHandle": "right",
@@ -4723,8 +4723,8 @@
       }
     },
     {
-      "id": "edge-copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0-new_node_1764732925456-1764747081285",
-      "sourceID": "copied_copied_copied_new_node_1764664508481_1764665088931_0_1764724077827_0_1764741083726_0",
+      "id": "e_022",
+      "sourceID": "n_006",
       "targetID": "new_node_1764732925456",
       "sourceHandle": "right",
       "targetHandle": "left",
@@ -5127,9 +5127,9 @@
       }
     },
     {
-      "id": "edge-copied_copied_new_node_1764741166080_1764741234386_0_1764741288703_0-copied_copied_copied_new_node_1764741166080_1764741234386_0_1764741288703_0_1765177323745_0-1765177336021",
-      "sourceID": "copied_copied_new_node_1764741166080_1764741234386_0_1764741288703_0",
-      "targetID": "copied_copied_copied_new_node_1764741166080_1764741234386_0_1764741288703_0_1765177323745_0",
+      "id": "e_023",
+      "sourceID": "n_008",
+      "targetID": "n_009",
       "sourceHandle": "bottom",
       "targetHandle": "top-source",
       "style": {

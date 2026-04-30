@@ -70,3 +70,6 @@ tsc_errors.log
 
 # 合同/法务文档不应进入代码仓库
 *.docx
+
+# 临时测试脚本（Playwright 端到端测试套件 + 调试脚本）
+tmp-test/

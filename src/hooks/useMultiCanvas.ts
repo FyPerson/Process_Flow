@@ -515,7 +515,7 @@ export function useMultiCanvas(
 
   // 添加新画布
   const addSheet = useCallback(() => {
-    const newId = `sheet_${Date.now()}`;
+    const newId = `sheet_${Date.now().toString(36)}`;
 
     setProject((prev) => {
       const currentProject = prev || createEmptyProject();
@@ -595,13 +595,16 @@ export function useMultiCanvas(
       const sourceSheet = project.sheets.find((s) => s.id === sheetId);
       if (!sourceSheet) return null;
 
-      const newId = `sheet_${Date.now()}`;
-      const timestamp = Date.now();
+      const newId = `sheet_${Date.now().toString(36)}`;
+      // base36 时间戳：缩短到 7-8 字符，对比原十进制 13 字符
+      const ts = Date.now().toString(36);
 
       const nodeIdMap = new Map<string, string>();
 
       const newNodes = sourceSheet.nodes.map((node, index) => {
-        const newNodeId = `${node.id}_copy_${timestamp}_${index}`;
+        // 不再 prefix 旧 ID，避免多次复制画布累积 _copy_copy_... 超 64 字符
+        // 当前格式：n_<base36 时间戳>_<index>，约 12-15 字符
+        const newNodeId = `n_${ts}_${index}`;
         nodeIdMap.set(node.id, newNodeId);
 
         const copiedNode = safeDeepCopy(node, autoSaveFilter);
@@ -623,7 +626,8 @@ export function useMultiCanvas(
       });
 
       const newConnectors = sourceSheet.connectors.map((connector, index) => {
-        const newConnectorId = `${connector.id}_copy_${timestamp}_${index}`;
+        // 同样不 prefix 旧 ID
+        const newConnectorId = `e_${ts}_${index}`;
         const copiedConnector = safeDeepCopy(connector, autoSaveFilter);
 
         return {

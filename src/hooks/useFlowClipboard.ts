@@ -62,9 +62,12 @@ export function useFlowClipboard() {
       const idMap = new Map<string, string>();
 
       // 创建新节点
+      const baseTs = Date.now().toString(36); // base36 缩短时间戳
       const newNodes = clipboardData.map((node, index) => {
-        // 生成新 ID
-        const newId = `copied_${node.id}_${Date.now()}_${index}`;
+        // 生成新 ID —— 不再 prefix 旧 ID，避免 copied_copied_copied... 累积超 64 字符
+        // 后端 ShortIdSchema 限制 1-64 字符 [A-Za-z0-9_-]
+        // 当前格式：n_<base36 时间戳>_<index>，如 'n_lz3y4k_0'，约 12-15 字符
+        const newId = `n_${baseTs}_${index}`;
         idMap.set(node.id, newId);
 
         return {
