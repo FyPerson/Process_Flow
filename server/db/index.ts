@@ -45,26 +45,36 @@ export function initDb(): DatabaseType {
   const dbPath = path.join(config.dataDir, DB_FILENAME);
   const db = new Database(dbPath);
 
-  // PRAGMA：WAL 提供并发读写、foreign_keys 确保引用完整性
-  db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = ON');
-  db.pragma('synchronous = NORMAL'); // WAL 下 NORMAL 是推荐值，比 FULL 快很多
+  // 一旦 db 实例创建成功，后续任何步骤失败都要主动 close —— 否则 wal 锁不释放
+  // （codex 审查建议：initDb 内部失败时 dbInstance 还没赋值，外层 closeDb() 兜底不到）
+  try {
+    // PRAGMA：WAL 提供并发读写、foreign_keys 确保引用完整性
+    db.pragma('journal_mode = WAL');
+    db.pragma('foreign_keys = ON');
+    db.pragma('synchronous = NORMAL'); // WAL 下 NORMAL 是推荐值，比 FULL 快很多
 
-  // 建元表 + 跑迁移
-  db.exec(SCHEMA_MIGRATIONS_DDL);
-  runMigrations(db);
+    // 建元表 + 跑迁移
+    db.exec(SCHEMA_MIGRATIONS_DDL);
+    runMigrations(db);
 
-  logger.info(
-    {
-      dbPath,
-      journalMode: db.pragma('journal_mode', { simple: true }),
-      foreignKeys: db.pragma('foreign_keys', { simple: true }),
-    },
-    '[db] ready'
-  );
+    logger.info(
+      {
+        dbPath,
+        journalMode: db.pragma('journal_mode', { simple: true }),
+        foreignKeys: db.pragma('foreign_keys', { simple: true }),
+      },
+      '[db] ready'
+    );
 
-  dbInstance = db;
-  return db;
+    dbInstance = db;
+    return db;
+  } catch (err) {
+    // 关 db 释放锁，但不做 wal_checkpoint（initDb 失败说明 db 状态不可信）
+    try { db.close(); } catch {
+      // ignore
+    }
+    throw err;
+  }
 }
 
 /**

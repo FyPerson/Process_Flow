@@ -4,7 +4,7 @@
   "description": "业务流程全景图 - React Flow 实现",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n api,vite -c blue,green \"npm:dev:api\" \"npm:dev:vite\"",
+    "dev": "concurrently -n api,vite -c blue,green --kill-others-on-fail \"npm:dev:api\" \"npm:dev:vite\"",
     "dev:api": "tsx watch server/index.ts",
     "dev:vite": "vite",
     "build": "tsc -b tsconfig.json && vite build",

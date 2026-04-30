@@ -61,18 +61,25 @@ async function bootstrap() {
     );
   }
 
+  // app.listen 用 Promise 包装，让端口占用等错误能进 bootstrap.catch 走 closeDb 路径
+  // （codex 审查建议：纯 callback 形式的 app.listen 错误会逃逸到 process unhandled，
+  //  跳过 closeDb → wal 不被 checkpoint）
   const t4 = Date.now();
-  app.listen(config.port, config.host, () => {
-    logger.info(
-      {
-        host: config.host,
-        port: config.port,
-        mode: config.isProduction ? 'production' : 'development',
-        listenMs: Date.now() - t4,
-        totalStartupMs: Date.now() - startedAt,
-      },
-      '[server] listening'
-    );
+  await new Promise<void>((resolve, reject) => {
+    const server = app.listen(config.port, config.host, () => {
+      logger.info(
+        {
+          host: config.host,
+          port: config.port,
+          mode: config.isProduction ? 'production' : 'development',
+          listenMs: Date.now() - t4,
+          totalStartupMs: Date.now() - startedAt,
+        },
+        '[server] listening'
+      );
+      resolve();
+    });
+    server.once('error', (err) => reject(err));
   });
 }
 
