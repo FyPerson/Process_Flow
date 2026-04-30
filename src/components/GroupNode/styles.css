@@ -102,3 +102,33 @@
   background: transparent !important;
   background-color: transparent !important;
 }
+
+/* ==========================================================================
+   P3C 分组废弃视觉（与 CustomNode .deprecated-badge 共享样式语义）
+   - 主体半透明，但 .deprecated-badge / handles 例外
+   ========================================================================== */
+.group-node.is-deprecated {
+  position: relative;
+}
+
+.group-node.is-deprecated > *:not(.deprecated-badge) {
+  opacity: 0.5;
+}
+
+.group-node .deprecated-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  z-index: 10;
+  padding: 2px 8px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.5);
+  pointer-events: auto;
+  user-select: none;
+  letter-spacing: 0.3px;
+  line-height: 14px;
+}

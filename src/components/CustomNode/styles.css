@@ -533,3 +533,39 @@ div.custom-flow-node.node-decision.selected,
   font-family: '微软雅黑', 'Microsoft YaHei', sans-serif;
   z-index: 1;
 }
+
+/* ==========================================================================
+   P3C 废弃节点视觉（codex 取舍 2）
+   - 节点主体半透明（opacity 0.5），但角标 .deprecated-badge 保持完全不透明
+   - 角标位于节点右上角；红色 chip + 白字 + 阴影，hover 时 tooltip 显示废弃元信息
+   - position: relative on the node container is required for absolute badge positioning
+   ========================================================================== */
+
+.custom-flow-node.is-deprecated {
+  position: relative;
+}
+
+/* 主体内容半透明（不影响角标，因为 :not 排除 + 角标 z-index 更高）*/
+.custom-flow-node.is-deprecated > *:not(.deprecated-badge):not(.react-flow__handle) {
+  opacity: 0.5;
+}
+
+/* React Flow handle 不要变淡（影响连线锚点的视觉提示）*/
+
+.deprecated-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  z-index: 10;
+  padding: 2px 8px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.5);
+  pointer-events: auto; /* 允许 hover 触发 tooltip */
+  user-select: none;
+  letter-spacing: 0.3px;
+  line-height: 14px;
+}

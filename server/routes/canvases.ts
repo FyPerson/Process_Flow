@@ -24,6 +24,7 @@ import {
   canRead,
   canWrite,
   createCanvas,
+  getCanvasFull,
   getCanvasRow,
   listCanvasesForAdmin,
   listCanvasesForGuest,
@@ -132,7 +133,9 @@ canvasesRouter.get('/api/canvases/:id', optionalAuth, (req: Request, res: Respon
     res.status(400).json({ error: 'invalid_id' });
     return;
   }
-  const row = getCanvasRow(id);
+  // P3C codex 必修 1：用 hydrate 版本读，从 nodes_meta + users JOIN 注入
+  // is_deprecated / deprecated_by / deprecated_at / deprecated_by_username
+  const row = getCanvasFull(id);
   if (!row) {
     res.status(404).json({ error: 'not_found' });
     return;
@@ -155,7 +158,7 @@ canvasesRouter.get('/api/canvases/:id', optionalAuth, (req: Request, res: Respon
       updated_by: row.updated_by,
       updated_at: row.updated_at,
       archived: row.archived === 1,
-      data: JSON.parse(row.data) as MultiCanvasProjectInput,
+      data: row.hydratedData as MultiCanvasProjectInput,
     },
   });
 });

@@ -214,6 +214,10 @@ function convertNodesToStorage(nodes: Node<FlowNodeData>[]): StorageNode[] {
         collapsed: groupData.collapsed as boolean,
         expandedSize: groupData.expandedSize as { width: number; height: number },
         relatedNodeIds: (groupData.relatedNodeIds as string[]) || [],
+        // P3C：is_deprecated 必须传回服务端，让 deltaB 能识别 false→true。
+        // deprecated_by/at/username 是服务端回填的元信息，不写回（autoSaveFilter 默认不会带，
+        // 但服务端的 stripMeta 也会防御性地丢弃）。
+        is_deprecated: groupData.is_deprecated as boolean | undefined,
       };
     }
 
@@ -242,6 +246,8 @@ function convertNodesToStorage(nodes: Node<FlowNodeData>[]): StorageNode[] {
       backgroundColor: node.data.backgroundColor,
       parentId: node.parentId,
       relatedNodeIds: node.data.relatedNodeIds,
+      // P3C：is_deprecated 必须回传服务端（参见上方分组节点说明）
+      is_deprecated: node.data.is_deprecated as boolean | undefined,
     };
   });
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from 'react';
+import { useMemo, useState, useEffect, memo } from 'react';
 import { Edge, Node, useReactFlow } from '@xyflow/react';
 import { FlowNodeData, Screenshot, NodeUpdateParams, EdgeUpdateParams, GroupNodeData } from '../../types/flow';
 import { ScreenshotViewer } from '../ScreenshotViewer';
@@ -6,6 +6,7 @@ import { PageSelector, PageOption } from '../PageSelector';
 import { NodePropertiesPanel } from './NodePropertiesPanel';
 import { EdgePropertiesPanel } from './EdgePropertiesPanel';
 import { GroupPropertiesPanel, GroupUpdateParams } from './GroupPropertiesPanel';
+import { DeprecateNodeSection } from './DeprecateNodeSection';
 import './styles.css?v=2.0';
 
 // Define the wrapper type passed from FlowCanvas
@@ -56,7 +57,20 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
   // Node Extras to be lifted here because of PageSelector
   const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
 
-  const { setCenter, getZoom } = useReactFlow();
+  const { setCenter, getZoom, getEdges } = useReactFlow();
+
+  // P3C：当前选中节点关联的连线数（标废弃二次确认 dialog 显示影响范围）
+  // 不依赖 edges 引用本身（React Flow 内部 mutation 可能不触发 re-render），
+  // 改为依赖 selectedElement.data.id —— selectedElement 变化时重新计算即可。
+  const selectedNodeId =
+    selectedElement?.type === 'node' ? selectedElement.data.id : null;
+  const deprecateEdgeCount = useMemo(() => {
+    if (!selectedNodeId) return { fromOrTo: 0 };
+    const count = getEdges().filter(
+      (e) => e.source === selectedNodeId || e.target === selectedNodeId
+    ).length;
+    return { fromOrTo: count };
+  }, [selectedNodeId, getEdges]);
 
   // UI State
   const [viewingScreenshot, setViewingScreenshot] = useState<Screenshot | null>(null);
@@ -237,6 +251,17 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
             <EdgePropertiesPanel
               selectedElement={selectedElement}
               onEdgeChange={safeOnEdgeChange}
+            />
+          )}
+
+          {/* P3C 标废弃区块（节点专属，包含 group + 普通节点）*/}
+          {isNode && selectedElement.type === 'node' && (
+            <DeprecateNodeSection
+              nodeData={selectedElement.data}
+              allNodes={allNodes}
+              edgeCount={deprecateEdgeCount}
+              onNodeChange={safeOnNodeChange}
+              readOnly={readOnly}
             />
           )}
 

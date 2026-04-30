@@ -2,6 +2,7 @@ import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { Node, NodeProps, NodeResizer, useReactFlow, Position, Handle, useStore, type ReactFlowState, useUpdateNodeInternals } from '@xyflow/react';
 import { GroupNodeData } from '../../types/flow';
 import { getUniqueName } from '../../utils/uniqueName';
+import { formatDeprecatedTooltip } from '../../utils/formatDeprecated';
 import './styles.css';
 
 export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
@@ -275,7 +276,7 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
 
       {/* 分组容器 */}
       <div
-        className={`group-node ${selected ? 'selected' : ''} ${isCollapsed ? 'collapsed' : ''}`}
+        className={`group-node ${selected ? 'selected' : ''} ${isCollapsed ? 'collapsed' : ''} ${(groupData as unknown as { is_deprecated?: boolean }).is_deprecated ? 'is-deprecated' : ''}`}
         style={{
           '--group-color': color,
           '--group-bg-color': groupData.collapsed ? color : `${color}15`,
@@ -376,6 +377,22 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
 
         {/* 内容区域（子节点会渲染在这里） */}
         {!groupData.collapsed && <div className="group-content" />}
+
+        {/* P3C 废弃角标（独立 z-index，CSS :not 排除让它不跟着变淡） */}
+        {(groupData as unknown as { is_deprecated?: boolean }).is_deprecated && (
+          <div
+            className="deprecated-badge"
+            title={formatDeprecatedTooltip(
+              groupData as unknown as {
+                deprecated_by?: number;
+                deprecated_at?: number;
+                deprecated_by_username?: string;
+              }
+            )}
+          >
+            已废弃
+          </div>
+        )}
       </div>
     </>
   );

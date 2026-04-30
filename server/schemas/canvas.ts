@@ -5,9 +5,11 @@
 // - .strict() 拒绝未知字段（防客户端塞恶意字段绕过）
 // - superRefine 跨字段校验：sheet/node/edge ID 唯一性、edge 端点必须指向同 sheet 内有效节点、activeSheetId 存在性
 //
-// 节点元信息字段（creator_id / created_at / updated_by / updated_at / is_deprecated）
-// 在 schema 里声明为 optional，但服务端在保存流程中**强制以 nodes_meta 表为准重写**——
-// 客户端传任何值都会被 §5.7 流程覆盖（详见 services/canvases.ts）
+// 节点元信息字段（creator_id / created_at / updated_by / updated_at / is_deprecated /
+// deprecated_by / deprecated_at / deprecated_by_username）
+// 在 schema 里声明为 optional + nullable，但服务端在保存流程中**强制以 nodes_meta 表为准重写**——
+// 客户端传任何值都会被 §5.7 流程覆盖；deprecated_by/at 由 stripMeta 在 save 时丢弃，
+// 客户端伪造无效（详见 services/canvases.ts）
 
 import { z } from 'zod';
 
@@ -121,6 +123,11 @@ const NodeSchema = z
     updated_by: z.number().int().optional(),
     updated_at: z.number().int().optional(),
     is_deprecated: z.boolean().optional(),
+    // 废弃元信息（GET 时 hydrate 自 nodes_meta + users JOIN；save 时 stripMeta 丢弃）
+    // 未废弃节点这三字段在响应里直接 omit；废弃但历史无 username 时仅 omit username
+    deprecated_by: z.number().int().nullable().optional(),
+    deprecated_at: z.number().int().nullable().optional(),
+    deprecated_by_username: z.string().max(64).nullable().optional(),
   })
   .strict();
 

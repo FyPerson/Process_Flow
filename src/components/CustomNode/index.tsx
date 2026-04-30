@@ -10,6 +10,7 @@ import {
 
 import { FlowNodeData } from '../../types/flow';
 import { getUniqueName } from '../../utils/uniqueName';
+import { formatDeprecatedTooltip } from '../../utils/formatDeprecated';
 import './styles.css';
 
 interface CustomNodeProps extends NodeProps {
@@ -216,6 +217,8 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
     const customBgClass = backgroundColor ? 'has-custom-bg' : '';
     // 如果有缩略图，添加一个类名
     const hasScreenshotsClass = hasScreenshots ? 'has-screenshots' : '';
+    // P3C：废弃状态加 class，CSS 同步 opacity（角标 .deprecated-badge 例外）
+    const deprecatedClass = nodeData.is_deprecated ? 'is-deprecated' : '';
 
     // 终止节点根据名称或 subType 判断是开始还是结束
     let subTypeClass = '';
@@ -231,8 +234,24 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
       }
     }
 
-    return `${baseClass} ${typeClass} ${subTypeClass} ${expandableClass} ${selectedClass} ${customBgClass} ${hasScreenshotsClass}`.trim();
+    return `${baseClass} ${typeClass} ${subTypeClass} ${expandableClass} ${selectedClass} ${customBgClass} ${hasScreenshotsClass} ${deprecatedClass}`.trim();
   };
+
+  // P3C：废弃节点角标（红色 chip + tooltip 显示 deprecated_by_username/at）
+  // 不参与 opacity 降低（CSS 用 :not(.deprecated-badge) 排除），保持完全可见
+  const renderDeprecatedBadge = () =>
+    nodeData.is_deprecated ? (
+      <div
+        className="deprecated-badge"
+        title={formatDeprecatedTooltip({
+          deprecated_by: nodeData.deprecated_by,
+          deprecated_at: nodeData.deprecated_at,
+          deprecated_by_username: nodeData.deprecated_by_username,
+        })}
+      >
+        已废弃
+      </div>
+    ) : null;
 
   const mergedStyle = {
     ...nodeStyle,
@@ -620,6 +639,7 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
         <Handle id="left-target" type="target" position={Position.Left} style={targetHandleStyle} />
 
         {renderContent()}
+        {renderDeprecatedBadge()}
       </div>
     );
   }
@@ -652,6 +672,7 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
         />
 
         {renderContent()}
+        {renderDeprecatedBadge()}
 
         {/* Bottom */}
         <Handle id="bottom" type="source" position={Position.Bottom} style={sourceHandleStyle} />
@@ -680,6 +701,7 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
       <Handle id="right-target" type="target" position={Position.Right} style={targetHandleStyle} />
 
       {renderContent()}
+      {renderDeprecatedBadge()}
 
       {/* Bottom */}
       <Handle id="bottom" type="source" position={Position.Bottom} style={sourceHandleStyle} />

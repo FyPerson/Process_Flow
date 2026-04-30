@@ -53,6 +53,11 @@ export interface FlowNodeData {
   detailConfig?: NodeDetailConfig;
   backgroundColor?: string; // 节点背景色（对于判断节点，只用于SVG填充）
   relatedNodeIds?: string[]; // 关联的其他节点 ID (手动维护，用于高亮显示)
+  // P3C 废弃元信息（从服务端 hydrate；前端不直接写，由"标记废弃"按钮 → autosave 触发）
+  is_deprecated?: boolean;
+  deprecated_by?: number;
+  deprecated_at?: number;
+  deprecated_by_username?: string;
   [key: string]: unknown;
 }
 
@@ -118,6 +123,19 @@ export interface FlowDefinition {
     label?: string; // 分组标签
     color?: string; // 分组颜色
     relatedNodeIds?: string[]; // 关联的其他节点 ID
+    // ============================================
+    // 节点元信息（服务端从 nodes_meta 表 hydrate；前端只读）
+    // ============================================
+    creator_id?: number;
+    created_at?: number;
+    updated_by?: number;
+    updated_at?: number;
+    // 废弃状态：单向 false → true（P3A 服务端不支持取消废弃）
+    is_deprecated?: boolean;
+    // 废弃元信息：服务端 GET 时 JOIN users 注入；未废弃节点这三字段 omit
+    deprecated_by?: number;
+    deprecated_at?: number;
+    deprecated_by_username?: string; // 用户已删除时为 undefined（前端 fallback "用户 #N"）
   }[];
   connectors: FlowConnector[];
 }

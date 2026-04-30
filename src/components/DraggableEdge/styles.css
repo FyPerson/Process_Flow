@@ -86,3 +86,6 @@
   stroke-width: 2.5;
   filter: drop-shadow(0 2px 6px rgba(239, 68, 68, 0.4));
 }
+
+/* P3C 边派生视觉：line/label opacity 都在 DraggableEdge 组件内部用 inline style 派生
+   原因：EdgeLabelRenderer 是 portal，CSS 父子选择器匹配不到 label DOM */

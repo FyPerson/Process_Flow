@@ -111,6 +111,83 @@ export function getCanvasRow(id: number): CanvasRow | null {
   return row ?? null;
 }
 
+/**
+ * 读单个画布并 hydrate 节点元信息（P3C codex 必修 1）。
+ *
+ * canvases.data 里只存了 is_deprecated（save rewrite 时写入），
+ * 但前端 tooltip 需要 deprecated_by / deprecated_at / deprecated_by_username。
+ * 这些字段以 nodes_meta + users JOIN 为准；GET 时一次性查出来 hydrate 进 data。
+ *
+ * 不修改 canvases.data 的 deprecated_by/at —— 它在 save rewrite 时已写入，
+ * 但 username 是 view-only（用户改名后旧 data 里的 username 应该跟着变）。
+ *
+ * 未废弃节点：omit deprecated_by/at/username（schema 接受 omit）
+ * 已废弃但历史 by/at 缺失：omit by/at/username
+ * 已废弃且 by 用户已删除：保留 by + at，username = null（前端 fallback "用户 #N"）
+ */
+export function getCanvasFull(id: number): (CanvasRow & { hydratedData: unknown }) | null {
+  const db = getDb();
+  const row = db.prepare('SELECT * FROM canvases WHERE id = ?').get(id) as
+    | CanvasRow
+    | undefined;
+  if (!row) return null;
+
+  type MetaJoinRow = {
+    sheet_id: string;
+    node_id: string;
+    is_deprecated: number;
+    deprecated_by: number | null;
+    deprecated_at: number | null;
+    deprecated_by_username: string | null;
+  };
+  const metaRows = db
+    .prepare(
+      `SELECT m.sheet_id, m.node_id, m.is_deprecated,
+              m.deprecated_by, m.deprecated_at, u.username AS deprecated_by_username
+       FROM nodes_meta m
+       LEFT JOIN users u ON u.id = m.deprecated_by
+       WHERE m.canvas_id = ?`
+    )
+    .all(id) as MetaJoinRow[];
+  const metaIndex = new Map<string, MetaJoinRow>();
+  for (const m of metaRows) {
+    metaIndex.set(`${m.sheet_id}|${m.node_id}`, m);
+  }
+
+  // hydrate：data.sheets[].nodes[] 注入废弃元信息
+  // P3C codex 建议 1：nodes_meta 是唯一可信源 —— 不论 storage 里残留什么 by/at/username，
+  // 输出时一律先 strip 掉，再按 meta 注入。防止旧 data 里的 stale 字段穿透到响应。
+  const stripDeprecatedAttribution = (n: StorageNode): StorageNode => {
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    const { deprecated_by, deprecated_at, deprecated_by_username, ...rest } = n;
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+    return rest as StorageNode;
+  };
+
+  const data = JSON.parse(row.data) as { sheets: StorageSheet[]; [key: string]: unknown };
+  const hydratedSheets = data.sheets.map((sheet) => ({
+    ...sheet,
+    nodes: sheet.nodes.map((rawNode) => {
+      const node = stripDeprecatedAttribution(rawNode);
+      const meta = metaIndex.get(`${sheet.id}|${node.id}`);
+      // 没有 meta 行（理论上不该发生）→ 透传 strip 后节点
+      if (!meta) return node;
+      // 未废弃 → 仅同步 is_deprecated=false（by/at/username 已 strip）
+      if (!meta.is_deprecated) {
+        return { ...node, is_deprecated: false };
+      }
+      // 已废弃：注入完整属性，meta 缺失的 omit
+      const out: StorageNode = { ...node, is_deprecated: true };
+      if (meta.deprecated_by !== null) out.deprecated_by = meta.deprecated_by;
+      if (meta.deprecated_at !== null) out.deprecated_at = meta.deprecated_at;
+      if (meta.deprecated_by_username !== null) out.deprecated_by_username = meta.deprecated_by_username;
+      return out;
+    }),
+  }));
+  const hydratedData = { ...data, sheets: hydratedSheets };
+  return { ...row, hydratedData };
+}
+
 /** 当前用户能否查看此画布 */
 export function canRead(row: CanvasRow, user: UserPublic | null): boolean {
   if (row.archived === 1) {
@@ -169,7 +246,37 @@ export function createCanvas(input: CreateCanvasInput): CreateCanvasResult {
   const db = getDb();
   const { name, description, visibility, is_public_to_guest, data, user } = input;
   const now = Date.now();
-  const dataJson = JSON.stringify(data);
+
+  // P3C codex 必修 3：导入/另存为路径下，data.sheets[].nodes[] 可能带 is_deprecated=true。
+  // 必须重写 data 把所有节点元字段强制为服务端值，并相应同步 nodes_meta。
+  // 否则下次 GET hydrate 时 meta.is_deprecated=0 会把 data 的废弃状态丢失。
+  // 同时 strip 客户端伪造的 deprecated_by/at/username（与 saveCanvas rewrite 一致）。
+  const rewrittenSheets = data.sheets.map((sheet) => ({
+    ...sheet,
+    nodes: sheet.nodes.map((rawNode) => {
+      const n = rawNode as Record<string, unknown>;
+      /* eslint-disable @typescript-eslint/no-unused-vars */
+      const {
+        deprecated_by: _db,
+        deprecated_at: _da,
+        deprecated_by_username: _du,
+        ...rest
+      } = n;
+      /* eslint-enable @typescript-eslint/no-unused-vars */
+      const isDeprecated = !!rest.is_deprecated;
+      return {
+        ...rest,
+        creator_id: user.id,
+        created_at: now,
+        updated_by: user.id,
+        updated_at: now,
+        is_deprecated: isDeprecated,
+        ...(isDeprecated ? { deprecated_by: user.id, deprecated_at: now } : {}),
+      };
+    }),
+  }));
+  const rewrittenData = { ...data, sheets: rewrittenSheets };
+  const dataJson = JSON.stringify(rewrittenData);
 
   // owner_id：private 时为创建者；public 不绑定 owner
   const ownerId = visibility === 'private' ? user.id : null;
@@ -204,14 +311,33 @@ export function createCanvas(input: CreateCanvasInput): CreateCanvasResult {
     ).run(canvasId, dataJson, user.id, now);
 
     // 为初始 data 中所有节点写 nodes_meta（方案 §3.1 v4 修订关键步骤）
-    const insertMeta = db.prepare(
+    // P3C codex 必修 3：is_deprecated=true 的节点要把 by/at 也写入，
+    // 否则下次 GET hydrate 时 meta 是 false 会让 data 的废弃状态被覆盖。
+    const insertMetaUndeprecated = db.prepare(
       `INSERT INTO nodes_meta
-         (canvas_id, sheet_id, node_id, creator_id, created_at, updated_by, updated_at, is_deprecated)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 0)`
+         (canvas_id, sheet_id, node_id, creator_id, created_at, updated_by, updated_at,
+          is_deprecated, deprecated_by, deprecated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL, NULL)`
     );
-    for (const sheet of data.sheets) {
+    const insertMetaDeprecated = db.prepare(
+      `INSERT INTO nodes_meta
+         (canvas_id, sheet_id, node_id, creator_id, created_at, updated_by, updated_at,
+          is_deprecated, deprecated_by, deprecated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`
+    );
+    for (const sheet of rewrittenSheets) {
       for (const node of sheet.nodes) {
-        insertMeta.run(canvasId, sheet.id, node.id, user.id, now, user.id, now);
+        // node.id 来自 ...rest 透传（rawNode 必有 id），TS 推不出来需双断言
+        const nodeId = (node as unknown as { id: string }).id;
+        if (node.is_deprecated) {
+          insertMetaDeprecated.run(
+            canvasId, sheet.id, nodeId, user.id, now, user.id, now, user.id, now
+          );
+        } else {
+          insertMetaUndeprecated.run(
+            canvasId, sheet.id, nodeId, user.id, now, user.id, now
+          );
+        }
       }
     }
 
@@ -266,7 +392,14 @@ export type SaveCanvasResult =
  *
  * v2.1 阶段加完整合并算法（§5.6）
  */
-type StorageNode = { id: string; is_deprecated?: boolean; [key: string]: unknown };
+type StorageNode = {
+  id: string;
+  is_deprecated?: boolean;
+  deprecated_by?: number | null;
+  deprecated_at?: number | null;
+  deprecated_by_username?: string | null;
+  [key: string]: unknown;
+};
 type StorageSheet = { id: string; nodes: StorageNode[]; [key: string]: unknown };
 type NodeMetaRow = {
   node_id: string;
@@ -314,12 +447,27 @@ function deepEqualJsonShape(a: unknown, b: unknown): boolean {
   return true;
 }
 
-/** 节点 storage 内容比对 —— 排除元字段（creator/updated/deprecated 由服务端管）
- * 用 key-order 无关的 deepEqual，避免误判 modified */
+/** 节点 storage 内容比对 —— 排除元字段（creator/updated/deprecated/deprecated_by/at/username 由服务端管）
+ * 用 key-order 无关的 deepEqual，避免误判 modified
+ *
+ * P3C codex 必修 3：deprecated_by / deprecated_at / deprecated_by_username 必须在这里 strip。
+ * 否则客户端伪造这三字段提交，nodeContentEquals 会返回 false，触发 modified 路径
+ * 走 creator/admin 校验 —— 普通用户标废弃会被错误拦截。 */
 function nodeContentEquals(a: StorageNode, b: StorageNode): boolean {
   const stripMeta = (n: StorageNode): Record<string, unknown> => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { creator_id, created_at, updated_by, updated_at, is_deprecated, ...rest } = n;
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    const {
+      creator_id,
+      created_at,
+      updated_by,
+      updated_at,
+      is_deprecated,
+      deprecated_by,
+      deprecated_at,
+      deprecated_by_username,
+      ...rest
+    } = n;
+    /* eslint-enable @typescript-eslint/no-unused-vars */
     return rest;
   };
   return deepEqualJsonShape(stripMeta(a), stripMeta(b));
@@ -476,6 +624,13 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
     // 4.4 deprecated_changed：任何登录用户都允许（公开权限）—— 不需校验
 
     // 5. 服务端从 nodes_meta 重写 incoming data 的元字段（防客户端篡改）
+    //
+    // P3C codex 必修 2（save rewrite 时序）：本次 deprecatedChanged / alsoDeprecated 的节点
+    // 必须用 user.id + now 显式写 deprecated_by/at —— **不能读旧 meta**（旧 meta 是 null）。
+    // 写顺序：rewrite → UPDATE canvases.data → UPDATE nodes_meta（步骤 8）。
+    // 如果在 rewrite 之后再 UPDATE nodes_meta、再回头 hydrate，rewrite 拿到的 by/at 仍是 null。
+    // 所以 rewrite 时直接用 user.id + now 即可（与步骤 8 写入的值一致）。
+    //
     // 一次性查所有相关 nodes_meta
     const allMetaRows = db.prepare(
       `SELECT node_id, sheet_id, creator_id, created_at, updated_by, updated_at,
@@ -486,20 +641,39 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
     for (const m of allMetaRows) {
       metaIndex.set(`${m.sheet_id}|${m.node_id}`, m);
     }
+
+    // P3C：strip 客户端伪造的 deprecated_by/at/username（防绕过权限路径）
+    // 注：is_deprecated 不 strip —— save 流程依赖客户端传的 is_deprecated 来判定
+    // deprecated_changed / alsoDeprecated。但 by/at/username 由服务端独占。
+    const stripDeprecatedAttribution = (n: StorageNode): StorageNode => {
+      /* eslint-disable @typescript-eslint/no-unused-vars */
+      const { deprecated_by, deprecated_at, deprecated_by_username, ...rest } = n;
+      /* eslint-enable @typescript-eslint/no-unused-vars */
+      return rest as StorageNode;
+    };
+
     // 逐节点重写
     const rewrittenSheets = incomingData.sheets.map((sheet) => ({
       ...sheet,
-      nodes: sheet.nodes.map((node) => {
+      nodes: sheet.nodes.map((rawNode) => {
+        const node = stripDeprecatedAttribution(rawNode);
         const meta = metaIndex.get(`${sheet.id}|${node.id}`);
         if (!meta) {
-          // 是 added 节点；用当前用户和 now（同步 nodes_meta 在下一步做）
+          // added 节点。
+          // P3C codex 必修 5：客户端可能直接传 is_deprecated=true（新建节点同时标废弃，
+          // 例如导入数据 / 错误状态），此时 deprecated_by/at 必须由服务端写为 user.id+now。
+          // nodes_meta 同步在步骤 8 处理。
+          const isAddedDeprecated = !!node.is_deprecated;
           return {
             ...node,
             creator_id: user.id,
             created_at: now,
             updated_by: user.id,
             updated_at: now,
-            is_deprecated: !!node.is_deprecated, // 客户端传的初始值
+            is_deprecated: isAddedDeprecated,
+            ...(isAddedDeprecated
+              ? { deprecated_by: user.id, deprecated_at: now }
+              : {}),
           };
         }
         // 已存在节点：creator/created_at 永远从表里读
@@ -510,9 +684,24 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
         const isDeprecatedChanged = deprecatedChanged.some(
           (d) => d.sheetId === sheet.id && d.node.id === node.id
         );
-        const newDeprecated = isDeprecatedChanged
-          || (modEntry?.alsoDeprecated ?? false)
-          || !!meta.is_deprecated; // 已废弃节点保持已废弃
+        const isDeprecatingNow = isDeprecatedChanged || (modEntry?.alsoDeprecated ?? false);
+        const newDeprecated = isDeprecatingNow || !!meta.is_deprecated; // 已废弃节点保持已废弃
+
+        // 废弃元信息：本次新废弃 → user.id+now；历史已废弃 → 从 meta 读；未废弃 → omit
+        let deprecatedAttribution: {
+          deprecated_by?: number;
+          deprecated_at?: number;
+        } = {};
+        if (isDeprecatingNow) {
+          deprecatedAttribution = { deprecated_by: user.id, deprecated_at: now };
+        } else if (meta.is_deprecated && meta.deprecated_by !== null && meta.deprecated_at !== null) {
+          deprecatedAttribution = {
+            deprecated_by: meta.deprecated_by,
+            deprecated_at: meta.deprecated_at,
+          };
+        }
+        // 历史 is_deprecated=1 但 by/at 为 null（旧数据）→ omit by/at，前端 fallback "已废弃"
+
         return {
           ...node,
           creator_id: meta.creator_id,
@@ -520,6 +709,7 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
           updated_by: isModified ? user.id : meta.updated_by,
           updated_at: isModified ? now : meta.updated_at,
           is_deprecated: newDeprecated,
+          ...deprecatedAttribution,
         };
       }),
     }));
@@ -543,13 +733,27 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
 
     // 8. 同步 nodes_meta —— 严格化版本
     // 8.1 added：INSERT
-    const insertMeta = db.prepare(
+    // P3C codex 必修 5：added 节点若客户端传 is_deprecated=true（导入/迁移/错误状态），
+    // INSERT 必须同事务把 is_deprecated/deprecated_by/at 一起写入，
+    // 否则 nodes_meta 与 canvases.data 不一致（data 里 is_deprecated=true，meta 里 0）。
+    const insertMetaUndeprecated = db.prepare(
       `INSERT INTO nodes_meta
-         (canvas_id, sheet_id, node_id, creator_id, created_at, updated_by, updated_at, is_deprecated)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 0)`
+         (canvas_id, sheet_id, node_id, creator_id, created_at, updated_by, updated_at,
+          is_deprecated, deprecated_by, deprecated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL, NULL)`
+    );
+    const insertMetaDeprecated = db.prepare(
+      `INSERT INTO nodes_meta
+         (canvas_id, sheet_id, node_id, creator_id, created_at, updated_by, updated_at,
+          is_deprecated, deprecated_by, deprecated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`
     );
     for (const { sheetId, node } of added) {
-      insertMeta.run(id, sheetId, node.id, user.id, now, user.id, now);
+      if (node.is_deprecated) {
+        insertMetaDeprecated.run(id, sheetId, node.id, user.id, now, user.id, now, user.id, now);
+      } else {
+        insertMetaUndeprecated.run(id, sheetId, node.id, user.id, now, user.id, now);
+      }
     }
     // 8.2 modified：UPDATE updated_by/updated_at
     // 如果 alsoDeprecated（content + deprecated 同时变化），同事务再 UPDATE is_deprecated

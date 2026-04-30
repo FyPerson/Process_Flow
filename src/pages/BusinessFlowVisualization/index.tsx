@@ -354,6 +354,11 @@ export function BusinessFlowVisualization() {
             relatedNodeIds: node.relatedNodeIds || [],
             // 注入 readOnly 让 GroupNode 自己感知（用于 NodeResizer / 双击改名 / 折叠按钮）
             readOnly,
+            // P3C：废弃元信息透传到 data（GroupNode 用于半透明 + 角标 + tooltip）
+            is_deprecated: node.is_deprecated,
+            deprecated_by: node.deprecated_by,
+            deprecated_at: node.deprecated_at,
+            deprecated_by_username: node.deprecated_by_username,
           } as any,
           zIndex: -1,
         };
@@ -380,6 +385,11 @@ export function BusinessFlowVisualization() {
           relatedNodeIds: node.relatedNodeIds,
           // 注入 readOnly 让 CustomNode 自己感知（用于 NodeResizer / 双击改名）
           readOnly,
+          // P3C：废弃元信息透传到 data（CustomNode 用于半透明 + 角标 + tooltip）
+          is_deprecated: node.is_deprecated,
+          deprecated_by: node.deprecated_by,
+          deprecated_at: node.deprecated_at,
+          deprecated_by_username: node.deprecated_by_username,
         },
       };
     });
@@ -391,7 +401,14 @@ export function BusinessFlowVisualization() {
       return 0;
     });
 
-    // 转换连接线
+    // P3C 取舍 4 codex 必修 1+2：边的废弃视觉**不在这里构造**。
+    // 原因：
+    // - FlowCanvas 用 useEdgesState(initialEdges) 仅初始化，之后内部 state 不响应
+    //   父组件 props 变化 → 标废弃后 processedEdges 重算无效
+    // - 若把 hasDeprecatedEndpoint 写入 edge.data，会被 convertEdgesToStorage 持久化
+    // 改为 DraggableEdge 内用 useStore 订阅 nodeLookup 派生（响应式订阅，
+    // 节点 data.is_deprecated 变化会触发 selector 重跑 + edge re-render）。
+    // 同理 animated 也不能在这里固定（也会被 useEdgesState 锁住），DraggableEdge 内部处理。
     const flowEdges: Edge[] = activeSheet.connectors
       .filter((conn) => {
         const sourceNode = flowNodes.find((n) => n.id === conn.sourceID);

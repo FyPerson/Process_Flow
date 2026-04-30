@@ -6,6 +6,8 @@ import {
   getSmoothStepPath,
   getStraightPath,
   useReactFlow,
+  useStore,
+  type ReactFlowState,
   Position,
 } from '@xyflow/react';
 import './styles.css';
@@ -13,6 +15,8 @@ import './styles.css';
 // 这个组件将替代默认的 Edge
 export default function DraggableEdge({
   id,
+  source,
+  target,
   sourceX,
   sourceY,
   targetX,
@@ -30,6 +34,19 @@ export default function DraggableEdge({
   const { setEdges, getZoom, getEdge } = useReactFlow();
   const [isHovered, setIsHovered] = useState(false);
   const [isSelected, setIsSelected] = useState(false);
+
+  // P3C 取舍 4：派生废弃端点状态。
+  // codex 必修 1（二审修正）：getNode() 不是响应式订阅，节点 data 变化时 edge 不一定重渲染。
+  // 必须用 useStore 订阅 nodeLookup —— React Flow 内部 store 变化时该 selector 触发 re-render。
+  // 选择 boolean 而非 node 对象本身，避免 selector 引用稳定性问题。
+  const hasDeprecatedEndpoint = useStore((state: ReactFlowState) => {
+    const s = state.nodeLookup.get(source);
+    const t = state.nodeLookup.get(target);
+    return (
+      !!(s?.data as { is_deprecated?: boolean } | undefined)?.is_deprecated
+      || !!(t?.data as { is_deprecated?: boolean } | undefined)?.is_deprecated
+    );
+  });
 
   // 从 React Flow 获取完整的 edge 对象，确保获取到 labelStyle 和 labelBgStyle
   // React Flow 可能不会自动将 labelStyle 和 labelBgStyle 作为 props 传递
@@ -365,7 +382,11 @@ export default function DraggableEdge({
         : style.strokeWidth || 1,
     stroke: isSelected ? '#3b82f6' : isHovered ? '#60a5fa' : style.stroke || '#64748b',
     strokeDasharray: style.strokeDasharray,
-    transition: 'stroke 0.2s, stroke-width 0.2s',
+    transition: 'stroke 0.2s, stroke-width 0.2s, opacity 0.2s',
+    // P3C 取舍 4：边连接到/从已废弃节点 → 半透明
+    // 选中/hover 时提高可见度（codex 建议项 6）
+    ...(hasDeprecatedEndpoint && !isSelected && !isHovered ? { opacity: 0.4 } : {}),
+    ...(hasDeprecatedEndpoint && (isSelected || isHovered) ? { opacity: 0.75 } : {}),
   };
 
   return (
@@ -388,6 +409,11 @@ export default function DraggableEdge({
               ...labelStyles,
               pointerEvents: 'all',
               zIndex: 20, // 确保标签在拖拽手柄之上
+              // P3C codex 二审 minor 修复：EdgeLabelRenderer 是 portal，
+              // CSS .edge-has-deprecated-endpoint .edge-label 选择器匹配不到 portal DOM。
+              // 改为 inline style 派生 opacity（与边线一致）
+              ...(hasDeprecatedEndpoint && !isSelected && !isHovered ? { opacity: 0.45 } : {}),
+              ...(hasDeprecatedEndpoint && (isSelected || isHovered) ? { opacity: 0.85 } : {}),
             }}
             className="nodrag nopan edge-label"
           >
