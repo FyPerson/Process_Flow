@@ -13,6 +13,7 @@ import {
 } from '../../types/flow';
 import { useMultiCanvas } from '../../hooks/useMultiCanvas';
 import { useAuth } from '../../auth/AuthContext';
+import { canWriteCanvas } from '../../auth/canWriteCanvas';
 import type { ApiError } from '../../api/canvases';
 import './styles.css';
 
@@ -55,7 +56,7 @@ export function BusinessFlowVisualization() {
     return Number.isInteger(n) && n > 0 ? n : null;
   }, [canvasIdRaw]);
 
-  const { readOnly } = useAuth();
+  const { user } = useAuth();
 
   // 使用多画布 Hook
   const {
@@ -79,10 +80,28 @@ export function BusinessFlowVisualization() {
     conflict,
     serverError,
     lastSavedAt,
+    canvasMetaState,
     save,
     createOnServer,
     discardAndReload,
   } = useMultiCanvas({ canvasId: canvasIdFromUrl, storageKey: 'saved-flow-data' });
+
+  // P3D-2 step 2：单一口径的"画布可写"判定
+  // 替代之前散乱的 useAuth().readOnly = (status==='guest')。
+  // canWriteCanvas 矩阵覆盖 user + canvasMeta 全部分支（详见 src/auth/canWriteCanvas.ts）：
+  // - 游客 → 不可写
+  // - 登录 + 本地草稿（canvasMeta=null）→ 可写（保持当前行为兼容）
+  // - admin → 全可写（含归档）
+  // - 普通用户 + 归档 → 不可写（修正 bug：之前能改但保存 403）
+  // - 普通用户 + 公共未归档 → 可写
+  // - 普通用户 + 私有未归档 + 是 owner → 可写
+  // - 普通用户 + 私有未归档 + 非 owner → 不可写（route canRead 已兜底，前端 fail-closed）
+  const canvasWritable = useMemo(
+    () => canWriteCanvas(canvasMetaState, user),
+    [canvasMetaState, user],
+  );
+  // readOnly 保留作为派生量供下游使用，与 P3D-2 之前的 prop 形态兼容
+  const readOnly = !canvasWritable;
 
   // beforeunload：dirty 或 saving 时拦截关闭
   useEffect(() => {
@@ -140,10 +159,15 @@ export function BusinessFlowVisualization() {
     const defaultName = project?.name || '未命名画布';
     const name = window.prompt('给这个画布起个名字：', defaultName);
     if (!name || !name.trim()) return;
+    if (!user) {
+      window.alert('请先登录后再另存到服务器');
+      return;
+    }
     try {
       const result = await createOnServer({
         name: name.trim(),
         visibility: 'private',
+        currentUserId: user.id,
       });
       // discarded=true 说明创建成功但用户已切到别的 canvas（极端竞态）
       // 不要让 URL 飞到这个新建 id，否则会把用户从他正在看的 canvas 拽走
@@ -166,7 +190,7 @@ export function BusinessFlowVisualization() {
         `创建失败：${apiErr?.error || apiErr?.message || '未知错误'}`
       );
     }
-  }, [project?.name, createOnServer, setSearchParams]);
+  }, [project?.name, createOnServer, setSearchParams, user]);
 
   const handleDiscardAndReload = useCallback(async () => {
     try {

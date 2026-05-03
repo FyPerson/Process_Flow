@@ -104,9 +104,11 @@ export function SaveStatus(props: SaveStatusProps) {
   }, [lastSavedAt]);
 
   if (readOnly) {
-    // 游客只读模式：保留导出能力（导出仅需 canRead 权限，不需要写权限）
+    // 当前画布只读：保留导出能力（导出仅需 canRead 权限，不需要写权限）
+    // P3D-2 step 2 codex 二审建议：原文案"游客只读模式"已不准确——
+    // 只读现在可能源自 游客 / 归档画布 / 私有画布非 owner / 加载中 等多种原因
     return (
-      <div className="save-status save-status--readonly" title="游客只读模式">
+      <div className="save-status save-status--readonly" title="当前画布只读">
         <span>只读</span>
         {exportServerButton}
       </div>

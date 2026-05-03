@@ -61,6 +61,16 @@ export type SaveResult =
   | { status: 'skipped' }
   | { status: 'discarded' };
 
+/** P3D-2 step 2 codex 二审必修 1：画布元信息状态机
+ * 拆开 null 的两种语义（本地草稿可写 vs 加载中 fail-closed） */
+export type CanvasMetaState =
+  | { kind: 'local' }
+  | { kind: 'loading' }
+  | {
+      kind: 'server';
+      meta: { visibility: 'public' | 'private'; owner_id: number | null; archived: boolean };
+    };
+
 export interface UseMultiCanvasReturn {
   // 项目数据
   project: MultiCanvasProject | null;
@@ -98,6 +108,24 @@ export interface UseMultiCanvasReturn {
   dirty: boolean;
   saving: boolean;
   serverError: ApiError | null;
+  /** P3D-2 step 2：画布元信息状态机（区分三种语义，避免 null 二义性）
+   *
+   * codex 二审必修 1：之前用 `canvasMeta: ... | null` 表达，但 null 同时含
+   * "本地草稿"（应可写）和 "fetch 加载中/失败"（应 fail-closed）两种状态 ——
+   * canWriteCanvas 把所有 null 都判可写，加载期间会暂时漏放行权限。
+   *
+   * 三态：
+   * - `{ kind: 'local' }`：未挂接服务端画布（canvasIdProp=null，localStorage 兜底）
+   *   → canWriteCanvas 对登录用户放行（保持现有 readOnly=guest 等价行为）
+   * - `{ kind: 'loading' }`：有 canvasIdProp 但元信息还在 fetch / 出错
+   *   → canWriteCanvas **fail-closed**（任何用户都不可写，等真值到位）
+   * - `{ kind: 'server', meta }`：从服务端拿到 visibility/owner_id/archived
+   *   → canWriteCanvas 按矩阵正常判定
+   *
+   * caller 把它和当前 user 一起喂给 canWriteCanvas() 算单一口径"画布可写"。
+   * 不要让下游 hooks/面板各自 useAuth() 算各自的 readOnly —— P3D-2 入口全覆盖
+   * 的前置不变量。 */
+  canvasMetaState: CanvasMetaState;
   /** 出现 409 冲突时记录服务端 currentVersion；用户重载或手动覆盖后清零 */
   conflict: { currentVersion: number } | null;
   /** 冲突期间 / 致命错误期间，自动保存被禁用（红字提示用户手动处理） */
@@ -117,12 +145,17 @@ export interface UseMultiCanvasReturn {
    */
   save: () => Promise<SaveResult>;
   /** 把当前内存 project 当作新画布创建到服务端，成功后 canvasId 自动指向它
-   * discarded=true 表示创建成功但用户已切到别的 canvas，caller 不应写 URL */
+   * discarded=true 表示创建成功但用户已切到别的 canvas，caller 不应写 URL
+   *
+   * P3D-2 step 2：input.currentUserId 用于 createOnServer 成功后立刻设置正确的
+   * canvasMeta（private 画布 owner=user；public 画布 owner=null）。
+   * 这避免了创建后 fetch 短路命中导致 canvasMeta 滞留为 null。 */
   createOnServer: (input: {
     name: string;
     description?: string;
     visibility: 'public' | 'private';
     is_public_to_guest?: boolean;
+    currentUserId: number;
   }) => Promise<{ id: number; version: number; discarded: boolean }>;
   /** 用户在冲突弹框选"丢弃本地、重载服务端"时调用 */
   discardAndReload: () => Promise<void>;
@@ -413,6 +446,12 @@ export function useMultiCanvas(
   const [conflict, setConflict] = useState<{ currentVersion: number } | null>(null);
   const [autoSaveDisabled, setAutoSaveDisabled] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+
+  // P3D-2 step 2 codex 二审必修 1+2：三态 state（避免 null 二义性 + fetch 切换 fail-closed）
+  // 初始按 canvasIdProp 决定：有 id → loading；无 id → local
+  const [canvasMetaState, setCanvasMetaState] = useState<CanvasMetaState>(() =>
+    canvasIdProp != null ? { kind: 'loading' } : { kind: 'local' },
+  );
   const [loadRevision, setLoadRevision] = useState(0);
   const bumpLoadRevision = useCallback(() => {
     setLoadRevision((v) => v + 1);
@@ -478,6 +517,9 @@ export function useMultiCanvas(
     setCanvasId(canvasIdProp);
     canvasIdRef.current = canvasIdProp;
     serverVersionRef.current = null;
+    // P3D-2 step 2 codex 二审必修 2：fetch 切换时立即把权限态切到 loading（fail-closed）
+    // 避免旧画布的 server meta 沿用到新画布的 loading 期间
+    setCanvasMetaState(canvasIdProp != null ? { kind: 'loading' } : { kind: 'local' });
 
     if (canvasIdProp != null) {
       apiGetCanvas(canvasIdProp)
@@ -490,6 +532,15 @@ export function useMultiCanvas(
           setProject(row.data);
           setCanvasId(row.id);
           setServerVersion(row.version);
+          // P3D-2 step 2：拿到 server meta 后切到 'server' 态
+          setCanvasMetaState({
+            kind: 'server',
+            meta: {
+              visibility: row.visibility,
+              owner_id: row.owner_id,
+              archived: row.archived,
+            },
+          });
           setDirty(false);
           setLastSavedAt(Date.now());
           bumpLoadRevision();
@@ -499,6 +550,7 @@ export function useMultiCanvas(
           if (canvasIdRef.current !== canvasIdProp) return;
           setServerError(err);
           setProject(null);
+          // fetch 失败仍保持 loading 态（fail-closed）—— 用户重试或刷新会重新走 fetch
         })
         .finally(() => {
           if (cancelled) return;
@@ -509,6 +561,8 @@ export function useMultiCanvas(
         });
     } else {
       // localStorage 回退（旧逻辑保留，但不再写回）
+      // P3D-2 step 2：本地草稿（kind='local'）—— canWriteCanvas 对登录用户放行
+      // 已在上面的 setCanvasMetaState 里设了，这里 try 块不需重复
       try {
         const savedData = localStorage.getItem(storageKey);
         if (savedData) {
@@ -802,6 +856,8 @@ export function useMultiCanvas(
     setServerError(null);
     setConflict(null);
     setAutoSaveDisabled(false);
+    // P3D-2 step 2：loadFromServer 也要先切到 loading（fail-closed）
+    setCanvasMetaState({ kind: 'loading' });
     try {
       const row = await apiGetCanvas(id);
       // 用户可能在 GET 期间又切走了
@@ -811,6 +867,15 @@ export function useMultiCanvas(
       setProject(row.data);
       setCanvasId(row.id);
       setServerVersion(row.version);
+      // P3D-2 step 2：拿到 server meta 后切到 'server' 态
+      setCanvasMetaState({
+        kind: 'server',
+        meta: {
+          visibility: row.visibility,
+          owner_id: row.owner_id,
+          archived: row.archived,
+        },
+      });
       setDirty(false);
       setLastSavedAt(Date.now());
       bumpLoadRevision();
@@ -895,6 +960,8 @@ export function useMultiCanvas(
     }
     setIsLoading(true);
     setServerError(null);
+    // P3D-2 step 2：reload 期间先切 loading（fail-closed）
+    setCanvasMetaState({ kind: 'loading' });
     try {
       const row = await apiGetCanvas(capturedCanvasId);
       // 用户在 GET 期间切走了，丢弃结果
@@ -902,6 +969,16 @@ export function useMultiCanvas(
       serverVersionRef.current = row.version;
       setProject(row.data);
       setServerVersion(row.version);
+      // P3D-2 step 2：拿到新 server meta 后切到 'server' 态
+      // （服务端 PATCH visibility/archived 后用户 reload 会看到新值）
+      setCanvasMetaState({
+        kind: 'server',
+        meta: {
+          visibility: row.visibility,
+          owner_id: row.owner_id,
+          archived: row.archived,
+        },
+      });
       setDirty(false);
       setConflict(null);
       setAutoSaveDisabled(false);
@@ -925,6 +1002,7 @@ export function useMultiCanvas(
       description?: string;
       visibility: 'public' | 'private';
       is_public_to_guest?: boolean;
+      currentUserId: number;
     }) => {
       // 同步并发拦截：避免双击"另存到服务器"创建两份
       if (saveInFlightRef.current) {
@@ -963,6 +1041,20 @@ export function useMultiCanvas(
         serverVersionRef.current = result.version;
         setCanvasId(result.id);
         setServerVersion(result.version);
+        // P3D-2 step 2：刚创建的画布元信息从 input 派生（与服务端 createCanvas 逻辑一致）
+        // - visibility 是用户提交的
+        // - owner_id：private 画布 = currentUserId；public 画布 = null（服务端 §3.1）
+        // - archived 永远 false
+        // 这样 canvasMetaState 立刻进入 'server' 态，canWriteCanvas 能正确放行。
+        // 不进入 'loading' 是因为我们有 input.* 真值，不需要再走 fetch refetch（短路命中）。
+        setCanvasMetaState({
+          kind: 'server',
+          meta: {
+            visibility: input.visibility,
+            owner_id: input.visibility === 'private' ? input.currentUserId : null,
+            archived: false,
+          },
+        });
         setLastSavedAt(Date.now());
         setConflict(null);
         setAutoSaveDisabled(false);
@@ -1036,6 +1128,7 @@ export function useMultiCanvas(
     conflict,
     autoSaveDisabled,
     lastSavedAt,
+    canvasMetaState,
     loadFromServer,
     save,
     createOnServer,

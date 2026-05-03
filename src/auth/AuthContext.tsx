@@ -27,7 +27,11 @@ interface AuthContextValue {
   user: UserPublic | null;
   /** 是否游客模式（authenticated=false 但 status='guest'）*/
   isGuest: boolean;
-  /** 是否只读模式（游客 = 只读，登录用户 = 可编辑） */
+  /** 是否只读模式（游客 = 只读，登录用户 = 可编辑）
+   *
+   * P3D-2 step 2 注意：这个字段表达的是"用户身份维度"的只读，不等于"画布维度"的只读。
+   * 实际是否能写画布请用 src/auth/canWriteCanvas.ts —— 它考虑 visibility/owner_id/archived。
+   * 这里保留是因为 Login/Navigation 等场景仍需"是不是游客"的快速判定。 */
   readOnly: boolean;
 
   login: (username: string, password: string) => Promise<void>;
