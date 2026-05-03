@@ -80,3 +80,6 @@ tsc_errors.log
 
 # 临时测试脚本（Playwright 端到端测试套件 + 调试脚本）
 tmp-test/
+
+# 项目介绍 PPT（HTML 静态产物，跟代码无关；如需正式归档请 git add -f）
+项目介绍ppt/

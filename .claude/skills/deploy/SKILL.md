@@ -462,7 +462,13 @@ COMMIT="abc1234"      # 被审的 commit hash 前缀（横切主题可省略）
 SUBJECT="P3A 节点级权限服务端"  # 主题描述
 
 mkdir -p "docs/规划/codex审查记录/$LEVEL1/$SUBDIR"
-mv /tmp/codex-result.md "docs/规划/codex审查记录/$LEVEL1/$SUBDIR/$ROUND-$TOPIC-$COMMIT-$SUBJECT.md"
+ARCHIVED="docs/规划/codex审查记录/$LEVEL1/$SUBDIR/$ROUND-$TOPIC-$COMMIT-$SUBJECT.md"
+mv /tmp/codex-result.md "$ARCHIVED"
+
+# 4.1.1 strip codex 输出的 trailing whitespace
+# codex 用 markdown 强制换行的双空格语法，归档到仓库会让 git diff --check 报警
+# 不修的话每次归档都要手动 sed，三次 trailing whitespace 踩坑（0430 session 踩坑 3）
+sed -i 's/[ \t]*$//' "$ARCHIVED"
 
 # 4.2 清理 /tmp 中间文件（prompt + stdout，无保留价值）
 rm /tmp/codex-prompt.txt /tmp/codex-stdout.log
