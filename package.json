@@ -11,7 +11,8 @@
     "start": "cross-env NODE_ENV=production tsx server/index.ts",
     "preview": "vite preview",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test": "node --import tsx --test \"src/**/*.test.ts\" \"server/**/*.test.ts\""
   },
   "dependencies": {
     "@types/dagre": "^0.7.53",

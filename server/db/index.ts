@@ -134,6 +134,16 @@ export function getDb(): DatabaseType {
   return dbInstance;
 }
 
+/** 测试专用：直接注入一个 db 实例（绕过 initDb 的文件系统操作 + 单例判定）
+ *
+ * 用途：单测里用 `:memory:` db + 手动跑 schema 后注入，避免污染 dev/prod 数据。
+ * 测试结束记得 setDbForTesting(null) 重置，否则会泄漏到下个测试。
+ *
+ * 不应在 production 代码里调用 —— 没有任何业务调用应当走这条路。 */
+export function setDbForTesting(db: DatabaseType | null): void {
+  dbInstance = db;
+}
+
 /** 优雅关闭（进程退出时调用）
  * 关闭前强制 wal_checkpoint(TRUNCATE)：把 wal 内容合并回主库 + 清空 wal 文件
  *
