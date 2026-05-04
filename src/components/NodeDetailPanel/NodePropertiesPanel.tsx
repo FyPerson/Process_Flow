@@ -18,6 +18,10 @@ interface NodePropertiesPanelProps {
     screenshots: Screenshot[];
     setScreenshots: (s: Screenshot[]) => void;
     allNodes?: Node<FlowNodeData>[];
+    /** P3D-2 step 4：当前用户是否可编辑此节点。
+     *  false → 用 fieldset disabled 把所有输入禁用；tab 切换仍可用（属性/外观/数据浏览）。
+     *  与 NodeDetailPanel 顶部横幅协同，横幅说明"不可编辑原因 + 标废弃指引"。 */
+    canEdit: boolean;
 }
 
 export const NodePropertiesPanel = memo(function NodePropertiesPanel({
@@ -27,7 +31,8 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({
     onOpenPageSelector,
     screenshots,
     setScreenshots,
-    allNodes = []
+    allNodes = [],
+    canEdit,
 }: NodePropertiesPanelProps) {
     // State Management
     const [nodeName, setNodeName] = useState('');
@@ -229,6 +234,11 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({
                 </button>
             </div>
 
+            {/* P3D-2 step 4：fieldset disabled={!canEdit} 兜底所有 input/select/textarea/button
+                浏览器原生 disabled 比逐个加 disabled 属性可靠（含 ScreenshotManager、NodeStyleEditor 等子组件）
+                tabs 切换在 fieldset 外部，所以不可编辑用户仍能浏览三个 tab。
+                border:none + padding:0 + margin:0 抹平 fieldset 的浏览器默认样式 */}
+            <fieldset disabled={!canEdit} style={{ border: 'none', padding: 0, margin: 0, minWidth: 0 }}>
             <div className="tab-content">
                 {activeTab === 'properties' && (
                     <>
@@ -380,6 +390,7 @@ export const NodePropertiesPanel = memo(function NodePropertiesPanel({
                     </>
                 )}
             </div>
+            </fieldset>
         </>
     );
 });

@@ -412,6 +412,15 @@ export function useFlowOperations({
     // 解散分组
     const onUngroup = useCallback(
         (groupId: string) => {
+            // P3D-2 step 4 codex 一审 H2：admin-only 数据层 gate
+            // 06-范围审查最后一段定调"解散分组按 admin-only 处理"。
+            // UI 层（GroupPropertiesPanel 解散按钮 disabled）+ NodeDetailPanel safeOnUngroup 是兜底，
+            // 数据层这里是真防护（防止快捷键 / 其它 UI 入口 / 测试入口绕过）。
+            // 必须早于所有 setNodes / saveHistory / triggerAutoSave。
+            // canvasWritable 也要查 —— 归档画布 admin 也不应改
+            if (!canvasWritable) return;
+            if (!user || user.role !== 'admin') return;
+
             // 获取最新状态，不依赖闭包中的 nodes
             const currentNodes = getNodes();
 
@@ -420,6 +429,7 @@ export function useFlowOperations({
 
             // P3D-2 step 3 codex 六审 high1：all-or-nothing gate
             // 解散会改两类节点：分组本身（删）+ 子节点（清 parentId/重定位）→ 都必须可编辑
+            // 注：admin-only 已通过；保留这层 canEditNodeData 校验作为冗余（admin 必通过）
             if (!canEditNodeData(groupNode.data, user, canvasWritable)) return;
             const childNodes = currentNodes.filter((n) => n.parentId === groupId);
             const childUneditable = childNodes.some(

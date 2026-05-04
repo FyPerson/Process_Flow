@@ -890,3 +890,14 @@ describe('filterNodeChangesByPermission', () => {
 //    - StrictMode 包装下连续触发 setNodes updater
 //    - 断言：history 栈顶 snapshot 只有 1 条，不重复
 //    - 修法预期：useFlowHistory.saveHistory 内对比栈顶去重
+//
+// 5. step 4 一审 H2 useFlowOperations.onUngroup admin-only 数据层 gate：
+//    - 普通用户（非 admin）作为 group creator，对自己创建的 group 调用 onUngroup
+//    - 断言：setNodes / saveHistory / triggerAutoSave 都不被调用（admin-only 在 canEditNodeData 之前拒）
+//    - 同时验证 admin 路径：admin 调 onUngroup 仍按原 canEditNodeData + child 全可编辑流程走
+//
+// 6. step 4 一审 H1 DeprecateNodeSection 公开权限不被 canEdit 吞：
+//    - 普通用户 + 别人创建的可写画布节点 + 点标废弃按钮
+//    - 断言：onNodeChange 被实际调用（不被 safeOnDeprecateChange 吞），dataUpdates 含 is_deprecated=true
+//    - 配合 isPublicDeprecateUpdate 在 canApplyNodeUpdate 层放行
+//    - 这是 P3C 公开权限 + step 4 横幅"如需标记废弃请使用下方按钮"指引的端到端验证

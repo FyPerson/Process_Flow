@@ -1079,6 +1079,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
           onRemoveFromGroup={handleRemoveFromGroup}
           allNodes={nodes}
           readOnly={readOnly}
+          user={user}
         />
       </div>
 

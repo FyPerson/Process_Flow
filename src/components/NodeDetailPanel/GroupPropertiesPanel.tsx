@@ -30,6 +30,12 @@ interface GroupPropertiesPanelProps {
     onUngroup: (groupId: string) => void;
     onRemoveFromGroup: (nodeId: string) => void;
     allNodes?: Node<FlowNodeData>[];
+    /** P3D-2 step 4：当前用户是否可编辑此分组（label / color / 关联节点 / 移出子节点）。
+     *  false → fieldset disabled 兜底 + 解散按钮也 disabled。 */
+    canEdit: boolean;
+    /** P3D-2 step 4：当前用户是否 admin。
+     *  解散分组按钮在 06-范围审查 last paragraph 定调 admin-only —— 即使 canEdit=true 也要 admin 才能解散。 */
+    isAdmin: boolean;
 }
 
 export const GroupPropertiesPanel = memo(function GroupPropertiesPanel({
@@ -40,6 +46,8 @@ export const GroupPropertiesPanel = memo(function GroupPropertiesPanel({
     onUngroup,
     onRemoveFromGroup,
     allNodes = [],
+    canEdit,
+    isAdmin,
 }: GroupPropertiesPanelProps) {
     const [groupLabel, setGroupLabel] = useState(groupData.label || '新分组');
     const [groupColor, setGroupColor] = useState(groupData.color || '#3b82f6');
@@ -90,6 +98,9 @@ export const GroupPropertiesPanel = memo(function GroupPropertiesPanel({
 
     return (
         <>
+            {/* P3D-2 step 4：fieldset disabled={!canEdit} 兜底 label/color/关联节点/移出子节点
+                解散按钮在 fieldset 内部还要叠加 admin-only 检查（canEdit ≠ admin） */}
+            <fieldset disabled={!canEdit} style={{ border: 'none', padding: 0, margin: 0, minWidth: 0 }}>
             {/* 基本信息 */}
             <div className="info-section">
                 <div className="info-item">
@@ -257,30 +268,35 @@ export const GroupPropertiesPanel = memo(function GroupPropertiesPanel({
 
             {/* 操作按钮 */}
             <div className="section">
+                {/* P3D-2 step 4：解散分组 admin-only（与 useFlowOperations onUngroup 后端 gate 同口径）
+                    canEdit=true 但非 admin 时也要 disable，并在 title 提示原因 */}
                 <button
                     onClick={handleUngroup}
+                    disabled={!isAdmin}
+                    title={isAdmin ? undefined : '仅管理员可解散分组（普通用户可对子节点单独操作）'}
                     style={{
                         width: '100%',
                         padding: '12px',
                         fontSize: '14px',
                         fontWeight: 500,
-                        color: '#dc2626',
-                        background: '#fef2f2',
-                        border: '1px solid #fecaca',
+                        color: isAdmin ? '#dc2626' : '#94a3b8',
+                        background: isAdmin ? '#fef2f2' : '#f1f5f9',
+                        border: `1px solid ${isAdmin ? '#fecaca' : '#cbd5e1'}`,
                         borderRadius: '8px',
-                        cursor: 'pointer',
+                        cursor: isAdmin ? 'pointer' : 'not-allowed',
                         transition: 'all 0.2s',
                     }}
                     onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#fee2e2';
+                        if (isAdmin) e.currentTarget.style.background = '#fee2e2';
                     }}
                     onMouseLeave={(e) => {
-                        e.currentTarget.style.background = '#fef2f2';
+                        if (isAdmin) e.currentTarget.style.background = '#fef2f2';
                     }}
                 >
-                    解散分组
+                    解散分组{!isAdmin && ' (仅管理员)'}
                 </button>
             </div>
+            </fieldset>
         </>
     );
 });
