@@ -11,6 +11,7 @@ import {
 import { FlowNodeData } from '../../types/flow';
 import { getUniqueName } from '../../utils/uniqueName';
 import { formatDeprecatedTooltip } from '../../utils/formatDeprecated';
+import { formatCreatorName } from '../../auth/formatCreatorName';
 import './styles.css';
 
 interface CustomNodeProps extends NodeProps {
@@ -242,6 +243,16 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
 
     return `${baseClass} ${typeClass} ${subTypeClass} ${expandableClass} ${selectedClass} ${customBgClass} ${hasScreenshotsClass} ${deprecatedClass} ${notEditableClass}`.trim();
   };
+
+  // P3D-2 step 8：节点创建者 hover tooltip
+  // 仅 __canEdit=false 的节点显示（自己创建的不打扰）；用 HTML 原生 title=（5 人内部桌面端，与
+  // deprecated-badge 同款模式）；文案简洁"由 X 创建"，详情面板蓝色横幅已经含权限提示
+  // 项目语境：仅桌面端浏览器、不做移动端，title= 在桌面端可靠
+  // 与 deprecated-badge tooltip 共存：hover 节点容器 → 显示创建者；hover 红色 chip → 显示废弃信息
+  //   （位置不同显示不同 tooltip，是 HTML 原生行为；用户语境清晰，不冲突）
+  const creatorTooltip = (nodeData as { __canEdit?: boolean }).__canEdit === false
+    ? `由 ${formatCreatorName(nodeData)} 创建`
+    : undefined;
 
   // P3C：废弃节点角标（红色 chip + tooltip 显示 deprecated_by_username/at）
   // 不参与 opacity 降低（CSS 用 :not(.deprecated-badge) 排除），保持完全可见
@@ -639,7 +650,7 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
     // 边框颜色和粗细会应用到SVG的stroke上，不需要在容器上应用
 
     return (
-      <div className={getNodeClassName()} style={decisionStyle}>
+      <div className={getNodeClassName()} style={decisionStyle} title={creatorTooltip}>
         {/* Top - 定位到顶部顶点 */}
         {/* source handle 在前，确保在拖拽时优先被识别 */}
         <Handle id="top-source" type="source" position={Position.Top} style={sourceHandleStyle} />
@@ -681,7 +692,7 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
     // 边框颜色和粗细会应用到SVG的stroke上，不需要在容器上应用
 
     return (
-      <div className={getNodeClassName()} style={dataStyle}>
+      <div className={getNodeClassName()} style={dataStyle} title={creatorTooltip}>
         {/* Top */}
         <Handle id="top-source" type="source" position={Position.Top} style={sourceHandleStyle} />
         <Handle id="top-target" type="target" position={Position.Top} style={targetHandleStyle} />
@@ -714,7 +725,7 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
 
   // 处理节点和终止节点
   return (
-    <div className={getNodeClassName()} style={mergedStyle}>
+    <div className={getNodeClassName()} style={mergedStyle} title={creatorTooltip}>
       {/* Top */}
       {/* source handle 在前，确保在拖拽时优先被识别 */}
       <Handle id="top-source" type="source" position={Position.Top} style={sourceHandleStyle} />

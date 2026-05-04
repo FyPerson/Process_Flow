@@ -3,6 +3,7 @@ import { Node, NodeProps, NodeResizer, useReactFlow, Position, Handle, useStore,
 import { GroupNodeData } from '../../types/flow';
 import { getUniqueName } from '../../utils/uniqueName';
 import { formatDeprecatedTooltip } from '../../utils/formatDeprecated';
+import { formatCreatorName } from '../../auth/formatCreatorName';
 import './styles.css';
 
 export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
@@ -289,6 +290,12 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
       {/* 分组容器 */}
       <div
         className={`group-node ${selected ? 'selected' : ''} ${isCollapsed ? 'collapsed' : ''} ${(groupData as unknown as { is_deprecated?: boolean }).is_deprecated ? 'is-deprecated' : ''} ${(groupData as unknown as { __canEdit?: boolean }).__canEdit === false ? 'not-editable' : ''}`}
+        title={
+          // P3D-2 step 8：分组创建者 hover tooltip（仅 __canEdit=false 显示，与 CustomNode 同款）
+          (groupData as unknown as { __canEdit?: boolean }).__canEdit === false
+            ? `由 ${formatCreatorName(groupData as unknown as Parameters<typeof formatCreatorName>[0])} 创建`
+            : undefined
+        }
         style={{
           '--group-color': color,
           '--group-bg-color': groupData.collapsed ? color : `${color}15`,
