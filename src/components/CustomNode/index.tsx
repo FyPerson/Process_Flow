@@ -219,6 +219,12 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
     const hasScreenshotsClass = hasScreenshots ? 'has-screenshots' : '';
     // P3C：废弃状态加 class，CSS 同步 opacity（角标 .deprecated-badge 例外）
     const deprecatedClass = nodeData.is_deprecated ? 'is-deprecated' : '';
+    // P3D-2 step 5：节点级不可编辑视觉提示
+    // __canEdit === false 时加 .not-editable，CSS 同步 cursor: not-allowed + opacity 降一档
+    // 不影响 selected / 双击查看（只是"看不能改"的视觉反馈）
+    const notEditableClass = (nodeData as { __canEdit?: boolean }).__canEdit === false
+      ? 'not-editable'
+      : '';
 
     // 终止节点根据名称或 subType 判断是开始还是结束
     let subTypeClass = '';
@@ -234,7 +240,7 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
       }
     }
 
-    return `${baseClass} ${typeClass} ${subTypeClass} ${expandableClass} ${selectedClass} ${customBgClass} ${hasScreenshotsClass} ${deprecatedClass}`.trim();
+    return `${baseClass} ${typeClass} ${subTypeClass} ${expandableClass} ${selectedClass} ${customBgClass} ${hasScreenshotsClass} ${deprecatedClass} ${notEditableClass}`.trim();
   };
 
   // P3C：废弃节点角标（红色 chip + tooltip 显示 deprecated_by_username/at）

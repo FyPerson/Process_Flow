@@ -355,6 +355,19 @@ export function BusinessFlowVisualization() {
 
     // 转换节点
     const flowNodes: Node<FlowNodeData>[] = activeSheet.nodes.map((node) => {
+      // P3D-2 step 3 + step 5：__canEdit 派生（普通节点 + group 共用）
+      // step 3：data.__canEdit 让节点组件本地判定（NodeResizer 显隐 / 双击改名 / 折叠等）
+      // step 5：top-level node.draggable 让 React Flow 12 原生层拒绝拖拽，hover 也变 not-allowed
+      // 两层共用同一个判定结果，避免重复算
+      const nodeCanEdit = canEditNodeData(
+        {
+          creator_id: node.creator_id,
+          __localNew: typeof node.creator_id !== 'number',
+        },
+        user,
+        canvasWritable,
+      );
+
       // 分组节点特殊处理
       if (node.type === 'group') {
         const width = node.size?.width || 200;
@@ -391,20 +404,17 @@ export function BusinessFlowVisualization() {
             // P3D-2 step 3 codex 二审必修 3：派生 __canEdit 让 NodeResizer / GroupNode
             // 折叠 / 对齐工具等"绕过中心 gate 的 direct setNodes"路径能本地判定。
             // 与 __localNew 同模式：__ 前缀 → autoSaveFilter 排除 → 不入 storage。
-            __canEdit: canEditNodeData(
-              {
-                creator_id: node.creator_id,
-                __localNew: typeof node.creator_id !== 'number',
-              },
-              user,
-              canvasWritable,
-            ),
+            __canEdit: nodeCanEdit,
             // P3C：废弃元信息透传到 data（GroupNode 用于半透明 + 角标 + tooltip）
             is_deprecated: node.is_deprecated,
             deprecated_by: node.deprecated_by,
             deprecated_at: node.deprecated_at,
             deprecated_by_username: node.deprecated_by_username,
           } as any,
+          // P3D-2 step 5：节点级 draggable（React Flow 12 原生支持 top-level draggable）
+          // canEdit=false 的节点（非作者 / 游客 / 归档）—— 拖拽直接被 React Flow 拒绝
+          // 与中心 mutation gate 同源（中心 gate 会再拦一道，这里只是 UI 友好层 + 性能优化避免无效 change）
+          draggable: nodeCanEdit,
           zIndex: -1,
         };
       }
@@ -436,20 +446,16 @@ export function BusinessFlowVisualization() {
           // P3D-1 codex 二审 Finding 1：creator_id 缺失派生 __localNew（同分组节点说明）
           __localNew: typeof node.creator_id !== 'number',
           // P3D-2 step 3 codex 二审必修 3：派生 __canEdit（同分组节点说明）
-          __canEdit: canEditNodeData(
-            {
-              creator_id: node.creator_id,
-              __localNew: typeof node.creator_id !== 'number',
-            },
-            user,
-            canvasWritable,
-          ),
+          __canEdit: nodeCanEdit,
           // P3C：废弃元信息透传到 data（CustomNode 用于半透明 + 角标 + tooltip）
           is_deprecated: node.is_deprecated,
           deprecated_by: node.deprecated_by,
           deprecated_at: node.deprecated_at,
           deprecated_by_username: node.deprecated_by_username,
         },
+        // P3D-2 step 5：节点级 draggable（同分组节点说明）
+        // 与中心 mutation gate 同源；这里是 React Flow 12 原生层 + UI 友好层
+        draggable: nodeCanEdit,
       };
     });
 

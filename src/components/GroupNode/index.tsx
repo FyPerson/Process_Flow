@@ -288,7 +288,7 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
 
       {/* 分组容器 */}
       <div
-        className={`group-node ${selected ? 'selected' : ''} ${isCollapsed ? 'collapsed' : ''} ${(groupData as unknown as { is_deprecated?: boolean }).is_deprecated ? 'is-deprecated' : ''}`}
+        className={`group-node ${selected ? 'selected' : ''} ${isCollapsed ? 'collapsed' : ''} ${(groupData as unknown as { is_deprecated?: boolean }).is_deprecated ? 'is-deprecated' : ''} ${(groupData as unknown as { __canEdit?: boolean }).__canEdit === false ? 'not-editable' : ''}`}
         style={{
           '--group-color': color,
           '--group-bg-color': groupData.collapsed ? color : `${color}15`,

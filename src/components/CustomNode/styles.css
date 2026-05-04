@@ -569,3 +569,23 @@ div.custom-flow-node.node-decision.selected,
   letter-spacing: 0.3px;
   line-height: 14px;
 }
+/* ==========================================================================
+   P3D-2 step 5：节点级不可编辑视觉提示（hover 灰）
+   - __canEdit === false 时加 .not-editable
+   - cursor: not-allowed 让 hover 立刻有视觉反馈"为啥拖不动"
+   - 主体微降 opacity 0.85
+   - 一审 Medium：必须 :not(.is-deprecated) 排除废弃节点
+     CSS opacity 不在同一元素相乘，后声明且更具体的 .not-editable (0.85)
+     会覆盖 .is-deprecated (0.5)，让废弃+不可编辑节点反而比单纯废弃更显眼，
+     违反 P3C 废弃语义。废弃语义优先：废弃节点保持 0.5，不可编辑只是次要标记。
+   - 不影响 React Flow handle / 双击查看
+   ========================================================================== */
+
+.custom-flow-node.not-editable {
+  cursor: not-allowed;
+}
+
+.custom-flow-node.not-editable:not(.is-deprecated) > *:not(.deprecated-badge):not(.react-flow__handle) {
+  opacity: 0.85;
+}
+

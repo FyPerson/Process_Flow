@@ -739,26 +739,40 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
       return;
     }
 
-    // P3D-2 step 3 codex 三审 high + 四审 medium 修复：
-    // handleDelete all-or-nothing 直接调 canEditNodeData 同源判权（不依赖 __canEdit 派生字段）
-    // selectedNodes 中只要有一个不可编辑节点 → 整体拒绝（确认弹窗都不弹）
-    // 不依赖 onNodesChange 的 remove change 兜底，避免"确认了但实际没删"的体验割裂
-    // edges 不参与节点权限判定（边删除规则在 P3 边相关 step 单独处理）
-    const hasUneditable = selectedNodes.some(
-      (n) => !canEditNodeData(n.data, user, !readOnly),
-    );
-    if (hasUneditable) {
-      // 这里默默吞 —— 详情面板的 disabled 在 step 4 做，此处 P3D-2 step 3 仅断写口
+    // P3D-2 step 3+7：节点级权限按"边/节点拆分"处理（06-范围审查必修 6）
+    // - 边没有 creator 语义，按 canvasWritable 即可删（已通过 readOnly 早退）
+    // - 节点必须 canEditNodeData（admin / creator / __localNew），不可编辑节点要跳过而不是整体拒
+    //
+    // 老版本（step 3）：all-or-nothing 整体拒，确认弹窗都不弹 → 用户体验"按 Backspace 没反应"
+    // 新版本（step 7）：拆分处理 —— 可编辑节点 + 所有边走删除流程；不可编辑节点跳过并提示
+    //                 边的"相连节点不存在"问题不用前端管（React Flow / 服务端 § 5.6 兜底）
+    const editableNodes = selectedNodes.filter((n) => canEditNodeData(n.data, user, !readOnly));
+    const uneditableNodes = selectedNodes.filter((n) => !canEditNodeData(n.data, user, !readOnly));
+
+    // 全部不可编辑（且无边选中）→ 友好提示"用标废弃"
+    if (editableNodes.length === 0 && selectedEdges.length === 0 && uneditableNodes.length > 0) {
+      alert('选中的节点你不是创建者（仅作者或管理员可删除）。\n如需停用节点请使用详情面板的"标记废弃"按钮——废弃节点对所有用户可见但视觉上半透明。');
       return;
     }
 
-    // 弹出确认框
-    const confirmMessage = selectedNodes.length > 0
-      ? `确定要删除选中的 ${selectedNodes.length} 个节点吗？\n注意：删除节点也会删除相连的连线。`
-      : `确定要删除选中的 ${selectedEdges.length} 条连线吗？`;
+    // 部分不可编辑：只删可删的（编辑节点 + 边），跳过不可编辑节点
+    // 弹出确认框（含跳过提示）
+    let confirmMessage: string;
+    if (editableNodes.length > 0 && selectedEdges.length > 0) {
+      confirmMessage = `确定要删除选中的 ${editableNodes.length} 个节点和 ${selectedEdges.length} 条连线吗？`;
+    } else if (editableNodes.length > 0) {
+      confirmMessage = `确定要删除选中的 ${editableNodes.length} 个节点吗？\n注意：删除节点也会删除相连的连线。`;
+    } else {
+      // 仅边
+      confirmMessage = `确定要删除选中的 ${selectedEdges.length} 条连线吗？`;
+    }
+    if (uneditableNodes.length > 0) {
+      // 一审 Low 2：明确说"边仍删" —— 用户可能以为跳过节点的相关连线也保留
+      confirmMessage += `\n\n${uneditableNodes.length} 个不可编辑节点将被跳过（非作者创建，请用"标废弃"代替）。\n注意：选中的连线仍会删除，即使连接到被跳过的节点。`;
+    }
 
     if (window.confirm(confirmMessage)) {
-      deleteElements({ nodes: selectedNodes, edges: selectedEdges });
+      deleteElements({ nodes: editableNodes, edges: selectedEdges });
       setSelectedElement(null);
       setShowPanel(false);
     }
@@ -809,19 +823,40 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
       }
 
       // Ctrl+G 或 Cmd+G (Mac) - 创建分组
+      // P3D-2 step 6：所有选中节点必须可编辑才能创建分组（与 onCreateGroup 数据层 gate 同口径）
+      // 一审 Low 1：UI 层同源调 canEditNodeData（不依赖 BFV 派生 __canEdit），与 handleDelete 同口径
+      // 派生字段只是 fast path，真正可信边界是 canEditNodeData / 数据层 gate
       if ((e.ctrlKey || e.metaKey) && e.key === 'g' && !e.shiftKey) {
         if (readOnly) { e.preventDefault(); return; }
         e.preventDefault();
+        const selectedNodes = getNodes().filter((n) => n.selected && n.type !== 'group' && !n.parentId);
+        if (selectedNodes.length === 0) {
+          alert('请先选择至少 1 个节点来创建分组');
+          return;
+        }
+        const hasUneditable = selectedNodes.some(
+          (n) => !canEditNodeData(n.data, user, !readOnly),
+        );
+        if (hasUneditable) {
+          alert('选中的节点中包含不可编辑的节点（非作者创建），无法创建分组。\n请只选中你自己创建的节点重试。');
+          return;
+        }
         onCreateGroup();
         return;
       }
 
       // Ctrl+Shift+G 或 Cmd+Shift+G (Mac) - 解散分组
+      // P3D-2 step 6 + 一审 H2：解散分组 admin-only（与 useFlowOperations.onUngroup 数据层 gate 同口径）
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'G') {
         if (readOnly) { e.preventDefault(); return; }
         e.preventDefault();
         // 如果选中的是分组节点，则解散该分组
         if (selectedElement?.type === 'node' && selectedElement.node?.type === 'group') {
+          // 提前 admin-only 检查 + 友好提示
+          if (!user || user.role !== 'admin') {
+            alert('解散分组仅管理员可操作。\n如需调整分组成员，请使用详情面板的"移出分组"按钮。');
+            return;
+          }
           // 使用 handleUngroup 确保面板关闭
           handleUngroup(selectedElement.data.id as string);
         }
@@ -855,7 +890,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [readOnly, undo, redo, copyNodes, pasteNodes, onCreateGroup, handleUngroup, selectedElement, handleDelete, onDuplicateSheet, activeSheetId]);
+  }, [readOnly, undo, redo, copyNodes, pasteNodes, onCreateGroup, handleUngroup, selectedElement, handleDelete, onDuplicateSheet, activeSheetId, getNodes, user]);
 
   // Determine alignment toolbar visibility (when more than 1 node is selected)
   const showAlignmentToolbar = nodes.filter((n) => n.selected).length > 1;
@@ -919,7 +954,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
                   <span className="btn-icon">↷</span>
                   {!isSidebarCollapsed && <span className="btn-text">重做</span>}
                 </button>
-                <button className="control-btn" onClick={handleDelete} title="删除选中元素 (Backspace)">
+                <button className="control-btn" onClick={handleDelete} title="删除选中元素 (Backspace)；非作者节点会被跳过，请用详情面板的标记废弃按钮">
                   <span className="btn-icon">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M3 6H5H21" strokeLinecap="round" strokeLinejoin="round" />
