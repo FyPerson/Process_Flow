@@ -22,6 +22,8 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { FlowNodeData, NodeUpdateParams, EdgeUpdateParams, MultiCanvasProject, CanvasSheet } from '../../types/flow';
+import type { UserPublic } from '../../auth/api';
+import { canEditNodeData } from '../../auth/canEditNode';
 import { CustomNode } from '../CustomNode';
 import { GroupNode } from '../GroupNode';
 import DraggableEdge from '../DraggableEdge';
@@ -67,6 +69,13 @@ interface FlowCanvasProps {
   onDuplicateSheet?: (sheetId: string) => void;
   /** 只读模式（游客 / 无写权限）—— 禁拖拽/连线/删除/sheet 增删改，但允许平移缩放选中查看 */
   readOnly?: boolean;
+  /** P3D-2 step 3：当前登录用户。给 mutation gate（onNodeUpdate / handleGroupChange /
+   *  wrappedOnNodesChange）算 canEditNodeData 用 —— 中心防漏层。
+   *  null = 游客（与 readOnly=true 协同；按 readOnly 分支兜底）。
+   *  P3D-2 step 3 codex 七审 H2：必传 prop（不允许 default null）。
+   *  调用方必须显式传 user，避免登录用户被静默当游客而无法编辑自己的节点。
+   *  游客场景显式传 null。 */
+  user: UserPublic | null;
   /** P2I：从 JSON 文件导入为新画布。caller 实现文件选择 + apiImport + URL 跳新 canvasId */
   onImport?: () => void;
 }
@@ -92,6 +101,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   onRenameSheet,
   onDuplicateSheet,
   readOnly = false,
+  user,
   onImport,
 }: {
   sheetId?: string;
@@ -110,6 +120,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   onRenameSheet?: (sheetId: string, newName: string) => void;
   onDuplicateSheet?: (sheetId: string) => void;
   readOnly?: boolean;
+  user: UserPublic | null;
   onImport?: () => void;
 }) {
   // 迁移旧的 edge handle ID
@@ -180,7 +191,8 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   );
 
   // 使用节点对齐 Hook
-  const { alignNodes } = useNodeAlignment({ setNodes, saveHistory });
+  // P3D-2 step 3 codex 六审 high2：传 user/canvasWritable 让 alignNodes 同源调 canEditNodeData
+  const { alignNodes } = useNodeAlignment({ setNodes, saveHistory, user, canvasWritable: !readOnly });
 
   // 当 nodes/edges 变化时通知父组件（用于多画布数据同步）
   const onDataChangeRef = useRef(onDataChange);
@@ -571,6 +583,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
     isDraggingRef,
     dragHistoryTimerRef,
     readOnly,
+    user,
   });
 
   // 使用 useFlowOperations Hook
@@ -591,17 +604,29 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
     triggerAutoSave,
     getFlowData,
     fitView,
+    user,
+    canvasWritable: !readOnly,
   });
 
-  // 监听标签更改事件（分组和普通节点）—— readOnly 时只读模式直接吞掉
+  // 监听标签更改事件（分组和普通节点）
+  // P3D-2 step 3 codex 二审 Blocker 1：事件层 gate
+  // - readOnly = !canvasWritable，作为粗粒度第一层
+  // - __canEdit === false 作为节点级第二层（非 creator 也要拦）
+  // onUpdateGroupLabel / onNodeUpdate 内部已有兜底 gate，这里早退避免 setNodes 抖动
   useEffect(() => {
     const handleGroupLabelChange = (e: CustomEvent<{ id: string; label: string }>) => {
       if (readOnly) return;
+      const target = getNodes().find((n) => n.id === e.detail.id);
+      if (!target) return;
+      if ((target.data as { __canEdit?: boolean }).__canEdit === false) return;
       onUpdateGroupLabel(e.detail.id, e.detail.label);
     };
 
     const handleNodeLabelChange = (e: CustomEvent<{ id: string; label: string }>) => {
       if (readOnly) return;
+      const target = getNodes().find((n) => n.id === e.detail.id);
+      if (!target) return;
+      if ((target.data as { __canEdit?: boolean }).__canEdit === false) return;
       onNodeUpdate(e.detail.id, { name: e.detail.label });
     };
 
@@ -612,7 +637,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
       window.removeEventListener('groupLabelChange', handleGroupLabelChange as EventListener);
       window.removeEventListener('nodeLabelChange', handleNodeLabelChange as EventListener);
     };
-  }, [readOnly, onUpdateGroupLabel, onNodeUpdate]);
+  }, [readOnly, onUpdateGroupLabel, onNodeUpdate, getNodes]);
 
 
 
@@ -638,32 +663,49 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   );
 
   // 分组属性更新回调
+  // P3D-2 step 3 codex 二审必修 1：拒绝路径必须在所有 setState 之前（与 onNodeUpdate 同模式）
+  // 否则 triggerAutoSave 会被触发，导致空白保存。
+  //
+  // 标废弃路径不走这里（DeprecateNodeSection 通过 onNodeUpdate 直接改 is_deprecated），
+  // 所以这里**不需要** is_deprecated 例外，全程按 canEditNodeData 判定。
   const handleGroupChange = useCallback(
     (id: string, updates: { label?: string; color?: string; relatedNodeIds?: string[] }) => {
-      setNodes((nds) =>
-        nds.map((node) => {
-          if (node.id === id && node.type === 'group') {
-            const newData = { ...node.data };
-            if (updates.label !== undefined) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (newData as any).label = updates.label;
-            }
-            if (updates.color !== undefined) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (newData as any).color = updates.color;
-            }
-            if (updates.relatedNodeIds !== undefined) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (newData as any).relatedNodeIds = updates.relatedNodeIds;
-            }
-            return { ...node, data: newData };
+      if (readOnly) return;
+      // 提前从 React Flow 实例拿当前 nodes（拒绝路径不能进 setNodes）
+      const currentNodes = getNodes();
+      const targetNode = currentNodes.find((n) => n.id === id && n.type === 'group');
+      // target 不存在 → 无效 id，直接早退（避免无意义 setNodes + triggerAutoSave）
+      if (!targetNode) return;
+      // target 存在但无权 → 默默吞掉，不进 setNodes 也不 triggerAutoSave
+      if (!canEditNodeData(
+        targetNode.data as unknown as FlowNodeData,
+        user,
+        !readOnly,
+      )) {
+        return;
+      }
+      setNodes((nds) => nds.map((node) => {
+        if (node.id === id && node.type === 'group') {
+          const newData = { ...node.data };
+          if (updates.label !== undefined) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (newData as any).label = updates.label;
           }
-          return node;
-        })
-      );
+          if (updates.color !== undefined) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (newData as any).color = updates.color;
+          }
+          if (updates.relatedNodeIds !== undefined) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (newData as any).relatedNodeIds = updates.relatedNodeIds;
+          }
+          return { ...node, data: newData };
+        }
+        return node;
+      }));
       triggerAutoSave();
     },
-    [setNodes, triggerAutoSave]
+    [setNodes, triggerAutoSave, readOnly, user, getNodes]
   );
 
   // 解散分组时关闭面板
@@ -697,6 +739,19 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
       return;
     }
 
+    // P3D-2 step 3 codex 三审 high + 四审 medium 修复：
+    // handleDelete all-or-nothing 直接调 canEditNodeData 同源判权（不依赖 __canEdit 派生字段）
+    // selectedNodes 中只要有一个不可编辑节点 → 整体拒绝（确认弹窗都不弹）
+    // 不依赖 onNodesChange 的 remove change 兜底，避免"确认了但实际没删"的体验割裂
+    // edges 不参与节点权限判定（边删除规则在 P3 边相关 step 单独处理）
+    const hasUneditable = selectedNodes.some(
+      (n) => !canEditNodeData(n.data, user, !readOnly),
+    );
+    if (hasUneditable) {
+      // 这里默默吞 —— 详情面板的 disabled 在 step 4 做，此处 P3D-2 step 3 仅断写口
+      return;
+    }
+
     // 弹出确认框
     const confirmMessage = selectedNodes.length > 0
       ? `确定要删除选中的 ${selectedNodes.length} 个节点吗？\n注意：删除节点也会删除相连的连线。`
@@ -707,7 +762,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
       setSelectedElement(null);
       setShowPanel(false);
     }
-  }, [getNodes, getEdges, deleteElements, setSelectedElement, setShowPanel, readOnly]);
+  }, [getNodes, getEdges, deleteElements, setSelectedElement, setShowPanel, readOnly, user]);
 
   // 键盘快捷键支持
   useEffect(() => {
@@ -1059,6 +1114,7 @@ export function FlowCanvas({
   onRenameSheet,
   onDuplicateSheet,
   readOnly = false,
+  user,
   onImport,
 }: FlowCanvasProps) {
   // 使用 sheetId 作为 key 确保 ReactFlowProvider 和 FlowCanvasContent 都重新挂载
@@ -1078,6 +1134,7 @@ export function FlowCanvas({
         onRenameSheet={onRenameSheet}
         onDuplicateSheet={onDuplicateSheet}
         readOnly={readOnly}
+        user={user}
         onImport={onImport}
       />
     </ReactFlowProvider>

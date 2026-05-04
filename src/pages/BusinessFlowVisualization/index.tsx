@@ -14,6 +14,7 @@ import {
 import { useMultiCanvas } from '../../hooks/useMultiCanvas';
 import { useAuth } from '../../auth/AuthContext';
 import { canWriteCanvas } from '../../auth/canWriteCanvas';
+import { canEditNodeData } from '../../auth/canEditNode';
 import type { ApiError } from '../../api/canvases';
 import './styles.css';
 
@@ -387,6 +388,17 @@ export function BusinessFlowVisualization() {
             // storage 不存 __localNew（migration 0002 + getCanvasFull 权威 hydrate 保证
             // 持久化节点必有 creator_id，不会误判）。
             __localNew: typeof node.creator_id !== 'number',
+            // P3D-2 step 3 codex 二审必修 3：派生 __canEdit 让 NodeResizer / GroupNode
+            // 折叠 / 对齐工具等"绕过中心 gate 的 direct setNodes"路径能本地判定。
+            // 与 __localNew 同模式：__ 前缀 → autoSaveFilter 排除 → 不入 storage。
+            __canEdit: canEditNodeData(
+              {
+                creator_id: node.creator_id,
+                __localNew: typeof node.creator_id !== 'number',
+              },
+              user,
+              canvasWritable,
+            ),
             // P3C：废弃元信息透传到 data（GroupNode 用于半透明 + 角标 + tooltip）
             is_deprecated: node.is_deprecated,
             deprecated_by: node.deprecated_by,
@@ -423,6 +435,15 @@ export function BusinessFlowVisualization() {
           creator_username: node.creator_username,
           // P3D-1 codex 二审 Finding 1：creator_id 缺失派生 __localNew（同分组节点说明）
           __localNew: typeof node.creator_id !== 'number',
+          // P3D-2 step 3 codex 二审必修 3：派生 __canEdit（同分组节点说明）
+          __canEdit: canEditNodeData(
+            {
+              creator_id: node.creator_id,
+              __localNew: typeof node.creator_id !== 'number',
+            },
+            user,
+            canvasWritable,
+          ),
           // P3C：废弃元信息透传到 data（CustomNode 用于半透明 + 角标 + tooltip）
           is_deprecated: node.is_deprecated,
           deprecated_by: node.deprecated_by,
@@ -531,7 +552,7 @@ export function BusinessFlowVisualization() {
     );
 
     return { processedNodes: visibleNodes, processedEdges: visibleEdges };
-  }, [activeSheet, filterElements, showSubflows, readOnly]);
+  }, [activeSheet, filterElements, showSubflows, readOnly, user, canvasWritable]);
 
   // 初始加载
   // 默认数据只用于"无 URL canvasId 且 hook 也没拉到本地数据"的场景；
@@ -687,6 +708,7 @@ export function BusinessFlowVisualization() {
             onDataChange={handleDataChange}
             getProjectData={getProjectData}
             readOnly={readOnly}
+            user={user}
             onImport={readOnly ? undefined : handleImport}
             // 多画布标签栏 —— readOnly 时所有 mutation 走 no-op，避免游客误以为能改
             sheets={project?.sheets || []}

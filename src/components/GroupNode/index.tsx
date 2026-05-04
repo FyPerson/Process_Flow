@@ -26,9 +26,12 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
     setIsCollapsed(!!groupData.collapsed);
   }, [groupData.collapsed]);
 
-  // 双击进入编辑模式（readOnly 时禁用）
+  // 双击进入编辑模式
+  // P3D-2 step 3 codex 二审 Blocker 1：双击改名也要按 __canEdit 拦
+  // readOnly 是粗粒度（画布级），__canEdit 是节点级（非 creator 也要拦）
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     if ((groupData as unknown as { readOnly?: boolean }).readOnly) return;
+    if ((groupData as unknown as { __canEdit?: boolean }).__canEdit === false) return;
     e.stopPropagation();
     setEditValue(groupData.label || '新分组');
     setIsEditing(true);
@@ -84,9 +87,13 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
     }
   }, [handleSubmit, groupData.label]);
 
-  // 处理折叠/展开（readOnly 时禁用 —— 折叠会写 data.collapsed 和子节点 hidden 状态）
+  // 处理折叠/展开
+  // - readOnly 时禁用（折叠会写 data.collapsed 和子节点 hidden 状态）
+  // - P3D-2 step 3 codex 二审必修 3：__canEdit === false 时也禁用（防漏层）
+  //   组件本身不知道当前用户，由 BFV 在 data 上派生 __canEdit 提供判定结果
   const handleCollapseToggle = useCallback((e: React.MouseEvent) => {
-    if ((groupData as unknown as { readOnly?: boolean }).readOnly) {
+    const gd = groupData as unknown as { readOnly?: boolean; __canEdit?: boolean };
+    if (gd.readOnly || gd.__canEdit === false) {
       // 先 stop 冒泡再 return，避免点击事件冒泡触发外层节点选中等行为
       e.stopPropagation();
       return;
@@ -257,11 +264,16 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
 
   return (
     <>
-      {/* 可调整大小 - 仅在选中且非只读时可用 */}
+      {/* 可调整大小 - 仅在选中、非只读、且当前用户可编辑此节点时可用
+          P3D-2 step 3：__canEdit 由 BFV 派生 */}
       <NodeResizer
         minWidth={minSize.minWidth}
         minHeight={minSize.minHeight}
-        isVisible={selected && !(groupData as unknown as { readOnly?: boolean }).readOnly}
+        isVisible={
+          selected &&
+          !(groupData as unknown as { readOnly?: boolean }).readOnly &&
+          (groupData as unknown as { __canEdit?: boolean }).__canEdit !== false
+        }
         lineStyle={{
           borderColor: color,
           borderWidth: 2,

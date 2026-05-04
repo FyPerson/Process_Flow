@@ -276,9 +276,12 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
     zIndex: 10, // target handle 的 z-index 稍低
   };
 
-  // 双击开始编辑（readOnly 时不进入编辑态）
+  // 双击开始编辑
+  // P3D-2 step 3 codex 二审 Blocker 1：节点改名也要按 __canEdit 拦
+  // readOnly 是粗粒度（画布级），__canEdit 是节点级（非 creator 也要拦）
   const handleDoubleClick = (e: React.MouseEvent) => {
     if ((nodeData as { readOnly?: boolean }).readOnly) return;
+    if ((nodeData as { __canEdit?: boolean }).__canEdit === false) return;
     e.stopPropagation(); // 防止触发画布的双击事件
     setOriginalValue(nodeData.name); // 保存编辑前的原始值
     setEditValue(nodeData.name); // 重置编辑值为当前值
@@ -348,16 +351,27 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
           </svg>
         </span>
       )}
-      {/* 仅在选中且非只读时显示调整大小控制器 */}
+      {/* 仅在选中、非只读、且当前用户可编辑此节点时显示调整大小控制器
+          P3D-2 step 3：__canEdit 由 BFV 派生（含游客 / 归档 / 非 creator 等场景） */}
       <NodeResizer
         color="#3b82f6"
-        isVisible={selected && !(nodeData as { readOnly?: boolean }).readOnly}
+        isVisible={
+          selected &&
+          !(nodeData as { readOnly?: boolean }).readOnly &&
+          (nodeData as { __canEdit?: boolean }).__canEdit !== false
+        }
         minWidth={100}
         minHeight={40}
         // 增大控制手柄大小，使其更容易点击
         handleStyle={{ width: 12, height: 12, borderRadius: '50%', border: '1px solid #fff' }}
         lineStyle={{ borderWidth: 1, borderStyle: 'dashed' }}
         onResize={(_, params) => {
+          // P3D-2 step 3 codex 二审必修 3：onResize 中心 gate（防漏层）
+          // isVisible 已隐藏 handle，但 React Flow 的 onResize 也可能被外部代码触发
+          // __canEdit === false 时拒绝；undefined（旧节点 / 未派生）默认放行
+          if ((nodeData as { __canEdit?: boolean }).__canEdit === false) {
+            return;
+          }
           const { width, height } = params;
           // 1. 更新节点样式
           setNodes((nodes) =>
@@ -380,6 +394,12 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
           updateNodeInternals(id);
         }}
         onResizeEnd={(_, params) => {
+          // P3D-2 step 3 codex 二审 Blocker 4：onResizeEnd 也要 gate
+          // 这里 setNodes 在受控模式下会转 'replace' change，已被 filterNodeChangesByPermission 兜底
+          // 但本地直接挡掉更省一次 diff
+          if ((nodeData as { __canEdit?: boolean }).__canEdit === false) {
+            return;
+          }
           const { width, height } = params;
           // 确保最终状态被保存
           setNodes((nodes) =>

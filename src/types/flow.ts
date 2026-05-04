@@ -65,6 +65,11 @@ export interface FlowNodeData {
   // P3D-1 运行时标记：本地新增节点（拖出/粘贴/创建分组），canEditNodeData() 据此放行
   // 不进 storage（autoSaveFilter 排除 __ 前缀 + 服务端 schema .strict() 拒绝）
   __localNew?: boolean;
+  // P3D-2 step 3 派生标志：当前用户能否编辑此节点（BFV 一次算好，下游节点组件直接读）
+  // 与 __localNew 同模式：__ 前缀 → autoSaveFilter 排除 → 不入 storage
+  // 给 NodeResizer 显隐 / GroupNode 双击改名/折叠 / 双击改节点名 等"在节点组件内部不方便拿 user/canvas 上下文"的路径用。
+  // 注意：useNodeAlignment / handleDelete / useFlowOperations 分组操作 已改为同源调 canEditNodeData，不依赖此字段。
+  __canEdit?: boolean;
   [key: string]: unknown;
 }
 

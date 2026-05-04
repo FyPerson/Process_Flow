@@ -13,6 +13,11 @@ import {
     OnConnect,
 } from '@xyflow/react';
 import { FlowNodeData } from '../types/flow';
+import type { UserPublic } from '../auth/api';
+import {
+    canApplyNodeUpdate,
+    filterNodeChangesByPermission,
+} from '../auth/canEditNode';
 
 interface UseFlowHandlersProps {
     nodes: Node<FlowNodeData>[];
@@ -32,6 +37,12 @@ interface UseFlowHandlersProps {
     dragHistoryTimerRef: React.MutableRefObject<NodeJS.Timeout | null>;
     /** 只读模式下，所有 mutation handler 直接 return（连线、节点变更、边双击删除等） */
     readOnly?: boolean;
+    /** P3D-2 step 3：当前登录用户，给 canEditNodeData 算节点级权限用。
+     *  null = 游客（与 readOnly=true 协同；按 readOnly 分支兜底）。
+     *  P3D-2 step 3 codex 八审 M2：必传 prop（不允许 default null）。
+     *  与 FlowCanvas user 必传同款约定，避免中间层重新 optional 化导致静默退化。
+     *  调用方（FlowCanvas）必须显式传，游客场景显式传 null。 */
+    user: UserPublic | null;
 }
 
 export function useFlowHandlers({
@@ -51,13 +62,28 @@ export function useFlowHandlers({
     isDraggingRef,
     dragHistoryTimerRef,
     readOnly = false,
+    user,
 }: UseFlowHandlersProps) {
+    // P3D-2 step 3 中心 mutation gate：canvasWritable = !readOnly。
+    // BFV 派生 readOnly = !canvasWritable（src/pages/BusinessFlowVisualization/index.tsx 算的单一口径）
+    // 这里反推回来供 canEditNodeData 用 —— 不要让此处再独立计算 canvasWritable，否则破坏单一口径。
+    const canvasWritable = !readOnly;
 
     // 包装 onNodesChange 以检测删除和位置变化操作
     const wrappedOnNodesChange = useCallback(
         (changes: NodeChange<Node<FlowNodeData>>[]) => {
+            // P3D-2 step 3 codex 二审必修 4：用 filterNodeChangesByPermission helper 过滤 changes
+            // helper 已包含 fail-closed 逻辑：!canvasWritable 时 mutating change（position/
+            // dimensions/remove）也会被过滤，避免外部异常 change 穿透中心层
+            const filteredChanges = filterNodeChangesByPermission(
+                changes,
+                nodes,
+                user,
+                canvasWritable,
+            );
+
             // 先应用变化
-            onNodesChange(changes);
+            onNodesChange(filteredChanges);
 
             if (isUndoRedoRef.current) {
                 return;
@@ -126,7 +152,7 @@ export function useFlowHandlers({
                 triggerAutoSave();
             }, 0);
         },
-        [onNodesChange, setNodes, setEdges, saveHistory, triggerAutoSave, isUndoRedoRef, isDraggingRef, dragHistoryTimerRef, setSelectedElement, setShowPanel],
+        [onNodesChange, setNodes, setEdges, saveHistory, triggerAutoSave, isUndoRedoRef, isDraggingRef, dragHistoryTimerRef, setSelectedElement, setShowPanel, nodes, user, canvasWritable],
     );
 
     // 包装 onEdgesChange 以检测删除操作
@@ -297,6 +323,26 @@ export function useFlowHandlers({
     const onNodeUpdate = useCallback(
         (nodeId: string, dataUpdates: Partial<FlowNodeData>, updatedStyle?: React.CSSProperties) => {
             if (readOnly) return;
+            // P3D-2 step 3 codex 二审必修 1+2 + 九审 Medium：在所有 setState 之前算 allowed
+            // - 必修 1：拒绝时不能只 setNodes 吞掉 nds，否则 setSelectedElement 会污染面板状态
+            //   导致用户看到"改成功了"的假象。allowed=false 必须**整个 onNodeUpdate 早退**
+            // - 必修 2：标废弃判定改用 canApplyNodeUpdate 内部的 isPublicDeprecateUpdate
+            //   精确为 is_deprecated === true && user !== null（取消废弃 false 走 canEditNode）
+            // - 九审 Medium：ghost nodeId（targetNode 找不到）也必须 fail-closed 早退
+            //   之前 `if (targetNode && !canApplyNodeUpdate)` 在 targetNode === undefined 时不进 if，
+            //   会落到下面的 setNodes/setSelectedElement/saveHistory 副作用路径
+            const targetNode = nodes.find((n) => n.id === nodeId);
+            if (!targetNode) return; // 九审 Medium：ghost nodeId fail-closed
+            if (!canApplyNodeUpdate(
+                targetNode.data as Record<string, unknown>,
+                dataUpdates as Record<string, unknown>,
+                updatedStyle,
+                user,
+                canvasWritable,
+            )) {
+                // 默默吞掉，UI / 画布 / 面板状态都不动（防漏层）
+                return;
+            }
             setNodes((nds) => {
                 const newNodes = nds.map((node) => {
                     if (node.id === nodeId) {
@@ -369,7 +415,7 @@ export function useFlowHandlers({
                 return prev;
             });
         },
-        [readOnly, setNodes, edges, saveHistory, triggerAutoSave, setSelectedElement],
+        [readOnly, user, canvasWritable, nodes, setNodes, edges, saveHistory, triggerAutoSave, setSelectedElement],
     );
 
     // 连线数据更新

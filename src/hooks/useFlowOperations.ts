@@ -11,6 +11,8 @@ import {
     getSavedDirectoryHandle,
 } from '../utils/flowVersionStorage';
 import { getUniqueName } from '../utils/uniqueName';
+import { canEditNodeData } from '../auth/canEditNode';
+import type { UserPublic } from '../auth/api';
 
 interface UseFlowOperationsProps {
     nodes: Node<FlowNodeData>[];
@@ -22,6 +24,11 @@ interface UseFlowOperationsProps {
     triggerAutoSave: () => void;
     getFlowData: () => FlowDefinition;
     fitView: FitView<Node<FlowNodeData>>;
+    /** P3D-2 step 3：中心 gate 入参
+     *  - 二审 Blocker 1：onUpdateGroupLabel
+     *  - 六审 high1：onCreateGroup / onUngroup / onAddToGroup / onRemoveFromGroup */
+    user: UserPublic | null;
+    canvasWritable: boolean;
 }
 
 export function useFlowOperations({
@@ -34,6 +41,8 @@ export function useFlowOperations({
     triggerAutoSave,
     getFlowData,
     fitView,
+    user,
+    canvasWritable,
 }: UseFlowOperationsProps) {
 
     // 添加节点
@@ -312,6 +321,14 @@ export function useFlowOperations({
             return;
         }
 
+        // P3D-2 step 3 codex 六审 high1：all-or-nothing gate
+        // 选中集合里任一节点不可编辑 → 整体拒绝（避免普通用户把别人节点拖进自己的新分组）
+        // 与 handleDelete / useNodeAlignment 同口径，直接调 canEditNodeData 不依赖 __canEdit 派生字段
+        const hasUneditable = selectedNodes.some(
+            (n) => !canEditNodeData(n.data, user, canvasWritable),
+        );
+        if (hasUneditable) return;
+
         // 使用 React Flow 提供的工具计算准确的包围盒
         const bounds = getNodesBounds(selectedNodes);
 
@@ -390,7 +407,7 @@ export function useFlowOperations({
             triggerAutoSave();
         }, 0);
 
-    }, [getNodes, setNodes, triggerAutoSave, getNodesBounds]);
+    }, [getNodes, setNodes, triggerAutoSave, getNodesBounds, edges, saveHistory, user, canvasWritable]);
 
     // 解散分组
     const onUngroup = useCallback(
@@ -400,6 +417,15 @@ export function useFlowOperations({
 
             const groupNode = currentNodes.find((n) => n.id === groupId);
             if (!groupNode) return; // 分组不存在
+
+            // P3D-2 step 3 codex 六审 high1：all-or-nothing gate
+            // 解散会改两类节点：分组本身（删）+ 子节点（清 parentId/重定位）→ 都必须可编辑
+            if (!canEditNodeData(groupNode.data, user, canvasWritable)) return;
+            const childNodes = currentNodes.filter((n) => n.parentId === groupId);
+            const childUneditable = childNodes.some(
+                (n) => !canEditNodeData(n.data, user, canvasWritable),
+            );
+            if (childUneditable) return;
 
             const groupX = groupNode.position.x || 0;
             const groupY = groupNode.position.y || 0;
@@ -434,7 +460,7 @@ export function useFlowOperations({
             saveHistory(updatedNodes, edges);
             triggerAutoSave();
         },
-        [getNodes, setNodes, edges, saveHistory, triggerAutoSave]
+        [getNodes, setNodes, edges, saveHistory, triggerAutoSave, user, canvasWritable]
     );
 
     // 添加节点到分组
@@ -442,6 +468,27 @@ export function useFlowOperations({
         (nodeIds: string[], groupId: string) => {
             const groupNode = nodes.find((n) => n.id === groupId);
             if (!groupNode) return;
+
+            // P3D-2 step 3 codex 六审 high1 + 七审 H1：三方权限 gate
+            // 改子节点的 parentId/position → 子节点必须可编辑
+            // 改 group 的成员关系 → 新父分组也必须可编辑（否则普通用户能往别人分组塞节点）
+            // 七审 H1：旧父分组也必须可编辑（否则等于绕过 onRemoveFromGroup 的"父分组也必须可编辑"语义）
+            if (!canEditNodeData(groupNode.data, user, canvasWritable)) return;
+            const targetNodes = nodes.filter((n) => nodeIds.includes(n.id) && n.type === 'custom');
+            const hasUneditable = targetNodes.some(
+                (n) => !canEditNodeData(n.data, user, canvasWritable),
+            );
+            if (hasUneditable) return;
+            // 七审 H1：旧父分组三方权限
+            const oldParentIds = new Set(
+                targetNodes.map((n) => n.parentId).filter((p): p is string => !!p && p !== groupId),
+            );
+            for (const oldParentId of oldParentIds) {
+                const oldParent = nodes.find((n) => n.id === oldParentId);
+                // 旧父在 nodes 中找不到 → fail-closed（不应发生，但兜底）
+                if (!oldParent) return;
+                if (!canEditNodeData(oldParent.data, user, canvasWritable)) return;
+            }
 
             const updatedNodes = nodes.map((node) => {
                 if (nodeIds.includes(node.id) && node.type === 'custom') {
@@ -462,7 +509,7 @@ export function useFlowOperations({
             saveHistory(updatedNodes, edges);
             triggerAutoSave();
         },
-        [nodes, edges, setNodes, saveHistory, triggerAutoSave]
+        [nodes, edges, setNodes, saveHistory, triggerAutoSave, user, canvasWritable]
     );
 
     // 从分组移除节点
@@ -473,6 +520,12 @@ export function useFlowOperations({
 
             const groupNode = nodes.find((n) => n.id === node.parentId);
             if (!groupNode) return;
+
+            // P3D-2 step 3 codex 六审 high1：all-or-nothing gate
+            // 改子节点的 parentId/position → 子节点必须可编辑
+            // 改 group 的成员关系 → 父分组也必须可编辑（否则普通用户能从别人分组摘节点）
+            if (!canEditNodeData(node.data, user, canvasWritable)) return;
+            if (!canEditNodeData(groupNode.data, user, canvasWritable)) return;
 
             const updatedNodes = nodes.map((n) => {
                 if (n.id === nodeId) {
@@ -493,30 +546,21 @@ export function useFlowOperations({
             saveHistory(updatedNodes, edges);
             triggerAutoSave();
         },
-        [nodes, edges, setNodes, saveHistory, triggerAutoSave]
+        [nodes, edges, setNodes, saveHistory, triggerAutoSave, user, canvasWritable]
     );
 
     // 更新分组标签
+    // P3D-2 step 3 codex 八审 M1：前置 gate（与 handleGroupChange / onAddToGroup 等同模式）
+    // 拒绝路径必须在 setNodes / saveHistory / triggerAutoSave 之前直接 return，
+    // 不依赖 setNodes updater 内 return nds 的"无变化"语义来吞副作用。
     const onUpdateGroupLabel = useCallback(
         (groupId: string, label: string) => {
-            // 获取最新节点状态
-            // 注意：因为我们要计算并保存历史，所以这里不能只依赖函数式更新
-            // 但考虑到 setNodes((nds) => ...) 是安全的做法，
-            // 我们可以采取两步走：
-            // 实际上，在这个 hook 中，我们并没有直接访问最新的 nodes (只有 props 传入的)
-            // 而 props.nodes 可能不是最新的（如果在闭包中）。
-            // 但是 useFlowOperations 会在每次 nodes 更新时重建，所以 nodes 应该是较新的。
-            // 为了最稳妥，我们应该使用 getNodes() 如果有的话，但这里没有传入 getReactFlow 的 getNodes。
-            // 修正：实际上 CustomNode/GroupNode 修改是通过事件触发的，此时 FlowCanvas 会调用这个函数。
-            // 如果 FlowCanvas 也是每次渲染都更新这个 hook，那么 nodes 是新的。
+            // 前置：用 getNodes() 拿最新 nodes，不依赖闭包 props.nodes
+            const currentNodes = getNodes();
+            const target = currentNodes.find((n) => n.id === groupId && n.type === 'group');
+            if (!target) return;
+            if (!canEditNodeData(target.data, user, canvasWritable)) return;
 
-            // 更好的方式：参考 onCreateGroup，如果它可以访问 getNodes (它用了 useReactFlow)，
-            // 这里我们也可以用 useReactFlow。
-            // 让我们看看 import... 是的，我们可以用 useReactFlow。
-            // 但是这个 hook props 里并没有 getNodes。
-            // 让我们在该 hook 顶部获取 getNodes。
-
-            // 下面的实现假设我们能正确更新。
             setNodes((nds) => {
                 const newNodes = nds.map((node) => {
                     if (node.id === groupId && node.type === 'group') {
@@ -530,17 +574,14 @@ export function useFlowOperations({
                     }
                     return node;
                 });
-
-                // 由于这里是在 setNodes 内部，我们有了最新的 newNodes
-                // 我们可以直接保存历史。
-                // 注意：React 状态更新是批处理的，但 saveHistory 是同步 ref 操作，所以是安全的。
+                // 八审 M1 + 七审 M2 同款约定：副作用在最终 nextNodes 算好后立即执行
+                // 拒绝路径已在前置 gate 早退，到达这里说明权限校验通过
                 saveHistory(newNodes, edges);
                 triggerAutoSave();
-
                 return newNodes;
             });
         },
-        [setNodes, edges, saveHistory, triggerAutoSave]
+        [getNodes, setNodes, edges, saveHistory, triggerAutoSave, user, canvasWritable]
     );
 
     return {
