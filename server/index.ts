@@ -19,6 +19,7 @@ import { annotationsRouter } from './routes/annotations.ts';
 import { authRouter } from './routes/auth.ts';
 import { canvasesRouter } from './routes/canvases.ts';
 import { healthRouter } from './routes/health.ts';
+import { usersRouter } from './routes/users.ts';
 
 async function bootstrap() {
   const startedAt = Date.now();
@@ -46,6 +47,7 @@ async function bootstrap() {
   app.use(authRouter);
   app.use(canvasesRouter);
   app.use(annotationsRouter);
+  app.use(usersRouter);
   logger.info({ ms: Date.now() - t2 }, '[startup] middlewares + routes registered');
 
   // === 前端资源（仅生产模式 serve dist；dev 模式由独立 Vite 进程处理）===
