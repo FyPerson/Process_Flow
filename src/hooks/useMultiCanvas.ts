@@ -1063,6 +1063,14 @@ export function useMultiCanvas(
         }
         return { ...result, discarded: false as const };
       } catch (err) {
+        // [DEBUG #15] createOnServer catch
+        console.error('[DEBUG#15 createOnServer] catch', {
+          err,
+          errStringified: JSON.stringify(err),
+          capturedCanvasId,
+          currentCanvasId: canvasIdRef.current,
+          willPolluteState: canvasIdRef.current === capturedCanvasId,
+        });
         if (canvasIdRef.current !== capturedCanvasId) {
           // 旧操作的错误不污染新 canvas state，但仍向 caller 透传错误
           throw err;

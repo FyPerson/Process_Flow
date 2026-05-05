@@ -235,12 +235,16 @@ export function BusinessFlowVisualization() {
       window.alert('请先登录后再另存到服务器');
       return;
     }
+    // [DEBUG #15] handleSaveAsNew enter
+    console.log('[DEBUG#15 handleSaveAsNew] enter', { name: name.trim(), userId: user.id });
     try {
       const result = await createOnServer({
         name: name.trim(),
         visibility: 'private',
         currentUserId: user.id,
       });
+      // [DEBUG #15] createOnServer 返回成功
+      console.log('[DEBUG#15 handleSaveAsNew] createOnServer returned', { result });
       // discarded=true 说明创建成功但用户已切到别的 canvas（极端竞态）
       // 不要让 URL 飞到这个新建 id，否则会把用户从他正在看的 canvas 拽走
       if (result.discarded) {
@@ -257,6 +261,13 @@ export function BusinessFlowVisualization() {
         { replace: true }
       );
     } catch (err) {
+      // [DEBUG #15] handleSaveAsNew catch（alert 来源）
+      console.error('[DEBUG#15 handleSaveAsNew] catch (alert source)', {
+        err,
+        errStringified: JSON.stringify(err),
+        errType: typeof err,
+        errIsError: err instanceof Error,
+      });
       const apiErr = err as ApiError;
       window.alert(
         `创建失败：${apiErr?.error || apiErr?.message || '未知错误'}`

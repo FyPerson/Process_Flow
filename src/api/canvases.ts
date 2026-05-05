@@ -34,11 +34,16 @@ async function apiFetch<T>(path: string, init?: RequestInit & { authed?: boolean
     headers.set('Authorization', `Bearer ${token}`);
   }
 
+  // [DEBUG #15] 入口埋点
+  console.log('[DEBUG#15 apiFetch] enter', { path, method: init?.method ?? 'GET' });
+
   // 网络层失败（断网、CORS、DNS）—— 归一为 ApiError 让上层用相同 try/catch 处理
   let res: Response;
   try {
     res = await fetch(path, { ...init, headers });
   } catch (e) {
+    // [DEBUG #15] 路径 A：fetch 本身抛异常
+    console.error('[DEBUG#15 apiFetch] PATH-A fetch threw', { path, error: e });
     const err: ApiError = {
       status: 0,
       error: 'network_error',
@@ -47,12 +52,22 @@ async function apiFetch<T>(path: string, init?: RequestInit & { authed?: boolean
     throw err;
   }
 
+  // [DEBUG #15] fetch 成功后埋点
+  console.log('[DEBUG#15 apiFetch] fetch ok', {
+    path,
+    status: res.status,
+    ok: res.ok,
+    contentType: res.headers.get('content-type'),
+  });
+
   const ct = res.headers.get('content-type') || '';
   // JSON 解析失败也归一（服务端可能返了 5xx HTML）
   let body: unknown;
   try {
     body = ct.includes('application/json') ? await res.json() : await res.text();
   } catch (e) {
+    // [DEBUG #15] 路径 B：body 解析抛异常
+    console.error('[DEBUG#15 apiFetch] PATH-B body parse threw', { path, status: res.status, error: e });
     const err: ApiError = {
       status: res.status,
       error: 'invalid_response',
@@ -61,7 +76,17 @@ async function apiFetch<T>(path: string, init?: RequestInit & { authed?: boolean
     throw err;
   }
 
+  // [DEBUG #15] body 解析成功后埋点
+  console.log('[DEBUG#15 apiFetch] body parsed', {
+    path,
+    status: res.status,
+    bodyType: typeof body,
+    bodyPreview: typeof body === 'string' ? body.slice(0, 100) : JSON.stringify(body).slice(0, 200),
+  });
+
   if (!res.ok) {
+    // [DEBUG #15] 路径 C：HTTP 非 2xx
+    console.error('[DEBUG#15 apiFetch] PATH-C non-ok status', { path, status: res.status, body });
     const obj = typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : null;
     const err: ApiError = {
       status: res.status,
@@ -74,6 +99,9 @@ async function apiFetch<T>(path: string, init?: RequestInit & { authed?: boolean
     };
     throw err;
   }
+
+  // [DEBUG #15] 正常返回路径
+  console.log('[DEBUG#15 apiFetch] returning ok body', { path, status: res.status });
   return body as T;
 }
 
