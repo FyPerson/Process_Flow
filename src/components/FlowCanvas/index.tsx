@@ -524,17 +524,19 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   }, [selectedElement, setNodes, setEdges, getNodes]); // Removed 'nodes' dependency
 
   // 包装 undo/redo 函数以关闭详情面板
+  // P3D-2 step 9：传 nodes/user/canvasWritable，让 useFlowHistory 内部按权限合并 snapshot
+  // 防御 12-二审 必修 3：撤销/重做整份覆盖会绕过中心 gate
   const undo = useCallback(() => {
-    historyUndo(setNodes, setEdges);
+    historyUndo(setNodes, setEdges, nodes, edges, user, !readOnly);
     setSelectedElement(null);
     setShowPanel(false);
-  }, [historyUndo, setNodes, setEdges]);
+  }, [historyUndo, setNodes, setEdges, nodes, edges, user, readOnly]);
 
   const redo = useCallback(() => {
-    historyRedo(setNodes, setEdges);
+    historyRedo(setNodes, setEdges, nodes, edges, user, !readOnly);
     setSelectedElement(null);
     setShowPanel(false);
-  }, [historyRedo, setNodes, setEdges]);
+  }, [historyRedo, setNodes, setEdges, nodes, edges, user, readOnly]);
 
   // 包装 copyNodes 以获取选中的节点
   const copyNodes = useCallback(() => {

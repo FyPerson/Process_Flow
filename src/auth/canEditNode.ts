@@ -22,7 +22,7 @@
 // canvasWritable + !is_deprecated（不依赖 canEditNode）。
 
 import type { UserPublic } from './api';
-import type { NodeChange, Node } from '@xyflow/react';
+import type { NodeChange, Node, Edge } from '@xyflow/react';
 import type { FlowNodeData } from '../types/flow';
 
 export interface CanEditNodeData {
@@ -63,6 +63,61 @@ export function canEditNodeData(
 // - isPublicDeprecateUpdate：判定一次 onNodeUpdate 是否仅"标废弃"
 // - filterNodeChangesByPermission：按 canEditNodeData 过滤 React Flow 节点 change 数组
 // - assertCanApplyNodeUpdate：判定一次 onNodeUpdate 是否可应用（结合 isDeprecate 例外）
+
+/**
+ * P3D-2 step 9 / 六审 medium 3：数值合法性校验（NaN / Infinity / 负宽高）。
+ *
+ * 校验规则：
+ *   - isFiniteNumber：必须是有限 number（拒 NaN / Infinity / null / undefined / 非 number）
+ *   - isValidXY：x/y 都必须是有限数
+ *   - isValidDimensions：width/height 都必须是有限数 + ≥ 0（负宽高必拒）
+ *
+ * 用于：
+ *   - filterNodeChangesByPermission 的 position/dimensions/add/replace 分支
+ *   - canApplyNodeUpdate 的 style.width/height（codex 26-审 medium 2）
+ */
+function isFiniteNumber(v: unknown): v is number {
+  return typeof v === 'number' && Number.isFinite(v);
+}
+
+function isValidXY(p: unknown): boolean {
+  if (!p || typeof p !== 'object') return false;
+  const obj = p as { x?: unknown; y?: unknown };
+  return isFiniteNumber(obj.x) && isFiniteNumber(obj.y);
+}
+
+function isValidDimensions(d: unknown): boolean {
+  if (!d || typeof d !== 'object') return false;
+  const obj = d as { width?: unknown; height?: unknown };
+  return (
+    isFiniteNumber(obj.width)
+    && isFiniteNumber(obj.height)
+    && obj.width >= 0
+    && obj.height >= 0
+  );
+}
+
+/**
+ * 校验 onNodeUpdate 的 style 几何字段（width/height）合法性。
+ * codex 26-审 medium 2：详情面板/恶意调用可能传 style.width=NaN 绕过 NodeChange gate。
+ * codex 27-二审 low 1：收紧非 object 入参 —— 字符串/数字/数组都 fail-closed。
+ *
+ * 规则：
+ *   - null / undefined → 放行（"无 style 改动"，调用方约定）
+ *   - 非 plain object（含 string / number / boolean / array）→ 拒（fail-closed）
+ *   - plain object：给了 width/height 就必须是有限数 + ≥ 0；undefined 放行（部分改动场景）
+ *
+ * @returns true 合法 / false 拒绝
+ */
+function isValidStyleGeometry(style: unknown): boolean {
+  if (style === null || style === undefined) return true;
+  if (typeof style !== 'object') return false; // string / number / boolean → fail-closed
+  if (Array.isArray(style)) return false; // 数组也拒
+  const obj = style as { width?: unknown; height?: unknown };
+  if (obj.width !== undefined && (!isFiniteNumber(obj.width) || obj.width < 0)) return false;
+  if (obj.height !== undefined && (!isFiniteNumber(obj.height) || obj.height < 0)) return false;
+  return true;
+}
 
 /**
  * 判定一次 dataUpdates 是否仅"标废弃"动作 —— 公开权限路径。
@@ -115,6 +170,10 @@ export function canApplyNodeUpdate(
   user: UserPublic | null,
   canvasWritable: boolean,
 ): boolean {
+  // codex 26-审 medium 2：style 几何字段（width/height）数值合法性
+  // 任何路径（标废弃 / 普通编辑）都要过这道校验，避免详情面板/恶意调用传 NaN 绕过 NodeChange gate
+  if (!isValidStyleGeometry(updatedStyle)) return false;
+
   if (isPublicDeprecateUpdate(dataUpdates, updatedStyle, user)) {
     // 标废弃也需要 canvasWritable（归档画布等场景）
     return canvasWritable && user !== null;
@@ -210,6 +269,13 @@ export function filterNodeChangesByPermission(
         if (!parentNode) return false;
         if (parentNode.type !== 'group') return false;
       }
+      // P3D-2 step 9 / 六审 medium 3：item.position 数值合法性
+      if (!isValidXY(item.position)) return false;
+      // 可选 width/height —— 给了就要合法（NodeBase.width/height 是 optional）
+      const itemWidth = (item as { width?: unknown }).width;
+      const itemHeight = (item as { height?: unknown }).height;
+      if (itemWidth !== undefined && (!isFiniteNumber(itemWidth) || itemWidth < 0)) return false;
+      if (itemHeight !== undefined && (!isFiniteNumber(itemHeight) || itemHeight < 0)) return false;
     } else if (change.type === 'replace') {
       const item = (change as { item?: Node<FlowNodeData> }).item;
       const id = (change as { id?: unknown }).id;
@@ -226,8 +292,32 @@ export function filterNodeChangesByPermission(
       // 这里只断"通过 replace 偷改 parentId"这一条路 —— 防御深度。
       const targetForReplace = nodes.find((n) => n.id === id);
       if (targetForReplace && targetForReplace.parentId !== item.parentId) return false;
+      // P3D-2 step 9 / 六审 medium 3：item.position 数值合法性
+      if (!isValidXY(item.position)) return false;
+      const itemWidth = (item as { width?: unknown }).width;
+      const itemHeight = (item as { height?: unknown }).height;
+      if (itemWidth !== undefined && (!isFiniteNumber(itemWidth) || itemWidth < 0)) return false;
+      if (itemHeight !== undefined && (!isFiniteNumber(itemHeight) || itemHeight < 0)) return false;
+    } else if (change.type === 'position') {
+      const id = (change as { id?: unknown }).id;
+      if (typeof id !== 'string' || id.length === 0) return false;
+      if (!existingNodeIds.has(id)) return false;
+      // P3D-2 step 9 / 六审 medium 3：position / positionAbsolute 数值校验
+      // 注意 React Flow 12 的 NodePositionChange.position 是 optional，
+      // 给了就必须合法；undefined 放行（drag 中间态等 React Flow 内部场景）
+      const pos = (change as { position?: unknown }).position;
+      if (pos !== undefined && !isValidXY(pos)) return false;
+      const posAbs = (change as { positionAbsolute?: unknown }).positionAbsolute;
+      if (posAbs !== undefined && !isValidXY(posAbs)) return false;
+    } else if (change.type === 'dimensions') {
+      const id = (change as { id?: unknown }).id;
+      if (typeof id !== 'string' || id.length === 0) return false;
+      if (!existingNodeIds.has(id)) return false;
+      // P3D-2 step 9 / 六审 medium 3：dimensions 数值合法性 + 非负
+      const dim = (change as { dimensions?: unknown }).dimensions;
+      if (dim !== undefined && !isValidDimensions(dim)) return false;
     } else {
-      // position / dimensions / remove
+      // remove
       const id = (change as { id?: unknown }).id;
       if (typeof id !== 'string' || id.length === 0) return false;
       if (!existingNodeIds.has(id)) return false;
@@ -260,4 +350,206 @@ export function filterNodeChangesByPermission(
     if (!target) return false; // existingNodeIds 已校验，理论上不会到这；fail-closed 兜底
     return canEditNodeData(target.data, user, canvasWritable);
   });
+}
+
+// ============================================================
+// P3D-2 step 9：undo/redo snapshot 数据完整性归一化
+// ============================================================
+
+/**
+ * 节点 parentId/extent 数据完整性归一化（codex 27-二审 medium / 28-三审 medium）。
+ *
+ * 规则（按顺序）：
+ *   1. group 节点不允许有 parentId（业务约定：group 不能嵌套 / 不能自引用）
+ *      → 见 useFlowOperations.onCreateGroup 创建入口已过滤 group 类型
+ *      历史脏 snapshot 含 group.parentId 的情况一律清
+ *   2. parentId 必须指向 result 内的 group 节点；否则清（孤儿 / 指向非 group / 自引用）
+ *
+ * 这是数据完整性约束，不是权限判定 —— admin / 普通用户都应该走，
+ * 防止历史 snapshot 因任何原因含脏 parentId 后被整份恢复。
+ */
+function normalizeNodeParents(nodes: Node<FlowNodeData>[]): Node<FlowNodeData>[] {
+  const allIds = new Set(nodes.map((n) => n.id));
+  const groupIds = new Set(nodes.filter((n) => n.type === 'group').map((n) => n.id));
+  return nodes.map((n) => {
+    if (n.parentId === undefined) return n;
+    // 1) group 节点本身不能有 parentId（不允许嵌套）
+    if (n.type === 'group') {
+      const { parentId: _drop, extent: _drop2, ...rest } = n;
+      return rest as Node<FlowNodeData>;
+    }
+    // 2) 自引用 / 孤儿 / 指向非 group → 清
+    if (n.parentId === n.id) {
+      const { parentId: _drop, extent: _drop2, ...rest } = n;
+      return rest as Node<FlowNodeData>;
+    }
+    if (!allIds.has(n.parentId) || !groupIds.has(n.parentId)) {
+      const { parentId: _drop, extent: _drop2, ...rest } = n;
+      return rest as Node<FlowNodeData>;
+    }
+    return n;
+  });
+}
+
+// ============================================================
+// P3D-2 step 9：undo/redo snapshot 权限 diff（12-二审 必修延期项）
+// ============================================================
+//
+// 问题：useFlowHistory.undo/redo 整份 setNodes(snapshot)，绕过中心 gate。
+// 攻击/误用场景：
+//   1. 用户 A 改了自己的节点 → 别人改了 B 的节点 → A 按 ctrl+z
+//      若整份回滚，B 节点会被 A 的 snapshot 旧版本覆盖（绕过权限）
+//   2. snapshot 含已被删除的别人节点 → 整份恢复会重新拉回（ghost 还魂）
+//
+// 修法：合并而非整份覆盖。语义为"只回滚自己有权的节点"，逐节点决策：
+//   - current 中无权编辑的节点 → 保留 current 版本（不被 snapshot 覆盖）
+//   - snapshot 中无权编辑的 ghost（current 已无）→ 不恢复
+//   - 其余按 snapshot 应用（含 admin 全量回滚）
+//
+// 边的策略：边的存在跟随节点。merge 完 nodes 后，
+//   - snapshot.edges 中两端都在 merged.nodes 内的 → 保留
+//   - current.edges 中涉及"current-only 保留节点"且端点都在 merged 内的 → 补入
+//   这避免出现孤儿边（ghost 端点）以及"别人节点的边被 undo 错误抹除"。
+
+/**
+ * 按节点级权限合并历史 snapshot 与当前 nodes。
+ *
+ * @param snapshot 历史 snapshot 中的 nodes（undo/redo 目标）
+ * @param current 当前画布的 nodes
+ * @param user 当前登录用户
+ * @param canvasWritable 当前画布是否可写
+ * @returns 合并后的 nodes 数组（顺序：snapshot 中保留的 + current 中无权节点的"插入位置"维持）
+ *
+ * 规则：
+ *   - current 中存在 + 用户无权 → 保留 current 版本
+ *   - current 中存在 + 用户有权 + snapshot 中也存在 → 用 snapshot 版本（正常回滚）
+ *   - current 中存在 + 用户有权 + snapshot 中不存在 → 删（snapshot 是历史真相，但要看用户是否有权删）
+ *     · 用户有权该 current 节点 → 允许删（=正常回滚到该节点不存在的历史）
+ *   - current 中不存在 + snapshot 中存在 + 用户无权该 snapshot 节点 → 不恢复（无权"还魂"别人节点）
+ *   - current 中不存在 + snapshot 中存在 + 用户有权 → 恢复（=正常回滚 add）
+ *
+ * 顺序策略：以 snapshot 顺序为主，再追加 current 中保留下来但 snapshot 没有的节点。
+ */
+export function mergeSnapshotByPermission(
+  snapshot: Node<FlowNodeData>[],
+  current: Node<FlowNodeData>[],
+  user: UserPublic | null,
+  canvasWritable: boolean,
+): Node<FlowNodeData>[] {
+  if (!canvasWritable || !user) {
+    // 无写权限：整份保留 current（理论上 undo/redo 入口已被 readOnly 短路）
+    return current;
+  }
+  if (user.role === 'admin') {
+    // admin 短路：整份回滚（admin 有完整画布写权限）
+    // codex 27-二审 medium：admin 路径也走数据完整性归一化，避免历史脏 parentId 还魂
+    return normalizeNodeParents(snapshot);
+  }
+
+  const currentById = new Map(current.map((n) => [n.id, n]));
+  const snapshotIds = new Set(snapshot.map((n) => n.id));
+  const result: Node<FlowNodeData>[] = [];
+
+  // 1) 遍历 snapshot：决定每个 snapshot 节点是否能恢复/覆盖
+  for (const snapNode of snapshot) {
+    const curNode = currentById.get(snapNode.id);
+    if (curNode) {
+      // current 中也有：看用户对 current 版本是否有权
+      if (canEditNodeData(curNode.data, user, canvasWritable)) {
+        // 有权 → 用 snapshot 覆盖（正常回滚）
+        result.push(snapNode);
+      } else {
+        // 无权 → 保留 current 版本（不被 snapshot 覆盖）
+        result.push(curNode);
+      }
+    } else {
+      // current 中没有，snapshot 中有 → 是否允许"还魂"
+      if (canEditNodeData(snapNode.data, user, canvasWritable)) {
+        result.push(snapNode);
+      }
+      // 无权 → 不恢复
+    }
+  }
+
+  // 2) current 中存在但 snapshot 中没有的节点：
+  //    若用户有权该节点 → 应该被删（snapshot 是无该节点的历史）
+  //    若用户无权 → 必须保留（不能借 undo/redo 删别人节点）
+  for (const curNode of current) {
+    if (snapshotIds.has(curNode.id)) continue;
+    if (!canEditNodeData(curNode.data, user, canvasWritable)) {
+      result.push(curNode);
+    }
+  }
+
+  // 3) parentId/extent 归一化（codex 26-审 high 必修 + 27-二审 medium 抽 helper）
+  //    场景：snapshot 中自己有权恢复的子节点 X（X.parentId=G）+ G 是别人的 group
+  //    → G 在合并步骤被丢弃（unauthorized ghost）→ X 还魂后 parentId 变孤儿
+  return normalizeNodeParents(result);
+}
+
+/**
+ * 与 mergeSnapshotByPermission 配套：边的存在跟随节点。
+ *
+ * 调用语义：
+ *   const mergedNodes = mergeSnapshotByPermission(snap.nodes, current.nodes, user, w);
+ *   const mergedEdges = mergeEdgesForMergedNodes(snap.edges, current.edges, mergedNodes, user, w);
+ *
+ * 规则（避免孤儿边 + 保护别人节点的连边）：
+ *   1. 整理 mergedNodeIds 集合
+ *   2. 取 snapshot.edges 里两端都在 mergedNodeIds 内的边 → 保留；
+ *      边无 creator 字段，权限语义按节点合并结果近似处理（codex 27-二审 low 2）
+ *   3. 对 current.edges 中"两端都在 mergedNodeIds 内 + snapshot 中无对应 edge"的边：
+ *      若边的至少一端是 protected 节点（current 中用户无权编辑、且仍在 merged 内的节点），
+ *      则补入（fail-closed 策略：凡涉及他人节点的边都保留，避免 undo 抹除别人的连边）。
+ *
+ * 注意（codex 26-审 medium 1）：fail-closed 的副作用是"自己新增到他人节点的边"也无法
+ *   被 undo 撤销 —— 因为它的端点涉及 protected 节点。这是有意为之，因为前端无法分辨
+ *   "我自己加的、可撤销的边" vs "保护边" —— 边没有 creator 字段。如果未来要精确撤销，
+ *   需要为边引入 creator_id（属于 P3E 之后的 schema 演进）。
+ *
+ * 短路：
+ *   - 游客 / canvasWritable=false → 整份保留 current.edges
+ *   - admin → 整份回滚 snapshot.edges
+ */
+export function mergeEdgesForMergedNodes(
+  snapshotEdges: Edge[],
+  currentEdges: Edge[],
+  mergedNodes: Node<FlowNodeData>[],
+  current: Node<FlowNodeData>[],
+  user: UserPublic | null,
+  canvasWritable: boolean,
+): Edge[] {
+  if (!canvasWritable || !user) return currentEdges;
+  if (user.role === 'admin') return snapshotEdges;
+
+  const mergedNodeIds = new Set(mergedNodes.map((n) => n.id));
+  // protectedCurrentNodeIds：current 中用户无权编辑、且仍在 merged 中的节点
+  // = "保护节点"，凡涉及它的 current 边都不能被 undo 抹除
+  const protectedCurrentNodeIds = new Set(
+    current
+      .filter((n) => mergedNodeIds.has(n.id) && !canEditNodeData(n.data, user, canvasWritable))
+      .map((n) => n.id),
+  );
+
+  const result: Edge[] = [];
+  const seenEdgeIds = new Set<string>();
+
+  // 1) snapshot.edges 里两端都在 merged 内的 → 保留
+  for (const e of snapshotEdges) {
+    if (!mergedNodeIds.has(e.source) || !mergedNodeIds.has(e.target)) continue;
+    result.push(e);
+    seenEdgeIds.add(e.id);
+  }
+
+  // 2) current.edges 中涉及保护节点的边补入（fail-closed 策略）
+  for (const e of currentEdges) {
+    if (seenEdgeIds.has(e.id)) continue;
+    if (!mergedNodeIds.has(e.source) || !mergedNodeIds.has(e.target)) continue;
+    if (protectedCurrentNodeIds.has(e.source) || protectedCurrentNodeIds.has(e.target)) {
+      result.push(e);
+      seenEdgeIds.add(e.id);
+    }
+  }
+
+  return result;
 }
