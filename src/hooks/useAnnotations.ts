@@ -136,6 +136,9 @@ export function useAnnotations(opts: {
   // refetch 内部逻辑（接受 explicit key 避免闭包陈旧）
   const performFetch = useCallback(
     async (keyAtStart: AnnotationsKey, genAtStart: number): Promise<void> => {
+      // codex 07-代码审 medium 2：fetchSeqRef 在所有路径（含 disabled）都递增
+      // 让旧 GET 的 finally 看到 seq !== fetchSeqRef.current 直接 return
+      // （否则 disabled 期间旧 GET 回包仍可能写 setLoading(false) 影响新 key 时序）
       const seq = ++fetchSeqRef.current;
       const counterAtStart = mutationsCounterRef.current;
 

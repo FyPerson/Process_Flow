@@ -546,7 +546,7 @@ div.custom-flow-node.node-decision.selected,
 }
 
 /* 主体内容半透明（不影响角标，因为 :not 排除 + 角标 z-index 更高）*/
-.custom-flow-node.is-deprecated > *:not(.deprecated-badge):not(.react-flow__handle) {
+.custom-flow-node.is-deprecated > *:not(.deprecated-badge):not(.annotation-badge):not(.react-flow__handle) {
   opacity: 0.5;
 }
 
@@ -569,6 +569,42 @@ div.custom-flow-node.node-decision.selected,
   letter-spacing: 0.3px;
   line-height: 14px;
 }
+
+/* ==========================================================================
+   P3E-3：节点批注徽章（左上角，与 deprecated-badge 右上左右分离）
+   - codex 06-取舍审 medium 1+2：左上 + 固定最小宽度防 1→2→99+ 抖动
+   - z-index 10 高于节点内容，但低于 React Flow handle（z-index 11）避免影响拖线
+   - 不参与 .is-deprecated 的 opacity 降低（CSS opacity 不同元素相乘规则下，废弃 + 有批注
+     节点的徽章本身仍然完全可见；下面用 :not(.annotation-badge) 排除节点 opacity 影响）
+   ========================================================================== */
+.annotation-badge {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  z-index: 10;
+  min-width: 24px;
+  height: 18px;
+  padding: 0 6px;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 9px;
+  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.5);
+  pointer-events: auto;
+  user-select: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-sizing: border-box;
+  transition: transform 100ms;
+}
+
+.annotation-badge:hover {
+  transform: scale(1.08);
+}
 /* ==========================================================================
    P3D-2 step 5：节点级不可编辑视觉提示（hover 灰）
    - __canEdit === false 时加 .not-editable
@@ -585,7 +621,7 @@ div.custom-flow-node.node-decision.selected,
   cursor: not-allowed;
 }
 
-.custom-flow-node.not-editable:not(.is-deprecated) > *:not(.deprecated-badge):not(.react-flow__handle) {
+.custom-flow-node.not-editable:not(.is-deprecated) > *:not(.deprecated-badge):not(.annotation-badge):not(.react-flow__handle) {
   opacity: 0.85;
 }
 

@@ -12,10 +12,12 @@ import {
   createEmptyProject,
 } from '../../types/flow';
 import { useMultiCanvas } from '../../hooks/useMultiCanvas';
+import { useAnnotations, annotationKey } from '../../hooks/useAnnotations';
 import { useAuth } from '../../auth/AuthContext';
 import { canWriteCanvas } from '../../auth/canWriteCanvas';
 import { canEditNodeData } from '../../auth/canEditNode';
 import type { ApiError } from '../../api/canvases';
+import type { AnnotationsBundle, PendingPanelTabRequest } from '../../components/NodeDetailPanel';
 import './styles.css';
 
 /** 把导入接口的 ApiError 翻译成对用户可行动的中文文案 */
@@ -103,6 +105,75 @@ export function BusinessFlowVisualization() {
   );
   // readOnly 保留作为派生量供下游使用，与 P3D-2 之前的 prop 形态兼容
   const readOnly = !canvasWritable;
+
+  // P3E-2/3：批注数据层（hook 内部按 canvasId/userId/readReady 派生 stable key）
+  // readReady 必填（codex 04-二审 medium 3）：caller 在 canvasMetaState.kind === 'server' 时才传 true
+  // canvasMetaState.kind === 'loading' 时传 false → enabled=false → hook 不发请求 + 显示禁用文案
+  // canvasMetaState.kind === 'local' 时传 false（本地草稿无服务端 canvasId 也走 disabled 路径）
+  const annotationsReadReady = canvasMetaState.kind === 'server';
+  const annotations = useAnnotations({
+    canvasId,
+    user,
+    readReady: annotationsReadReady,
+  });
+
+  // P3E-3 pendingPanelTab：徽章点击 / 其他外部触发 → 选中节点 + 切到批注 tab
+  // codex 06-取舍审 high 2：必须含 nodeId 防时序错位（NodeDetailPanel 消费时校验 selectedElement.data.id 匹配）
+  // 07-代码审 high 1：徽章点击的"显式选中节点 + 打开面板"由 FlowCanvas 内部实现
+  //   （需要 reactFlowInstance + setNodes/setSelectedElement/setShowPanel 闭包，BFV 拿不到）
+  //   BFV 只负责 pendingPanelTab state；FlowCanvas 通过 bundle.requestPanelTab(nodeId, tab) 请求切 tab
+  const [pendingPanelTab, setPendingPanelTab] = useState<PendingPanelTabRequest | null>(null);
+
+  const requestPanelTab = useCallback((nodeId: string, tab: 'details' | 'annotations') => {
+    setPendingPanelTab({ nodeId, tab });
+  }, []);
+
+  const onPendingPanelTabConsumed = useCallback(() => {
+    setPendingPanelTab(null);
+  }, []);
+
+  // 批注 bundle（透传给 FlowCanvas → NodeDetailPanel）
+  const annotationsBundle: AnnotationsBundle = useMemo(
+    () => ({
+      sheetId: activeSheetId ?? null,
+      getAnnotationsForNode: (sheetId: string, nodeId: string) =>
+        annotations.annotationsByNodeKey.get(annotationKey(sheetId, nodeId)) ?? [],
+      // P3E-3 节点 creator id 来源：activeSheet 当前节点的 creator_id（与 useAnnotations.getNodeCreatorId 同款语义）
+      // 这里复用前端已 hydrate 的 creator_id，无需额外 API
+      getNodeCreatorId: (sheetId: string, nodeId: string) => {
+        if (sheetId !== activeSheetId) return undefined;
+        const n = activeSheet?.nodes.find((nn) => nn.id === nodeId);
+        return n?.creator_id;
+      },
+      loading: annotations.loading,
+      fetchError: annotations.error,
+      enabled: annotationsReadReady && canvasId !== null && user !== null,
+      isAnnotationPending: annotations.isAnnotationPending,
+      onCreateAnnotation: annotations.createAnnotation,
+      onResolveAnnotation: annotations.resolveAnnotation,
+      onReopenAnnotation: annotations.reopenAnnotation,
+      pendingPanelTab,
+      onPendingPanelTabConsumed,
+      requestPanelTab,
+    }),
+    [
+      activeSheetId,
+      activeSheet,
+      annotations.annotationsByNodeKey,
+      annotations.loading,
+      annotations.error,
+      annotations.isAnnotationPending,
+      annotations.createAnnotation,
+      annotations.resolveAnnotation,
+      annotations.reopenAnnotation,
+      annotationsReadReady,
+      canvasId,
+      user,
+      pendingPanelTab,
+      onPendingPanelTabConsumed,
+      requestPanelTab,
+    ],
+  );
 
   // beforeunload：dirty 或 saving 时拦截关闭
   useEffect(() => {
@@ -353,6 +424,17 @@ export function BusinessFlowVisualization() {
       return { processedNodes: [], processedEdges: [] };
     }
 
+    // P3E-3 派生：本 sheet 各节点的 unresolved 计数（注入 data.__annotationUnresolvedCount）
+    // useAnnotations 已派生 unresolvedCountByNodeKey；这里按 sheet:node 复合 key 查
+    const unresolvedByNodeId = new Map<string, number>();
+    if (activeSheetId) {
+      for (const n of activeSheet.nodes) {
+        const k = annotationKey(activeSheetId, n.id);
+        const c = annotations.unresolvedCountByNodeKey.get(k);
+        if (c) unresolvedByNodeId.set(n.id, c);
+      }
+    }
+
     // 转换节点
     const flowNodes: Node<FlowNodeData>[] = activeSheet.nodes.map((node) => {
       // P3D-2 step 3 + step 5：__canEdit 派生（普通节点 + group 共用）
@@ -410,6 +492,8 @@ export function BusinessFlowVisualization() {
             deprecated_by: node.deprecated_by,
             deprecated_at: node.deprecated_at,
             deprecated_by_username: node.deprecated_by_username,
+            // P3E-3：批注 unresolved 计数（GroupNode 左上角徽章渲染用）
+            __annotationUnresolvedCount: unresolvedByNodeId.get(node.id) ?? 0,
           } as any,
           // P3D-2 step 5：节点级 draggable（React Flow 12 原生支持 top-level draggable）
           // canEdit=false 的节点（非作者 / 游客 / 归档）—— 拖拽直接被 React Flow 拒绝
@@ -452,6 +536,8 @@ export function BusinessFlowVisualization() {
           deprecated_by: node.deprecated_by,
           deprecated_at: node.deprecated_at,
           deprecated_by_username: node.deprecated_by_username,
+          // P3E-3：批注 unresolved 计数（CustomNode 左上角徽章渲染用）
+          __annotationUnresolvedCount: unresolvedByNodeId.get(node.id) ?? 0,
         },
         // P3D-2 step 5：节点级 draggable（同分组节点说明）
         // 与中心 mutation gate 同源；这里是 React Flow 12 原生层 + UI 友好层
@@ -558,7 +644,7 @@ export function BusinessFlowVisualization() {
     );
 
     return { processedNodes: visibleNodes, processedEdges: visibleEdges };
-  }, [activeSheet, filterElements, showSubflows, readOnly, user, canvasWritable]);
+  }, [activeSheet, activeSheetId, filterElements, showSubflows, readOnly, user, canvasWritable, annotations.unresolvedCountByNodeKey]);
 
   // 初始加载
   // 默认数据只用于"无 URL canvasId 且 hook 也没拉到本地数据"的场景；
@@ -724,6 +810,7 @@ export function BusinessFlowVisualization() {
             onDeleteSheet={readOnly ? () => undefined : deleteSheet}
             onRenameSheet={readOnly ? () => undefined : renameSheet}
             onDuplicateSheet={readOnly ? undefined : duplicateSheet}
+            annotationsBundle={annotationsBundle}
           />
         )}
       </div>

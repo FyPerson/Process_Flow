@@ -12,6 +12,7 @@ import { FlowNodeData } from '../../types/flow';
 import { getUniqueName } from '../../utils/uniqueName';
 import { formatDeprecatedTooltip } from '../../utils/formatDeprecated';
 import { formatCreatorName } from '../../auth/formatCreatorName';
+import { useAnnotationBadge } from '../NodeDetailPanel/annotationBadgeContext';
 import './styles.css';
 
 interface CustomNodeProps extends NodeProps {
@@ -267,6 +268,25 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
         })}
       >
         已废弃
+      </div>
+    ) : null;
+
+  // P3E-3：节点批注徽章（左上角；仅 unresolved > 0 渲染）
+  // codex 06-取舍审 medium 1：左上 + 废弃右上左右分离；固定尺寸防 1→2→99+ 抖动
+  // 点击触发 BFV 顶层 onBadgeClick(nodeId) → 选中节点 + 设 pendingPanelTab(annotations)
+  const annotationBadge = useAnnotationBadge();
+  const annotationCount = nodeData.__annotationUnresolvedCount ?? 0;
+  const renderAnnotationBadge = () =>
+    annotationCount > 0 ? (
+      <div
+        className="annotation-badge"
+        title={`未解决批注 ${annotationCount} 条`}
+        onClick={(e) => {
+          e.stopPropagation();
+          annotationBadge?.onBadgeClick(id);
+        }}
+      >
+        {annotationCount > 99 ? '99+' : annotationCount}
       </div>
     ) : null;
 
@@ -677,6 +697,7 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
 
         {renderContent()}
         {renderDeprecatedBadge()}
+        {renderAnnotationBadge()}
       </div>
     );
   }
@@ -710,6 +731,7 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
 
         {renderContent()}
         {renderDeprecatedBadge()}
+        {renderAnnotationBadge()}
 
         {/* Bottom */}
         <Handle id="bottom" type="source" position={Position.Bottom} style={sourceHandleStyle} />
@@ -739,6 +761,7 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
 
       {renderContent()}
       {renderDeprecatedBadge()}
+      {renderAnnotationBadge()}
 
       {/* Bottom */}
       <Handle id="bottom" type="source" position={Position.Bottom} style={sourceHandleStyle} />

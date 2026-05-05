@@ -1,6 +1,7 @@
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { Node, NodeProps, NodeResizer, useReactFlow, Position, Handle, useStore, type ReactFlowState, useUpdateNodeInternals } from '@xyflow/react';
 import { GroupNodeData } from '../../types/flow';
+import { useAnnotationBadge } from '../NodeDetailPanel/annotationBadgeContext';
 import { getUniqueName } from '../../utils/uniqueName';
 import { formatDeprecatedTooltip } from '../../utils/formatDeprecated';
 import { formatCreatorName } from '../../auth/formatCreatorName';
@@ -412,9 +413,30 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
             已废弃
           </div>
         )}
+
+        {/* P3E-3 批注徽章（左上角；与 deprecated-badge 同款独立 z-index） */}
+        <GroupAnnotationBadge nodeId={id} count={(groupData as unknown as { __annotationUnresolvedCount?: number }).__annotationUnresolvedCount ?? 0} />
       </div>
     </>
   );
 });
+
+/** GroupNode 批注徽章子组件（与 CustomNode renderAnnotationBadge 等价；抽出避免顶层 hook 干扰主流程） */
+function GroupAnnotationBadge({ nodeId, count }: { nodeId: string; count: number }) {
+  const ctx = useAnnotationBadge();
+  if (count <= 0) return null;
+  return (
+    <div
+      className="annotation-badge"
+      title={`未解决批注 ${count} 条`}
+      onClick={(e) => {
+        e.stopPropagation();
+        ctx?.onBadgeClick(nodeId);
+      }}
+    >
+      {count > 99 ? '99+' : count}
+    </div>
+  );
+}
 
 GroupNode.displayName = 'GroupNode';

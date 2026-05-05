@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, memo } from 'react';
 import { Edge, Node, useReactFlow } from '@xyflow/react';
 import { FlowNodeData, Screenshot, NodeUpdateParams, EdgeUpdateParams, GroupNodeData } from '../../types/flow';
 import type { UserPublic } from '../../auth/api';
+import type { Annotation, ApiError, CreateAnnotationInput } from '../../api/annotations';
 import { canEditNodeData } from '../../auth/canEditNode';
 import { formatCreatorName } from '../../auth/formatCreatorName';
 import { ScreenshotViewer } from '../ScreenshotViewer';
@@ -10,7 +11,17 @@ import { NodePropertiesPanel } from './NodePropertiesPanel';
 import { EdgePropertiesPanel } from './EdgePropertiesPanel';
 import { GroupPropertiesPanel, GroupUpdateParams } from './GroupPropertiesPanel';
 import { DeprecateNodeSection } from './DeprecateNodeSection';
+import { AnnotationPanel } from './AnnotationPanel';
 import './styles.css?v=2.0';
+
+/** P3E-3 顶层 tab：节点选中时切换"详情"和"批注"。edge 选中无 tab */
+export type PanelTab = 'details' | 'annotations';
+
+/** 批注 tab 切换请求（codex 06-取舍审 high 2：必须含 nodeId 防时序错位） */
+export interface PendingPanelTabRequest {
+  nodeId: string;
+  tab: PanelTab;
+}
 
 // Define the wrapper type passed from FlowCanvas
 export type SelectedElement =
@@ -38,6 +49,41 @@ interface NodeDetailPanelProps {
    *  user=null 时 canWriteCanvas 第一行 if (!user) return false → readOnly=true，约定成立。
    *  如果未来上游加新调用点，必须保持此约定，否则蓝色"非作者"横幅会替代黄色"只读"横幅，体验错乱。 */
   user: UserPublic | null;
+
+  // ===== P3E-3 批注相关 props（打包成 1 个 bundle 对象，FlowCanvas 透传不臃肿）=====
+  /** 批注数据层 bundle（由 BFV 顶层接 useAnnotations + 派生）；
+   *  null = 不渲染批注 tab（理论上 P3E-3 总是传非 null；fail-closed 防御） */
+  annotationsBundle: AnnotationsBundle | null;
+}
+
+/** P3E-3 批注 bundle：把 useAnnotations 派生数据 + actions + tab 控制打包传递 */
+export interface AnnotationsBundle {
+  /** 当前选中节点所在 sheet 的 id（与 nodeId 复合定位批注） */
+  sheetId: string | null;
+  /** 单节点批注查找（按 sheetId+nodeId 复合 key 派生）；nodeCreatorId 同样按 nodeId 查 nodes_meta */
+  getAnnotationsForNode: (sheetId: string, nodeId: string) => Annotation[];
+  getNodeCreatorId: (sheetId: string, nodeId: string) => number | undefined;
+  /** 整画布批注是否在加载（hook.loading） */
+  loading: boolean;
+  /** 批注 fetch 错误（hook.error），仅展示 */
+  fetchError: ApiError | null;
+  /** 批注数据层是否可用（canvasId 非空 + user 非空 + readReady） */
+  enabled: boolean;
+  /** 同 id 是否在 mutation 飞行（hook.isAnnotationPending） */
+  isAnnotationPending: (id: number) => boolean;
+  /** 创建批注（hook.createAnnotation）；失败 throw ApiError */
+  onCreateAnnotation: (input: CreateAnnotationInput) => Promise<Annotation>;
+  /** 标记 resolved；失败 throw ApiError */
+  onResolveAnnotation: (id: number) => Promise<void>;
+  /** 重开；失败 throw ApiError */
+  onReopenAnnotation: (id: number) => Promise<void>;
+  /** 外部请求切换 tab（如徽章点击）；含 nodeId 用于消费时校验 */
+  pendingPanelTab: PendingPanelTabRequest | null;
+  /** pendingPanelTab 被消费后回调清零（避免重复触发） */
+  onPendingPanelTabConsumed: () => void;
+  /** 请求切换 tab（FlowCanvas 内部徽章点击 → 选中节点 + 打开面板后调）；
+   *  设计上等价于 BFV setPendingPanelTab；放进 bundle 让 FlowCanvas 内部能调 */
+  requestPanelTab: (nodeId: string, tab: PanelTab) => void;
 }
 
 export const NodeDetailPanel = memo(function NodeDetailPanel({
@@ -52,6 +98,7 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
   allNodes = [],
   readOnly = false,
   user,
+  annotationsBundle,
 }: NodeDetailPanelProps) {
   // P3D-2 step 4：节点级编辑权限判定
   // - canEdit = false 时面板顶部加横幅 + 输入 disabled，但 DeprecateNodeSection 仍可用（公开权限）
@@ -90,6 +137,42 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
   // 解散分组仅 admin（与 group 面板按钮 disabled 同口径；数据层 useFlowOperations.onUngroup 兜底）
   const safeOnUngroup = isAdmin ? onUngroup : (() => undefined);
   const safeOnRemoveFromGroup = canEdit ? onRemoveFromGroup : (() => undefined);
+
+  // P3E-3：顶层 tab 状态（仅 isNode 有意义；edge 不显示 tab）
+  const [panelTab, setPanelTab] = useState<PanelTab>('details');
+
+  // 切节点时重置 tab 到 details（避免上一个节点的 tab 状态泄露给新节点）
+  // P3D-2 step 4 同款时序：根据 selectedElement.data.id 变化重置
+  const selectedNodeIdForTabReset =
+    selectedElement?.type === 'node' ? selectedElement.data.id : null;
+  useEffect(() => {
+    setPanelTab('details');
+  }, [selectedNodeIdForTabReset]);
+
+  // 消费 pendingPanelTab：codex 06-取舍审 high 2 必须校验 nodeId 匹配再切
+  // codex 07-代码审 medium 1：增加过期清理 —— 但只清"明显过期"场景：
+  //   - selectedElement 为 edge → 用户主动选边，pending 切 tab 已无意义，清
+  //   - selectedElement 为 null → 面板已关闭，pending 不再适用，清
+  //   - selectedElement 为不同 nodeId 节点 → **不清**：可能是 React 18 跨组件 setState
+  //     批量未完成的中间态（FlowCanvas setSelectedElement + BFV setPendingPanelTab 在不同
+  //     组件树）；新 nodeId 的 pending 会覆盖旧的，旧 pending 留着不消费即可（tab 不切）
+  //   - nodeId 匹配 → 消费 + 清
+  const pendingPanelTab = annotationsBundle?.pendingPanelTab ?? null;
+  const onPendingPanelTabConsumed = annotationsBundle?.onPendingPanelTabConsumed;
+  useEffect(() => {
+    if (!pendingPanelTab) return;
+    // 选中的不是节点（edge / null）→ 立即清零
+    if (!selectedElement || selectedElement.type !== 'node') {
+      onPendingPanelTabConsumed?.();
+      return;
+    }
+    // nodeId 匹配 → 消费 + 清零
+    if (selectedElement.data.id === pendingPanelTab.nodeId) {
+      setPanelTab(pendingPanelTab.tab);
+      onPendingPanelTabConsumed?.();
+    }
+    // nodeId 不匹配 → 等下次 selectedElement 更新（同步 setState 完成后）
+  }, [pendingPanelTab, selectedElement, onPendingPanelTabConsumed]);
 
   // Node Extras to be lifted here because of PageSelector
   const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
@@ -242,11 +325,7 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
         </div>
 
         <div className="panel-content">
-          {/* P3D-2 step 4：节点级权限横幅
-              - 画布只读 → 黄色"只读"横幅（保留原行为）
-              - 画布可写但当前用户不可编辑此节点 → 蓝色"非作者"横幅
-              - 否则不显示横幅
-              注：DeprecateNodeSection 不受 canEdit 拦（公开权限） */}
+          {/* P3D-2 step 4：节点级权限横幅（保留在所有 tab 上方，仅 isNode 时显示） */}
           {readOnly && (
             <div
               style={{
@@ -276,54 +355,142 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
             </div>
           )}
 
-          {/* Group Node Content */}
-          {isGroupNode && selectedElement.type === 'node' && selectedElement.node && safeOnGroupChange && safeOnUngroup && safeOnRemoveFromGroup && (
-            <GroupPropertiesPanel
-              groupData={selectedElement.node.data as unknown as GroupNodeData}
-              groupNode={selectedElement.node}
-              childNodes={childNodes}
-              onGroupChange={safeOnGroupChange}
-              onUngroup={safeOnUngroup}
-              onRemoveFromGroup={safeOnRemoveFromGroup}
-              allNodes={allNodes}
-              canEdit={canEdit}
-              isAdmin={isAdmin}
-            />
+          {/* P3E-3：顶层 tab 切换（仅节点；edge 不显示 tab，保持原渲染流） */}
+          {isNode && selectedElement.type === 'node' && annotationsBundle && (() => {
+            const sheetIdForTab = annotationsBundle.sheetId;
+            const annotationsForTabBadge = sheetIdForTab
+              ? annotationsBundle.getAnnotationsForNode(sheetIdForTab, selectedElement.data.id)
+              : [];
+            const unresolvedForTabBadge = annotationsForTabBadge.filter((a) => a.status === 'unresolved').length;
+            return (
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 4,
+                  padding: '8px 16px 0',
+                  borderBottom: '1px solid rgba(255,255,255,0.06)',
+                }}
+              >
+                {(['details', 'annotations'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setPanelTab(tab)}
+                    style={{
+                      padding: '6px 12px',
+                      background: panelTab === tab ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                      border: 'none',
+                      borderBottom:
+                        panelTab === tab ? '2px solid #60a5fa' : '2px solid transparent',
+                      color: panelTab === tab ? '#e2e8f0' : '#94a3b8',
+                      fontSize: 13,
+                      cursor: 'pointer',
+                      fontWeight: panelTab === tab ? 600 : 400,
+                    }}
+                  >
+                    {tab === 'details' ? '详情' : '批注'}
+                    {tab === 'annotations' && unresolvedForTabBadge > 0 && (
+                      <span
+                        style={{
+                          marginLeft: 6,
+                          padding: '0 6px',
+                          fontSize: 10,
+                          background: 'rgba(59, 130, 246, 0.4)',
+                          color: '#fff',
+                          borderRadius: 8,
+                          minWidth: 16,
+                          display: 'inline-block',
+                          lineHeight: '14px',
+                        }}
+                      >
+                        {unresolvedForTabBadge > 99 ? '99+' : unresolvedForTabBadge}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            );
+          })()}
+
+          {/* === 详情 tab === */}
+          {panelTab === 'details' && (
+            <>
+              {/* Group Node Content */}
+              {isGroupNode && selectedElement.type === 'node' && selectedElement.node && safeOnGroupChange && safeOnUngroup && safeOnRemoveFromGroup && (
+                <GroupPropertiesPanel
+                  groupData={selectedElement.node.data as unknown as GroupNodeData}
+                  groupNode={selectedElement.node}
+                  childNodes={childNodes}
+                  onGroupChange={safeOnGroupChange}
+                  onUngroup={safeOnUngroup}
+                  onRemoveFromGroup={safeOnRemoveFromGroup}
+                  allNodes={allNodes}
+                  canEdit={canEdit}
+                  isAdmin={isAdmin}
+                />
+              )}
+
+              {/* Regular Node Content */}
+              {isNode && !isGroupNode && selectedElement.type === 'node' && (
+                <NodePropertiesPanel
+                  selectedElement={selectedElement}
+                  onNodeChange={safeOnNodeChange}
+                  onViewScreenshot={setViewingScreenshot}
+                  onOpenPageSelector={() => setShowPageSelector(true)}
+                  screenshots={screenshots}
+                  setScreenshots={setScreenshots}
+                  allNodes={allNodes}
+                  canEdit={canEdit}
+                />
+              )}
+
+              {/* P3C 标废弃区块（节点专属；details tab 内显示）
+                  一审 H1：必须走 safeOnDeprecateChange（仅 canvasWritable gate），不走 safeOnNodeChange（canEdit gate）
+                  M1: 此区块在 NodeDetailPanel 顶层，不在 NodePropertiesPanel 的 fieldset 内部，所以浏览器原生 disabled 不影响 */}
+              {isNode && selectedElement.type === 'node' && (
+                <DeprecateNodeSection
+                  nodeData={selectedElement.data}
+                  allNodes={allNodes}
+                  edgeCount={deprecateEdgeCount}
+                  onNodeChange={safeOnDeprecateChange}
+                  readOnly={readOnly}
+                />
+              )}
+            </>
           )}
 
-          {/* Regular Node Content */}
-          {isNode && !isGroupNode && selectedElement.type === 'node' && (
-            <NodePropertiesPanel
-              selectedElement={selectedElement}
-              onNodeChange={safeOnNodeChange}
-              onViewScreenshot={setViewingScreenshot}
-              onOpenPageSelector={() => setShowPageSelector(true)}
-              screenshots={screenshots}
-              setScreenshots={setScreenshots}
-              allNodes={allNodes}
-              canEdit={canEdit}
-            />
-          )}
+          {/* === 批注 tab === */}
+          {panelTab === 'annotations'
+            && isNode
+            && selectedElement.type === 'node'
+            && annotationsBundle
+            && annotationsBundle.sheetId && (
+              <AnnotationPanel
+                sheetId={annotationsBundle.sheetId}
+                nodeId={selectedElement.data.id}
+                annotations={annotationsBundle.getAnnotationsForNode(
+                  annotationsBundle.sheetId,
+                  selectedElement.data.id,
+                )}
+                nodeCreatorId={annotationsBundle.getNodeCreatorId(
+                  annotationsBundle.sheetId,
+                  selectedElement.data.id,
+                )}
+                user={user}
+                loading={annotationsBundle.loading}
+                fetchError={annotationsBundle.fetchError}
+                enabled={annotationsBundle.enabled}
+                isAnnotationPending={annotationsBundle.isAnnotationPending}
+                onCreate={annotationsBundle.onCreateAnnotation}
+                onResolve={annotationsBundle.onResolveAnnotation}
+                onReopen={annotationsBundle.onReopenAnnotation}
+              />
+            )}
 
-          {/* Edge Content */}
+          {/* Edge Content（不受 tab 影响） */}
           {!isNode && selectedElement.type === 'edge' && (
             <EdgePropertiesPanel
               selectedElement={selectedElement}
               onEdgeChange={safeOnEdgeChange}
-            />
-          )}
-
-          {/* P3C 标废弃区块（节点专属，包含 group + 普通节点）
-              一审 H1：必须走 safeOnDeprecateChange（仅 canvasWritable gate），不走 safeOnNodeChange（canEdit gate）
-              否则非作者点标废弃会被详情面板层 no-op 吞掉，破坏 P3C 公开权限
-              M1: 此区块在 NodeDetailPanel 顶层，不在 NodePropertiesPanel 的 fieldset 内部，所以浏览器原生 disabled 不影响 */}
-          {isNode && selectedElement.type === 'node' && (
-            <DeprecateNodeSection
-              nodeData={selectedElement.data}
-              allNodes={allNodes}
-              edgeCount={deprecateEdgeCount}
-              onNodeChange={safeOnDeprecateChange}
-              readOnly={readOnly}
             />
           )}
 

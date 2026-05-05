@@ -70,6 +70,10 @@ export interface FlowNodeData {
   // 给 NodeResizer 显隐 / GroupNode 双击改名/折叠 / 双击改节点名 等"在节点组件内部不方便拿 user/canvas 上下文"的路径用。
   // 注意：useNodeAlignment / handleDelete / useFlowOperations 分组操作 已改为同源调 canEditNodeData，不依赖此字段。
   __canEdit?: boolean;
+  // P3E-3 派生标志：该节点的 unresolved 批注数量（BFV 从 useAnnotations.unresolvedCountByNodeKey 派生）
+  // 与 __canEdit 同模式：__ 前缀 → autoSaveFilter 排除 → 不入 storage
+  // CustomNode/GroupNode 渲染左上角徽章 + 点击触发 selectNode + 切到批注 tab
+  __annotationUnresolvedCount?: number;
   [key: string]: unknown;
 }
 

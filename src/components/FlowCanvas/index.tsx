@@ -27,7 +27,8 @@ import { canEditNodeData } from '../../auth/canEditNode';
 import { CustomNode } from '../CustomNode';
 import { GroupNode } from '../GroupNode';
 import DraggableEdge from '../DraggableEdge';
-import { NodeDetailPanel, SelectedElement } from '../NodeDetailPanel';
+import { NodeDetailPanel, SelectedElement, type AnnotationsBundle } from '../NodeDetailPanel';
+import { AnnotationBadgeContext } from '../NodeDetailPanel/annotationBadgeContext';
 import { useFlowHistory } from '../../hooks/useFlowHistory';
 import { useFlowClipboard } from '../../hooks/useFlowClipboard';
 import { useAutoSave } from '../../hooks/useAutoSave';
@@ -78,6 +79,8 @@ interface FlowCanvasProps {
   user: UserPublic | null;
   /** P2I：从 JSON 文件导入为新画布。caller 实现文件选择 + apiImport + URL 跳新 canvasId */
   onImport?: () => void;
+  /** P3E-3 批注 bundle（透传给 NodeDetailPanel） */
+  annotationsBundle?: AnnotationsBundle | null;
 }
 
 import { OffscreenIndicators } from './OffscreenIndicators';
@@ -103,6 +106,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   readOnly = false,
   user,
   onImport,
+  annotationsBundle,
 }: {
   sheetId?: string;
   initialNodes: Node<FlowNodeData>[];
@@ -122,6 +126,8 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   readOnly?: boolean;
   user: UserPublic | null;
   onImport?: () => void;
+  /** P3E-3 批注 bundle（由 BFV 接 useAnnotations + 派生）；不传 = 不显示批注 tab/徽章 */
+  annotationsBundle?: AnnotationsBundle | null;
 }) {
   // 迁移旧的 edge handle ID
   const migratedEdges = initialEdges.map((edge) => {
@@ -900,7 +906,38 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   // 侧边栏折叠状态
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
+  // P3E-3 一审 high 1：徽章点击下沉到 FlowCanvas 内部实现
+  // 显式选中目标节点（setNodes selected） + 打开详情面板（setSelectedElement + setShowPanel）
+  // + 通过 annotationsBundle.requestPanelTab 通知 BFV 切到批注 tab
+  // 这样无论用户点哪个节点的徽章（已选中 / 未选中 / 在另一个 sheet），都能正确导航到批注
+  const onAnnotationBadgeClick = useCallback(
+    (nodeId: string) => {
+      const targetNode = nodes.find((n) => n.id === nodeId);
+      if (!targetNode) return; // 节点不存在 fail-closed
+      // 1. 标记 React Flow 选中态（其他节点取消选中）
+      setNodes((prev) =>
+        prev.map((n) => (n.selected !== (n.id === nodeId) ? { ...n, selected: n.id === nodeId } : n)),
+      );
+      // 2. 同步 NodeDetailPanel 选中
+      setSelectedElement({
+        type: 'node',
+        data: targetNode.data as FlowNodeData,
+        node: targetNode,
+      });
+      setShowPanel(true);
+      // 3. 通知 BFV 切到批注 tab（NodeDetailPanel pendingPanelTab effect 消费时校验 nodeId 匹配）
+      annotationsBundle?.requestPanelTab(nodeId, 'annotations');
+    },
+    [nodes, setNodes, annotationsBundle],
+  );
+
+  const annotationBadgeContextValue = useMemo(
+    () => ({ onBadgeClick: onAnnotationBadgeClick }),
+    [onAnnotationBadgeClick],
+  );
+
   return (
+    <AnnotationBadgeContext.Provider value={annotationBadgeContextValue}>
     <div className={`flow-canvas-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       {/* Sidebar Area */}
       <div className={`flow-sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
@@ -1117,6 +1154,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
           allNodes={nodes}
           readOnly={readOnly}
           user={user}
+          annotationsBundle={annotationsBundle ?? null}
         />
       </div>
 
@@ -1134,6 +1172,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
         />
       )}
     </div>
+    </AnnotationBadgeContext.Provider>
   );
 });
 
@@ -1154,6 +1193,7 @@ export function FlowCanvas({
   readOnly = false,
   user,
   onImport,
+  annotationsBundle,
 }: FlowCanvasProps) {
   // 使用 sheetId 作为 key 确保 ReactFlowProvider 和 FlowCanvasContent 都重新挂载
   return (
@@ -1174,6 +1214,7 @@ export function FlowCanvas({
         readOnly={readOnly}
         user={user}
         onImport={onImport}
+        annotationsBundle={annotationsBundle}
       />
     </ReactFlowProvider>
   );
