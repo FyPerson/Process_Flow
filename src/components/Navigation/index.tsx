@@ -54,6 +54,15 @@ export function Navigation() {
                     流程图
                 </Link>
 
+                {user?.role === 'admin' && (
+                    <Link
+                        to="/admin"
+                        className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
+                    >
+                        管理后台
+                    </Link>
+                )}
+
                 <div className="dropdown-container">
                     <div className={`nav-link dropdown-trigger ${isSystemPageActive() ? 'active' : ''}`}>
                         系统示例页面

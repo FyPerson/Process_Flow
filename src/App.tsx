@@ -1,8 +1,19 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext.tsx';
 import { LoginPage } from './auth/LoginPage.tsx';
 import { Navigation } from './components/Navigation';
+import { AdminPage } from './pages/Admin';
 import { BusinessFlowVisualization } from './pages/BusinessFlowVisualization';
+
+/** /admin 路由 guard：非 admin 重定向 / + alert（前端兜底，服务端 requireFreshAdmin 是真防护） */
+function AdminRoute() {
+  const { user } = useAuth();
+  if (!user || user.role !== 'admin') {
+    // 用 Navigate 而非 alert + redirect，避免 alert 阻塞渲染；alert 在 useEffect 里也可，但这里简单走重定向
+    return <Navigate to="/" replace />;
+  }
+  return <AdminPage />;
+}
 
 function AppShell() {
   const { status } = useAuth();
@@ -150,6 +161,10 @@ function AppShell() {
                 />
               </div>
             }
+          />
+          <Route
+            path="/admin"
+            element={<AdminRoute />}
           />
         </Routes>
       </main>

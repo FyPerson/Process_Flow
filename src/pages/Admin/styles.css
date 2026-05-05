@@ -1,0 +1,351 @@
+/* admin 后台样式（P3F-2）—— 与 Login/Navigation 同主题：深色 + slate 调色板 */
+
+.admin-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #0f172a;
+  color: #e2e8f0;
+  overflow: hidden;
+}
+
+/* === 顶部 tab === */
+.admin-tabs {
+  display: flex;
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+
+.admin-tab {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 12px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.admin-tab:hover {
+  color: #e2e8f0;
+}
+
+.admin-tab.active {
+  color: #60a5fa;
+  border-bottom-color: #60a5fa;
+}
+
+.admin-tab-content {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+}
+
+/* === 用户管理 tab === */
+.users-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.users-tab-section {
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 20px 24px;
+  border: 1px solid #334155;
+}
+
+.users-tab-section-title {
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.users-tab-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.users-tab-section-header .users-tab-section-title {
+  margin: 0;
+}
+
+.users-tab-section-header button {
+  background: #334155;
+  border: 1px solid #475569;
+  color: #e2e8f0;
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.users-tab-section-header button:hover:not(:disabled) {
+  background: #475569;
+}
+
+.users-tab-section-header button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.users-tab-hint {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: #0f172a;
+  border-left: 3px solid #475569;
+  border-radius: 0 4px 4px 0;
+}
+
+/* === 创建表单 === */
+.users-create-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.users-create-form input,
+.users-create-form select {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  padding: 8px 12px;
+  font-size: 13px;
+  border-radius: 4px;
+  outline: none;
+}
+
+.users-create-form input:focus,
+.users-create-form select:focus {
+  border-color: #60a5fa;
+}
+
+.users-create-form input[type='text'] {
+  flex: 1;
+  min-width: 200px;
+}
+
+.users-create-form input[type='password'] {
+  flex: 1;
+  min-width: 180px;
+}
+
+.users-create-form select {
+  width: 90px;
+}
+
+.users-create-form button {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  font-size: 13px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.users-create-form button:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.users-create-form button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* === 列表 === */
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.users-table thead th {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid #334155;
+  color: #94a3b8;
+  font-weight: 500;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.users-table tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #334155;
+}
+
+.users-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.users-table-empty {
+  text-align: center;
+  color: #64748b;
+  padding: 24px !important;
+}
+
+.users-row-deleted {
+  opacity: 0.55;
+}
+
+.users-self-tag {
+  margin-left: 6px;
+  color: #fbbf24;
+  font-size: 11px;
+}
+
+.users-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.users-row-actions button {
+  background: #334155;
+  border: 1px solid #475569;
+  color: #e2e8f0;
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.users-row-actions button:hover:not(:disabled) {
+  background: #475569;
+}
+
+.users-row-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.users-row-actions .users-action-danger {
+  background: #7f1d1d;
+  border-color: #991b1b;
+}
+
+.users-row-actions .users-action-danger:hover:not(:disabled) {
+  background: #991b1b;
+}
+
+.users-row-actions-disabled {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.users-row-error {
+  flex-basis: 100%;
+  margin-top: 4px;
+}
+
+/* === 错误条 === */
+.users-tab-error {
+  background: #450a0a;
+  color: #fecaca;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-top: 8px;
+  border-left: 3px solid #dc2626;
+}
+
+/* === 改密 dialog === */
+.users-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.users-dialog {
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 20px 24px;
+  min-width: 320px;
+  max-width: 400px;
+  border: 1px solid #334155;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.users-dialog h3 {
+  margin: 0 0 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.users-dialog input {
+  width: 100%;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  padding: 8px 12px;
+  font-size: 13px;
+  border-radius: 4px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.users-dialog input:focus {
+  border-color: #60a5fa;
+}
+
+.users-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.users-dialog-actions button {
+  padding: 6px 16px;
+  font-size: 13px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid;
+}
+
+.users-dialog-actions button:first-child {
+  background: transparent;
+  color: #94a3b8;
+  border-color: #475569;
+}
+
+.users-dialog-actions button:first-child:hover:not(:disabled) {
+  background: #334155;
+}
+
+.users-dialog-actions button:last-child {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+
+.users-dialog-actions button:last-child:hover:not(:disabled) {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.users-dialog-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
