@@ -6,6 +6,10 @@
   border-bottom: 1px solid rgba(148, 163, 184, 0.2);
   background: #0f172a;
   flex-shrink: 0;
+  /* P3F-3 fix: 给 nav 顶栏建 stacking context + 高 z-index，让"系统示例页面"等下拉能盖在
+     <main> 内的 React Flow / FlowCanvas sidebar 之上（截图 1 问题修法） */
+  position: relative;
+  z-index: 100;
 }
 
 .app-title {

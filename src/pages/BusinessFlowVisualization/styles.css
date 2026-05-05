@@ -16,6 +16,9 @@
   border-bottom: 2px solid rgba(139, 92, 246, 0.3);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   flex-shrink: 0;
+  /* P3F-3: 给顶栏建立 stacking context，让 CanvasSwitcher 下拉能盖在 .flow-content（含 React Flow）之上 */
+  position: relative;
+  z-index: 50;
 }
 
 .header-left {
