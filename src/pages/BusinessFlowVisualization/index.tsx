@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { CanvasSwitcher } from '../../components/CanvasSwitcher';
 import { FlowCanvas } from '../../components/FlowCanvas';
 import { SaveStatus } from '../../components/SaveStatus';
 import { downloadCanvasFromServer, downloadProjectAsLocal } from '../../utils/canvas-export';
@@ -665,7 +666,15 @@ export function BusinessFlowVisualization() {
         return;
       }
 
-      // 真正的"全新空场景"才加载默认流程
+      // P3F-3 偿还债务 #17：登录用户全新空场景 → 加载空草稿 + 空状态引导
+      // 仅游客 / 未登录态保留默认 demo 数据加载（首次访问展示用）
+      if (user !== null) {
+        loadProject(createEmptyProject());
+        setLoading(false);
+        return;
+      }
+
+      // 游客 / 未登录态：加载默认 demo 流程（演示价值；登录用户看到 demo 会困惑）
       try {
         console.log('加载默认流程数据');
         const response = await fetch('/data/complete-business-flow.json');
@@ -679,7 +688,7 @@ export function BusinessFlowVisualization() {
     };
 
     initializeProject();
-  }, [isProjectLoading, project, canvasIdFromUrl, serverError, loadProject]);
+  }, [isProjectLoading, project, canvasIdFromUrl, serverError, loadProject, user]);
 
   // 处理画布数据变更（从 FlowCanvas 回调）
   // sheetId 由 FlowCanvas 组件传入，确保数据保存到正确的画布
@@ -756,6 +765,9 @@ export function BusinessFlowVisualization() {
             {activeSheet?.name || '画布'} - 从线索管理到项目执行的完整流程
           </p>
         </div>
+        <div className="flow-header-center">
+          <CanvasSwitcher currentCanvasId={canvasIdFromUrl} />
+        </div>
         <div className="flow-info">
           <span className="info-item">
             <span className="info-icon">📑</span>
@@ -788,6 +800,25 @@ export function BusinessFlowVisualization() {
         </div>
       </div>
       <div className="flow-content">
+        {/* 空状态引导卡片（P3F-3 偿还债务 #17）—— 仅登录用户在本地草稿且无节点时显示 */}
+        {canvasMetaState.kind === 'local' &&
+          user !== null &&
+          (activeSheet?.nodes.length ?? 0) === 0 && (
+            <div className="bfv-empty-guide">
+              <div className="bfv-empty-guide-card">
+                <h3>👋 你正在本地草稿模式</h3>
+                <p>
+                  你的修改只保存在本机浏览器，不会被其他人看到。要协作编辑或加批注，请：
+                </p>
+                <ul>
+                  <li>从顶栏 <strong>📁 切换画布</strong> 选择一个已有画布，或</li>
+                  <li>
+                    在右上角 <strong>另存为新画布</strong> 把当前草稿保存到服务器
+                  </li>
+                </ul>
+              </div>
+            </div>
+          )}
         {activeSheet && activeSheetId && (
           <FlowCanvas
             // 关键：切换画布或 hook 整体替换 project（fetch / discardAndReload / loadProject）

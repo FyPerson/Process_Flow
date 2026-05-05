@@ -43,9 +43,67 @@
   letter-spacing: 0.5px;
 }
 
+/* P3F-3: 顶栏中央插槽（CanvasSwitcher） */
+.flow-header-center {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  justify-content: center;
+  padding: 0 16px;
+  min-width: 0;
+}
+
 .flow-info {
   display: flex;
   gap: 16px;
+}
+
+/* P3F-3: 空状态引导卡片（债务 #17）—— 浮在 FlowCanvas 之上，不阻塞操作 */
+.bfv-empty-guide {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  pointer-events: none; /* 不挡节点交互；卡片本身没有 actionable 元素 */
+}
+
+.bfv-empty-guide-card {
+  background: rgba(30, 41, 59, 0.95);
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 16px 20px;
+  max-width: 480px;
+  color: #e2e8f0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+}
+
+.bfv-empty-guide-card h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.bfv-empty-guide-card p {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+.bfv-empty-guide-card ul {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.7;
+}
+
+.bfv-empty-guide-card strong {
+  color: #60a5fa;
+  font-weight: 600;
 }
 
 .info-item {

@@ -4,6 +4,7 @@
 // admin 鉴权由路由 guard + requireFreshAdmin 服务端兜底；本组件假设进得来就是 admin
 
 import { useState } from 'react';
+import { CanvasesTab } from './CanvasesTab';
 import { UsersTab } from './UsersTab';
 import './styles.css';
 
@@ -31,16 +32,8 @@ export function AdminPage() {
         </button>
       </div>
       <div className="admin-tab-content">
-        {tab === 'users' ? <UsersTab /> : <CanvasesTabPlaceholder />}
+        {tab === 'users' ? <UsersTab /> : <CanvasesTab />}
       </div>
-    </div>
-  );
-}
-
-function CanvasesTabPlaceholder() {
-  return (
-    <div style={{ padding: 24, color: '#94a3b8', fontSize: 14 }}>
-      共有画布管理（P3F-3 实施中）
     </div>
   );
 }

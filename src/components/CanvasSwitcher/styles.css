@@ -1,0 +1,124 @@
+/* 画布切换下拉（P3F-3） */
+
+.canvas-switcher {
+  position: relative;
+  display: inline-block;
+}
+
+.canvas-switcher-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  max-width: 280px;
+}
+
+.canvas-switcher-trigger:hover {
+  background: #334155;
+  border-color: #475569;
+}
+
+.canvas-switcher-trigger-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.canvas-switcher-trigger-arrow {
+  font-size: 9px;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.canvas-switcher-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  min-width: 280px;
+  max-width: 360px;
+  max-height: 400px;
+  overflow-y: auto;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  padding: 4px;
+}
+
+.canvas-switcher-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.canvas-switcher-item:hover {
+  background: #334155;
+}
+
+.canvas-switcher-item-active {
+  background: #1e3a8a;
+}
+
+.canvas-switcher-item-active:hover {
+  background: #1e40af;
+}
+
+.canvas-switcher-item-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.canvas-switcher-item-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.canvas-switcher-item-mark {
+  color: #60a5fa;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.canvas-switcher-divider {
+  height: 1px;
+  background: #334155;
+  margin: 4px 0;
+}
+
+.canvas-switcher-loading,
+.canvas-switcher-empty {
+  color: #94a3b8;
+  font-size: 12px;
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.canvas-switcher-error {
+  color: #fecaca;
+  font-size: 12px;
+  padding: 8px 10px;
+  background: #450a0a;
+  border-radius: 4px;
+  margin: 4px;
+}
