@@ -93,7 +93,7 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction): v
  * 解决 codex P3F-1 一审 high：JWT 内 role/id 是 token 签发时的快照，
  * 用户被另一 admin 降权或软删后，旧 token 在过期前仍可能继续访问 admin 路由。
  *
- * 单次 SELECT，性能成本可忽略（内部 5 人项目）。返回 400 / 401 / 403 而非 200 即拒。
+ * 单次 SELECT，性能成本可忽略（内部 5 人项目）。返回 401（账号无效/无 token）/ 403（已降权）而非 200 即拒。
  *
  * 不替代 requireAuth：其他路由（auth / canvases / annotations）仍走原中间件，
  * 容忍 token TTL 内的状态延迟（这是 JWT 通用语义）。

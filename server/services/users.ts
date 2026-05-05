@@ -101,6 +101,9 @@ export async function createUser(
       .run(params.username, hash, params.role, now, now);
   } catch (err) {
     // better-sqlite3 UNIQUE 违反：code = 'SQLITE_CONSTRAINT_UNIQUE'
+    // ⚠️ 此分支无运行时单测覆盖（ESM 只读绑定 + better-sqlite3 同步 API 双重原因）。
+    // 依赖 better-sqlite3 当前错误码常量；若升级 better-sqlite3 主版本，请手工验证错误码未变
+    // （grep "SQLITE_CONSTRAINT_UNIQUE" + 跑一次 race 模拟），否则此分支会漏接冒泡 500。
     if (err && typeof err === 'object' && (err as { code?: string }).code === 'SQLITE_CONSTRAINT_UNIQUE') {
       const racer = findUserByUsername(params.username);
       if (racer && racer.deleted_at !== null) {

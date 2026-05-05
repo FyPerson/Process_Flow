@@ -370,9 +370,12 @@ describe('P3F-1 用户管理路由契约', () => {
     assert.equal(res.status, 403);
   });
 
-  // -------- 21. requireFreshAdmin：旧 admin token 被降权后访问 → 401 --------
-  // codex P3F-1 一审 high 1 修法验证：JWT 内 role 是签发时快照，DB 实际降权后旧 token 必须失效
-  it('21a. ADMIN 被降为 user 后，旧 admin token GET → 401（DB 当前态拒）', async () => {
+  // -------- 21. requireFreshAdmin：旧 admin token 被降权 / 软删后访问应失效 --------
+  // codex P3F-1 一审 high 1 修法验证：JWT 内 role 是签发时快照，DB 实际撤权后旧 token 必须失效
+  // 撤权语义（codex 二审 low 1 修订）：
+  //   降权（账号仍存在但无 admin 权）→ 403 forbidden
+  //   软删（账号无效）→ 401 unauthorized
+  it('21a. ADMIN 被降为 user 后，旧 admin token GET → 403（账号仍存在但无 admin 权限）', async () => {
     // 先签 ADMIN 的 token（此时 DB role=admin）
     const oldToken = signToken(ADMIN);
     // ADMIN2 把 ADMIN 降为 user（直接写 DB 模拟另一 admin 操作）
