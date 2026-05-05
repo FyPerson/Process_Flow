@@ -15,6 +15,7 @@ import { bootstrapInitialAdmin } from './db/bootstrap.ts';
 import { closeDb, initDb } from './db/index.ts';
 import { httpLogger, logger } from './middleware/logger.ts';
 import { securityMiddleware } from './middleware/security.ts';
+import { annotationsRouter } from './routes/annotations.ts';
 import { authRouter } from './routes/auth.ts';
 import { canvasesRouter } from './routes/canvases.ts';
 import { healthRouter } from './routes/health.ts';
@@ -44,6 +45,7 @@ async function bootstrap() {
   app.use(healthRouter);
   app.use(authRouter);
   app.use(canvasesRouter);
+  app.use(annotationsRouter);
   logger.info({ ms: Date.now() - t2 }, '[startup] middlewares + routes registered');
 
   // === 前端资源（仅生产模式 serve dist；dev 模式由独立 Vite 进程处理）===
