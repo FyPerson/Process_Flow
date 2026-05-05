@@ -274,8 +274,13 @@ export const CustomNode = memo(({ id, data, selected, style }: CustomNodeProps) 
   // P3E-3：节点批注徽章（左上角；仅 unresolved > 0 渲染）
   // codex 06-取舍审 medium 1：左上 + 废弃右上左右分离；固定尺寸防 1→2→99+ 抖动
   // 点击触发 BFV 顶层 onBadgeClick(nodeId) → 选中节点 + 设 pendingPanelTab(annotations)
+  // 修法：unresolved 计数从 Context 读，不从 nodeData 读 —— FlowCanvas useNodesState
+  // 锁内部 state，外部 BFV 派生 data.__annotationUnresolvedCount 不会同步进来
   const annotationBadge = useAnnotationBadge();
-  const annotationCount = nodeData.__annotationUnresolvedCount ?? 0;
+  const annotationCount =
+    annotationBadge && annotationBadge.activeSheetId
+      ? annotationBadge.getUnresolvedCount(annotationBadge.activeSheetId, id)
+      : 0;
   const renderAnnotationBadge = () =>
     annotationCount > 0 ? (
       <div

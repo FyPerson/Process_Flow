@@ -424,16 +424,10 @@ export function BusinessFlowVisualization() {
       return { processedNodes: [], processedEdges: [] };
     }
 
-    // P3E-3 派生：本 sheet 各节点的 unresolved 计数（注入 data.__annotationUnresolvedCount）
-    // useAnnotations 已派生 unresolvedCountByNodeKey；这里按 sheet:node 复合 key 查
-    const unresolvedByNodeId = new Map<string, number>();
-    if (activeSheetId) {
-      for (const n of activeSheet.nodes) {
-        const k = annotationKey(activeSheetId, n.id);
-        const c = annotations.unresolvedCountByNodeKey.get(k);
-        if (c) unresolvedByNodeId.set(n.id, c);
-      }
-    }
+    // P3E-3 修法（部署后发现 useNodesState 锁状态问题）：
+    // 不再把 unresolved 计数注入 data.__annotationUnresolvedCount —— FlowCanvas 内部
+    // useNodesState(initialNodes) 会把首次值锁住，外部 props 重算不响应。
+    // 改为 CustomNode/GroupNode 通过 AnnotationBadgeContext 直接读 hook 派生（响应式）。
 
     // 转换节点
     const flowNodes: Node<FlowNodeData>[] = activeSheet.nodes.map((node) => {
@@ -492,8 +486,6 @@ export function BusinessFlowVisualization() {
             deprecated_by: node.deprecated_by,
             deprecated_at: node.deprecated_at,
             deprecated_by_username: node.deprecated_by_username,
-            // P3E-3：批注 unresolved 计数（GroupNode 左上角徽章渲染用）
-            __annotationUnresolvedCount: unresolvedByNodeId.get(node.id) ?? 0,
           } as any,
           // P3D-2 step 5：节点级 draggable（React Flow 12 原生支持 top-level draggable）
           // canEdit=false 的节点（非作者 / 游客 / 归档）—— 拖拽直接被 React Flow 拒绝
@@ -536,8 +528,6 @@ export function BusinessFlowVisualization() {
           deprecated_by: node.deprecated_by,
           deprecated_at: node.deprecated_at,
           deprecated_by_username: node.deprecated_by_username,
-          // P3E-3：批注 unresolved 计数（CustomNode 左上角徽章渲染用）
-          __annotationUnresolvedCount: unresolvedByNodeId.get(node.id) ?? 0,
         },
         // P3D-2 step 5：节点级 draggable（同分组节点说明）
         // 与中心 mutation gate 同源；这里是 React Flow 12 原生层 + UI 友好层
@@ -644,7 +634,7 @@ export function BusinessFlowVisualization() {
     );
 
     return { processedNodes: visibleNodes, processedEdges: visibleEdges };
-  }, [activeSheet, activeSheetId, filterElements, showSubflows, readOnly, user, canvasWritable, annotations.unresolvedCountByNodeKey]);
+  }, [activeSheet, activeSheetId, filterElements, showSubflows, readOnly, user, canvasWritable]);
 
   // 初始加载
   // 默认数据只用于"无 URL canvasId 且 hook 也没拉到本地数据"的场景；

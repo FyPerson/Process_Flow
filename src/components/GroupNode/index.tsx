@@ -415,15 +415,16 @@ export const GroupNode = memo(({ id, data, selected }: NodeProps) => {
         )}
 
         {/* P3E-3 批注徽章（左上角；与 deprecated-badge 同款独立 z-index） */}
-        <GroupAnnotationBadge nodeId={id} count={(groupData as unknown as { __annotationUnresolvedCount?: number }).__annotationUnresolvedCount ?? 0} />
+        <GroupAnnotationBadge nodeId={id} />
       </div>
     </>
   );
 });
 
-/** GroupNode 批注徽章子组件（与 CustomNode renderAnnotationBadge 等价；抽出避免顶层 hook 干扰主流程） */
-function GroupAnnotationBadge({ nodeId, count }: { nodeId: string; count: number }) {
+/** GroupNode 批注徽章子组件（计数从 Context 读，避免 useNodesState 锁状态） */
+function GroupAnnotationBadge({ nodeId }: { nodeId: string }) {
   const ctx = useAnnotationBadge();
+  const count = ctx && ctx.activeSheetId ? ctx.getUnresolvedCount(ctx.activeSheetId, nodeId) : 0;
   if (count <= 0) return null;
   return (
     <div

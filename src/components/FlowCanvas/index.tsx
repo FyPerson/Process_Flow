@@ -931,9 +931,26 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
     [nodes, setNodes, annotationsBundle],
   );
 
+  // 修法：getUnresolvedCount + activeSheetId 也通过 Context 注入（避免 node.data 锁状态）
+  // 详见 annotationBadgeContext.ts 注释：FlowCanvas useNodesState(initialNodes) 锁内部 state，
+  // 外部 BFV 派生 data.__annotationUnresolvedCount 不会同步进 React Flow 内部
+  const getUnresolvedCount = useCallback(
+    (sheetId: string, nodeId: string): number => {
+      if (!annotationsBundle) return 0;
+      // bundle.getAnnotationsForNode 已派生（依赖 annotations.annotationsByNodeKey 响应式）
+      const list = annotationsBundle.getAnnotationsForNode(sheetId, nodeId);
+      return list.filter((a) => a.status === 'unresolved').length;
+    },
+    [annotationsBundle],
+  );
+
   const annotationBadgeContextValue = useMemo(
-    () => ({ onBadgeClick: onAnnotationBadgeClick }),
-    [onAnnotationBadgeClick],
+    () => ({
+      onBadgeClick: onAnnotationBadgeClick,
+      getUnresolvedCount,
+      activeSheetId: activeSheetId ?? null,
+    }),
+    [onAnnotationBadgeClick, getUnresolvedCount, activeSheetId],
   );
 
   return (
