@@ -1,7 +1,8 @@
 // admin 画布管理数据层 hook（P3F-3）
 //
-// 与 useUsers 同款简化模式：
-// - 单页面消费 / mountedRef + fetchSeq 拦旧回包 / 乐观更新 + 失败回滚
+// 简化模式（vs useUsers 的乐观更新）：
+// - 单页面消费 / mountedRef + fetchSeq 拦旧回包
+// - 不做乐观更新：每次 patch/archive 完成后 refetch 权威列表（codex 03 一审 high 2 修法）
 // - 复用现有 src/api/canvases.ts 的 listCanvases / patchCanvas / archiveCanvas
 // - admin 视角：listCanvases 走服务端 listCanvasesForAdmin（拉所有非归档）
 
@@ -19,9 +20,9 @@ export interface UseAdminCanvasesResult {
   canvases: CanvasListItem[];
   loading: boolean;
   error: ApiError | null;
-  /** 改元信息（name/description/is_public_to_guest）；乐观更新；失败回滚 */
+  /** 改元信息（name/description/is_public_to_guest）；成功/失败均 refetch 权威列表 */
   patchCanvas: (id: number, patch: PatchCanvasInput) => Promise<void>;
-  /** 归档（软删）；乐观从列表移除（archived=1 → 列表过滤）；失败回滚 */
+  /** 归档（软删）；archived=1 后服务端列表过滤；成功/失败均 refetch */
   archiveCanvas: (id: number) => Promise<void>;
   refetch: () => Promise<void>;
 }
@@ -63,73 +64,43 @@ export function useAdminCanvases(): UseAdminCanvasesResult {
     };
   }, [performFetch]);
 
+  // codex 03 一审 high 2 + medium 3 修法（codex 04 四审 medium 注释精确化）：
+  // 不做乐观更新；成功路径 await 完整 refetch；失败路径 throw 后异步 refetch（不阻塞错误回传）。
+  // 理由（内部 5 人项目 admin 单人操作场景）：
+  // - admin 同时操作多个画布的并发概率低
+  // - 简单 refetch 比"mutation 序号 + closure snapshot 回滚"代码量少且不会展示错误中间态
+  // - 同时治 medium 3：updated_at 排序与服务端一致（之前用 Date.now() 估算偏差）
+  // - 失败路径"异步 refetch"语义：调用方先拿到 throw 立刻显示错误，列表 refetch 在后台跑；
+  //   可能短时间错误条与旧列表并存（内网 < 100ms 可接受）
+  // 代价：操作完成到列表更新有 1 个 fetch 往返延迟（内网 < 100ms 用户感知不明显）
+
   const patchCanvasCb = useCallback(
     async (id: number, patch: PatchCanvasInput): Promise<void> => {
-      // 乐观更新：在本地写新字段
-      let snapshot: CanvasListItem | null = null;
-      setCanvases((prev) =>
-        prev.map((c) => {
-          if (c.id !== id) return c;
-          snapshot = c;
-          return {
-            ...c,
-            ...(patch.name !== undefined ? { name: patch.name } : {}),
-            ...(patch.description !== undefined ? { description: patch.description } : {}),
-            ...(patch.is_public_to_guest !== undefined
-              ? { is_public_to_guest: patch.is_public_to_guest }
-              : {}),
-            updated_at: Date.now(),
-          };
-        }),
-      );
       try {
         await apiPatchCanvas(id, patch);
         if (!mountedRef.current) return;
-        // 服务端无返回完整 row，refetch 拿权威值（name/desc/is_public_to_guest）
-        // 不全量 refetch 避免列表抖动；本地 patch 已是最终态足够（下次 mount 再权威同步）
+        await performFetch();
       } catch (e) {
-        // 失败回滚
-        if (mountedRef.current && snapshot !== null) {
-          const snap: CanvasListItem = snapshot;
-          setCanvases((prev) => prev.map((c) => (c.id === id ? snap : c)));
-        }
+        // 失败也 refetch（防本地有过期状态或 race 残留）
+        if (mountedRef.current) void performFetch();
         throw e;
       }
     },
-    [],
+    [performFetch],
   );
 
   const archiveCanvasCb = useCallback(
     async (id: number): Promise<void> => {
-      // 乐观更新：从列表移除（archived=1 服务端过滤）
-      let snapshot: CanvasListItem | null = null;
-      let snapshotIdx: number = -1;
-      setCanvases((prev) => {
-        const idx = prev.findIndex((c) => c.id === id);
-        if (idx >= 0) {
-          snapshot = prev[idx];
-          snapshotIdx = idx;
-          return prev.filter((_, i) => i !== idx);
-        }
-        return prev;
-      });
       try {
         await apiArchiveCanvas(id);
+        if (!mountedRef.current) return;
+        await performFetch();
       } catch (e) {
-        // 失败回滚（按原索引插回）
-        if (mountedRef.current && snapshot !== null) {
-          const snap: CanvasListItem = snapshot;
-          const at: number = snapshotIdx;
-          setCanvases((prev) => {
-            const next = [...prev];
-            next.splice(Math.min(at, next.length), 0, snap);
-            return next;
-          });
-        }
+        if (mountedRef.current) void performFetch();
         throw e;
       }
     },
-    [],
+    [performFetch],
   );
 
   return {

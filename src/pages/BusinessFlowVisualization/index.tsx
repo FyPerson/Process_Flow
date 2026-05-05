@@ -668,21 +668,30 @@ export function BusinessFlowVisualization() {
 
       // P3F-3 偿还债务 #17：登录用户全新空场景 → 加载空草稿 + 空状态引导
       // 仅游客 / 未登录态保留默认 demo 数据加载（首次访问展示用）
+      //
+      // 鉴权竞态：codex 03 一审 high 1 关注"user === null 是否覆盖鉴权未完成态"。
+      // 已确认无竞态：[App.tsx](../../App.tsx) AppShell 在 status === 'loading' 时显示 splash，
+      // 仅在 'authenticated' / 'guest' 时才挂载 BFV。所以本 useEffect 跑时 user 已确定：
+      //   - status='authenticated' → user 是 UserPublic（非 null）
+      //   - status='guest' → user === null
+      //   - status='unauthenticated' → 走 LoginPage 路径，BFV 不渲染
+      // 因此 user !== null 等价于"已登录用户"，无误判风险。
       if (user !== null) {
-        loadProject(createEmptyProject());
+        // 系统自动建的空草稿不该标 dirty（codex 03 一审 medium 1）
+        loadProject(createEmptyProject(), { markDirty: false });
         setLoading(false);
         return;
       }
 
       // 游客 / 未登录态：加载默认 demo 流程（演示价值；登录用户看到 demo 会困惑）
+      // demo 数据是系统展示，也不该标 dirty
       try {
-        console.log('加载默认流程数据');
         const response = await fetch('/data/complete-business-flow.json');
         const flowDef: FlowDefinition = await response.json();
-        loadProject(flowDef);
+        loadProject(flowDef, { markDirty: false });
       } catch (error) {
         console.error('加载默认数据失败:', error);
-        loadProject(createEmptyProject());
+        loadProject(createEmptyProject(), { markDirty: false });
       }
       setLoading(false);
     };
@@ -766,7 +775,11 @@ export function BusinessFlowVisualization() {
           </p>
         </div>
         <div className="flow-header-center">
-          <CanvasSwitcher currentCanvasId={canvasIdFromUrl} />
+          <CanvasSwitcher
+            currentCanvasId={canvasIdFromUrl}
+            dirty={dirty}
+            saving={saving}
+          />
         </div>
         <div className="flow-info">
           <span className="info-item">

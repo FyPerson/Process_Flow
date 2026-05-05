@@ -17,9 +17,13 @@ import './styles.css';
 interface Props {
   /** 当前 canvasId（URL ?canvasId=N），null 表示本地草稿 */
   currentCanvasId: number | null;
+  /** 当前画布是否有未保存改动；切换前用于 confirm 拦截（codex 03 一审 medium 2）*/
+  dirty?: boolean;
+  /** 当前是否在保存中；保存中切换会丢失 inflight 改动 */
+  saving?: boolean;
 }
 
-export function CanvasSwitcher({ currentCanvasId }: Props) {
+export function CanvasSwitcher({ currentCanvasId, dirty = false, saving = false }: Props) {
   const [, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const [canvases, setCanvases] = useState<CanvasListItem[]>([]);
@@ -65,6 +69,21 @@ export function CanvasSwitcher({ currentCanvasId }: Props) {
 
   const handlePick = useCallback(
     (id: number | null) => {
+      // 切到当前画布 → 直接关下拉，不导航
+      if (id === currentCanvasId) {
+        setOpen(false);
+        return;
+      }
+      // codex 03 一审 medium 2：dirty/saving 时切换会丢未保存改动，二次确认
+      // setSearchParams 是 SPA 内部跳转，不触发 beforeunload，需显式拦截
+      if (dirty || saving) {
+        const ok = window.confirm(
+          saving
+            ? '当前画布正在保存，切换会丢弃未完成的保存。确认切换？'
+            : '当前画布有未保存改动，切换后会丢失。确认切换？',
+        );
+        if (!ok) return;
+      }
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev);
@@ -76,7 +95,7 @@ export function CanvasSwitcher({ currentCanvasId }: Props) {
       );
       setOpen(false);
     },
-    [setSearchParams],
+    [setSearchParams, currentCanvasId, dirty, saving],
   );
 
   const currentLabel =

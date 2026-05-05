@@ -92,7 +92,10 @@ export interface UseMultiCanvasReturn {
     nodes: Node<FlowNodeData>[],
     edges: Edge[]
   ) => void;
-  loadProject: (data: MultiCanvasProject | FlowDefinition) => void;
+  loadProject: (
+    data: MultiCanvasProject | FlowDefinition,
+    opts?: { markDirty?: boolean },
+  ) => void;
   getProjectData: () => MultiCanvasProject;
 
   // 状态标志（兼容旧调用方）
@@ -594,16 +597,24 @@ export function useMultiCanvas(
     setDirty(true);
   }, []);
 
-  // 加载项目（支持自动迁移）—— 不再写 localStorage，仅改内存 + 标 dirty
+  // 加载项目（支持自动迁移）—— 不再写 localStorage，仅改内存
+  // opts.markDirty=false：用于"系统自动初始化的空草稿/默认数据"场景（codex 03 一审 medium 1）
+  //   登录用户首次进入无本地数据时 BFV initializeProject 会调 loadProject(createEmptyProject())，
+  //   不该把"系统自动建的空项目"当成用户改动 → 不触发 beforeunload + 不显示 dirty
   const loadProject = useCallback(
-    (data: MultiCanvasProject | FlowDefinition) => {
+    (
+      data: MultiCanvasProject | FlowDefinition,
+      opts: { markDirty?: boolean } = {},
+    ) => {
       const projectData: MultiCanvasProject = isMultiCanvasProject(data)
         ? data
         : migrateToMultiCanvas(data);
       setProject(projectData);
       setIsLoading(false);
       bumpLoadRevision();
-      markDirty();
+      if (opts.markDirty !== false) {
+        markDirty();
+      }
     },
     [markDirty, bumpLoadRevision]
   );

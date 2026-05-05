@@ -8,7 +8,7 @@
 
 import { useCallback, useState, type FormEvent } from 'react';
 import { useAdminCanvases } from '../../hooks/useAdminCanvases';
-import type { ApiError, CanvasListItem } from '../../api/canvases';
+import type { ApiError, CanvasListItem, PatchCanvasInput } from '../../api/canvases';
 
 export function CanvasesTab() {
   const { canvases, loading, error, patchCanvas, archiveCanvas, refetch } = useAdminCanvases();
@@ -37,12 +37,17 @@ export function CanvasesTab() {
       setEditSubmitting(true);
       setEditError(null);
       try {
-        // 只发改动字段；description 空字符串当成清空（服务端按 PatchCanvasRequestSchema 处理）
-        await patchCanvas(editing.canvas.id, {
+        // 按 visibility 构造 patch body（codex 03 一审 low 1）：
+        //   private 画布的 is_public_to_guest 在 DB 永远 0，不该写回；
+        //   服务端 PatchCanvasRequestSchema 已对此字段做 admin 校验，但 UI 不发更清晰
+        const patch: PatchCanvasInput = {
           name: trimmedName,
           description: editing.description,
-          is_public_to_guest: editing.is_public_to_guest,
-        });
+        };
+        if (editing.canvas.visibility === 'public') {
+          patch.is_public_to_guest = editing.is_public_to_guest;
+        }
+        await patchCanvas(editing.canvas.id, patch);
         setEditing(null);
       } catch (err) {
         setEditError(mapApiError(err as ApiError));
