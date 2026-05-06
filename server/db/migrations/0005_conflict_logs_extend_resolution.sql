@@ -1,6 +1,6 @@
 -- 0005_conflict_logs_extend_resolution：阶段 5 合并算法 — 扩 conflict_logs.resolution CHECK
 --
--- 背景（[阶段 5 取舍审 02-拍板](../../../docs/规划/codex审查记录/阶段5/P5-合并算法/02-拍板记录-阶段5-11项决策.md)）：
+-- 背景（[阶段 5 取舍审 02-拍板](../../../docs/规划/codex审查记录/阶段5/P5-合并算法/Day1-基建/02-拍板记录.md)）：
 --
 -- conflict_logs 表本身已在 0001_initial.sql 阶段 0 时一并建好；阶段 5 进入合并算法后，需要新增
 -- 一种 resolution 类型 `base_version_expired` —— 客户端 baseVersion 太旧（canvas_versions 已被

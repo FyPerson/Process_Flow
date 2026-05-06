@@ -90,7 +90,7 @@ powershell -File scripts/deploy.ps1        # 主 PowerShell 跑（不能在 hook
 
 codex 7 轮审查链 final 0 high + 0 medium 全闭环 confidence=high；单测 282→293；tsc 三端 + lint:ids + build 全过。下次进 Day 2 detector/apply 主体（约 6h + 25+ 单测）。
 
-详见 [docs/规划/codex审查记录/阶段5/P5-合并算法/99-收尾.md](docs/规划/codex审查记录/阶段5/P5-合并算法/99-收尾.md)。
+详见 [docs/规划/codex审查记录/阶段5/P5-合并算法/Day1-基建/99-收尾.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day1-基建/99-收尾.md)。
 
 ## 给未来 Claude 的话
 
