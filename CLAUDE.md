@@ -34,7 +34,7 @@
 npm run dev              # api + vite 双进程并发，端口 5173
 
 # 验证（npm test 已串好 lint:ids → typecheck:test → 单测）
-npm test                 # 228 测试 + lint:ids 兜底 + 测试 type-check
+npm test                 # 293 测试 + lint:ids 兜底 + 测试 type-check
 npx tsc --noEmit -p tsconfig.client.json   # 前端类型检查（必须显式 -p）
 npx tsc --noEmit -p tsconfig.server.json   # 服务端类型检查
 npx tsc --noEmit -p tsconfig.test.json     # 测试类型检查
@@ -81,11 +81,20 @@ powershell -File scripts/deploy.ps1        # 主 PowerShell 跑（不能在 hook
 
 ## 当前阶段
 
-阶段 4 心跳 + auto-save 完整闭环（v1.11.0，2026-05-06）：服务端 heartbeats/drafts CRUD（baseVersion 校验 + 配额 200 + 2MB + JSON 校验）+ 客户端 useHeartbeat（30s + hidden 暂停 + visible 补发）+ useDraftAutosave（canonical JSON diff + ref-stable interval + blockedSnapshot + keepalive 60KB 阈值 + pause/snapshot reset 模块协同）+ 草稿恢复弹窗 + 顶栏"草稿已保存 HH:mm" + 列表角标"X 人在编辑"（不计自己）。codex 4 轮审 confidence=high 通过。下一阶段 5 = 合并算法（4 天 MVP）。
+阶段 5 合并算法 4 天 MVP — **Day 1 完工**（v1.12.0，2026-05-06）：类型/框架/saveCanvas 入口三分支改造 + schema parentId 真校验 + 旧数据审计脚本。Day 1 是基建层无功能落地（合并算法 stub 未真接入，Day 2 才接 detector/apply）。
+- `server/services/merge/`（新建 39KB）：types.ts（含 ConflictType 16 项 + DetectContext + StorageNodeContentFields/StorageConnectorContentFields + 4 个 AssertNever 真断言双向防漂移）/ computeDelta.ts（含 DataIntegrityError + assertProjectIntegrity 7 项硬约束 + computeDelta 主入口）/ computeDelta.test.ts 18 case
+- `server/schemas/canvas.ts`：parentId 真校验（line 247-294 两遍循环 + 自引用拒 + group 不能嵌套 + 必须指向 group）+ canvas.test.ts 新建 6 case
+- `server/services/canvases.ts`：saveCanvas 入口三分支（baseVersion <、=、> 三种语义）+ SaveCanvasResult 加 base_version_expired
+- `server/db/migrations/0005_conflict_logs_extend_resolution.sql`：扩 CHECK 加 base_version_expired
+- `scripts/audit-canvas-integrity.mjs`：旧数据审计脚本，生产 db 已跑过 0 违规
+
+codex 7 轮审查链 final 0 high + 0 medium 全闭环 confidence=high；单测 282→293；tsc 三端 + lint:ids + build 全过。下次进 Day 2 detector/apply 主体（约 6h + 25+ 单测）。
+
+详见 [docs/规划/codex审查记录/阶段5/P5-合并算法/99-收尾.md](docs/规划/codex审查记录/阶段5/P5-合并算法/99-收尾.md)。
 
 ## 给未来 Claude 的话
 
 - 看到 `Date.now()` 拼节点 ID 立刻警觉（已被 lint:ids 拦），用 `src/utils/ids.ts` 的 `newNodeId/newGroupId/newEdgeId`
 - 改 `useFlowClipboard.ts` 或 `useMultiCanvas.ts` 复制粘贴路径必读 `src/hooks/useFlowClipboard.test.ts` 单测
 - codex 报告里若给"加 rate limit/CDN/SLO 监控"这类建议，先用项目语境过滤
-- 修法描述 ≠ 修法实现：codex 二/三审揪出"我以为修了实际没改对"的死代码已 2 次（P3B 二/三审），交 codex 前必须 Read 完整文件确认现场
+- 修法描述 ≠ 修法实现：codex 揪出"我以为修了实际没改对"已 ≥4 次（P3D-2 step 3 helper 写没用 / P3B 二/三审复制粘贴 idMap 死代码 / P4 useDraftAutosave interval 被 effect deps 重置 / P5 Day 1 五审 M5 元组假断言 TS 不拒编译）。**Read 完整文件不够**——必须用反向测试证明断言/防漏机制生效（如临时删字段跑 tsc 验证报错）
