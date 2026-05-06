@@ -36,6 +36,7 @@ import {
   saveCanvas,
   unpublishCanvas,
 } from '../services/canvases.ts';
+import { DataIntegrityError } from '../services/merge/computeDelta.ts';
 import { countActiveEditorsByCanvas } from '../services/heartbeats.ts';
 import type { MultiCanvasProjectInput } from '../schemas/canvas.ts';
 
@@ -303,6 +304,15 @@ canvasesRouter.put(
       }
       res.json({ ok: true, version: result.version, merged: false });
     } catch (err) {
+      // 阶段 5 Day 2 D5 决策：DataIntegrityError 走独立 500 错误码 data_integrity_error，
+      // 与普通 save_failed 分开。前端可识别并提示用户"画布数据损坏需联系运维"。
+      // 触发场景：computeDelta 入口的 assertProjectIntegrity 双向扫描发现重复 ID / null handle /
+      // activeSheetId 不存在 / connector 跨 sheet / parentId 自引用或非 group 父等。
+      // 生产 db 审计已通过 9 canvases + 27 versions 全过，正常路径不应触发。
+      if (err instanceof DataIntegrityError) {
+        res.status(500).json({ error: 'data_integrity_error', message: err.message });
+        return;
+      }
       res.status(500).json({ error: 'save_failed', message: (err as Error).message });
     }
   }
