@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CanvasSwitcher } from '../../components/CanvasSwitcher';
 import { FlowCanvas } from '../../components/FlowCanvas';
+import { OtherEditorsBadge } from '../../components/OtherEditorsBadge';
 import { SaveStatus } from '../../components/SaveStatus';
 import { downloadCanvasFromServer, downloadProjectAsLocal } from '../../utils/canvas-export';
 import { importCanvas } from '../../api/canvases';
@@ -13,6 +14,10 @@ import {
   createEmptyProject,
 } from '../../types/flow';
 import { useMultiCanvas } from '../../hooks/useMultiCanvas';
+import { useHeartbeat } from '../../hooks/useHeartbeat';
+import { useDraftAutosave } from '../../hooks/useDraftAutosave';
+import { useDraftRecovery } from '../../hooks/useDraftRecovery';
+import { DraftRecoveryDialog } from '../../components/DraftRecoveryDialog';
 import { useAnnotations, annotationKey } from '../../hooks/useAnnotations';
 import { useAuth } from '../../auth/AuthContext';
 import { canWriteCanvas } from '../../auth/canWriteCanvas';
@@ -78,6 +83,7 @@ export function BusinessFlowVisualization() {
     isLoading: isProjectLoading,
     loadRevision,
     canvasId,
+    serverVersion,
     dirty,
     saving,
     autoSaveDisabled,
@@ -89,6 +95,44 @@ export function BusinessFlowVisualization() {
     createOnServer,
     discardAndReload,
   } = useMultiCanvas({ canvasId: canvasIdFromUrl, storageKey: 'saved-flow-data' });
+
+  // 阶段 4 P4C：心跳——只在登录 + 服务端画布场景上报
+  // 游客 / 本地草稿（canvasIdFromUrl=null）模式不上报，因为没有"在编辑哪张画布"的语义
+  const { otherEditors } = useHeartbeat({
+    canvasId: canvasIdFromUrl,
+    enabled: user !== null && canvasIdFromUrl !== null,
+  });
+
+  // 阶段 4 P4E：草稿恢复弹窗（服务端 GET draft + legacy localStorage）
+  // 必须先于 useDraftAutosave 声明，因为 onLegacyLocalStorageDetected 需要 markLegacyDraft
+  const handleRestoreDraft = useCallback(
+    (restored: MultiCanvasProject) => {
+      // 直接 loadProject 替换当前内存 project（与"导入"语义一致）
+      loadProject(restored);
+    },
+    [loadProject],
+  );
+  const {
+    recoveryInfo,
+    handleRestore,
+    handleDiscard,
+    handleKeep,
+    markLegacyDraft,
+  } = useDraftRecovery({
+    canvasId: canvasIdFromUrl,
+    currentVersion: serverVersion,
+    enabled: user !== null,
+    onRestore: handleRestoreDraft,
+  });
+
+  // 阶段 4 P4D：草稿 30s auto-save（与主版本 PUT canvases 双轨）
+  const { status: draftStatus, lastSavedAt: draftSavedAt } = useDraftAutosave({
+    canvasId: canvasIdFromUrl,
+    baseVersion: serverVersion,
+    project: project ?? null,
+    enabled: user !== null && canvasIdFromUrl !== null,
+    onLegacyLocalStorageDetected: markLegacyDraft,
+  });
 
   // P3D-2 step 2：单一口径的"画布可写"判定
   // 替代之前散乱的 useAuth().readOnly = (status==='guest')。
@@ -767,6 +811,14 @@ export function BusinessFlowVisualization() {
 
   return (
     <div className="business-flow-visualization">
+      {recoveryInfo && (
+        <DraftRecoveryDialog
+          info={recoveryInfo}
+          onRestore={handleRestore}
+          onDiscard={handleDiscard}
+          onKeep={handleKeep}
+        />
+      )}
       <div className="flow-header">
         <div className="header-left">
           <h1 className="flow-title">{project?.name || '业务流程图'}</h1>
@@ -794,6 +846,7 @@ export function BusinessFlowVisualization() {
             <span className="info-icon">🔗</span>
             连接: {processedEdges.length}
           </span>
+          <OtherEditorsBadge editors={otherEditors} />
           <SaveStatus
             canvasId={canvasId}
             hasProject={!!project}
@@ -804,6 +857,8 @@ export function BusinessFlowVisualization() {
             serverError={serverError}
             lastSavedAt={lastSavedAt}
             readOnly={readOnly}
+            draftStatus={draftStatus}
+            draftSavedAt={draftSavedAt}
             onSave={handleSave}
             onSaveAsNew={handleSaveAsNew}
             onDiscardAndReload={handleDiscardAndReload}

@@ -154,6 +154,14 @@ export function CanvasSwitcher({ currentCanvasId, dirty = false, saving = false 
                     {c.visibility === 'public' ? '🌐' : '🔒'}
                   </span>
                   <span className="canvas-switcher-item-name">{c.name}</span>
+                  {(c.activeEditors ?? 0) > 0 && (
+                    <span
+                      className="canvas-switcher-item-editors"
+                      title={`${c.activeEditors} 人在编辑`}
+                    >
+                      👥{c.activeEditors}
+                    </span>
+                  )}
                   {active && <span className="canvas-switcher-item-mark">✓</span>}
                 </button>
               );

@@ -14,8 +14,13 @@ import {
   type ApiError,
   createCanvas as apiCreateCanvas,
   getCanvas as apiGetCanvas,
+  deleteDraft as apiDeleteDraft,
   saveCanvas as apiSaveCanvas,
 } from '../api/canvases';
+import {
+  pauseDraftAutosave,
+  resetDraftAutosaveSnapshot,
+} from './useDraftAutosave';
 import { newNodeId, newGroupId, newEdgeId } from '../utils/ids';
 
 // 存储节点格式（用于保存）
@@ -935,6 +940,8 @@ export function useMultiCanvas(
     saveInFlightRef.current = true;
     setSaving(true);
     setServerError(null);
+    // 阶段 4 codex P4 二审 #3：暂停草稿 PUT 避免与主版本保存竞争 → DELETE 后旧 PUT 复活草稿
+    pauseDraftAutosave(15_000); // 主版本 PUT + DELETE draft 通常 < 5s，留 15s 余量
     try {
       const result = await apiSaveCanvas(capturedCanvasId, capturedVersion, current);
       // 身份校验：用户在 PUT 期间可能切到别的 canvas，那回包不应污染当前 canvas 状态
@@ -951,6 +958,15 @@ export function useMultiCanvas(
       if (changeSeqRef.current === capturedSeq) {
         setDirty(false);
       }
+      // 阶段 4 P4E + P4 三审 #3-a：主版本保存成功 → 清掉自己的草稿
+      // 必须 await 让 DELETE 完成后再 reset+resume，否则旧 PUT 仍可能晚到把已删草稿复活
+      try {
+        await apiDeleteDraft(capturedCanvasId);
+      } catch (delErr) {
+        console.warn('[draft] delete after main save failed', delErr);
+      }
+      // codex P4 二审 #3：让 useDraftAutosave 下一轮 tick 重抓基线
+      resetDraftAutosaveSnapshot();
       return { status: 'saved' };
     } catch (err) {
       // 同样身份校验：旧 canvas 的网络错误不该写到新 canvas state
@@ -971,6 +987,9 @@ export function useMultiCanvas(
       // saving 是本次 operation 自己打开的全局 UI 状态，不按 canvas 身份关 ——
       // saveInFlightRef 已保证全局互斥，唯一的 owner 就是当前这次 save，无条件释放
       setSaving(false);
+      // 阶段 4 P4 三审 medium：不在 finally 无条件 resume；让 pauseUntil 自然过期
+      // 给 DELETE 完成后再到下一轮 tick 留足够缓冲（ resetDraftAutosaveSnapshot 已让 snapshot 重抓基线）
+      // 失败路径同样不 resume——避免与 conflict/error 处理路径下的草稿 PUT 竞争
     }
   }, []);
 

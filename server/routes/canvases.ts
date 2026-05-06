@@ -36,6 +36,7 @@ import {
   saveCanvas,
   unpublishCanvas,
 } from '../services/canvases.ts';
+import { countActiveEditorsByCanvas } from '../services/heartbeats.ts';
 import type { MultiCanvasProjectInput } from '../schemas/canvas.ts';
 
 export const canvasesRouter: Router = Router();
@@ -124,6 +125,23 @@ canvasesRouter.get('/api/canvases', optionalAuth, (req: Request, res: Response) 
   } else {
     list = listCanvasesForUser(user.id);
   }
+
+  // 阶段 4 P4C：批量注入"X 人在编辑"角标数据（codex P4 二审 #6 简化）
+  // 服务端单一时钟源（判断点 6）：90s 内 last_seen_at 算活跃；客户端只展示
+  // SQL 层一次性排除自己（excludeUserId）—— 比 route 层二次查 + 扣减更清晰
+  if (user) {
+    const countsByCanvas = countActiveEditorsByCanvas({
+      canvasIds: list.map((c) => c.id),
+      excludeUserId: user.id,
+    });
+    list = list.map((c) => ({
+      ...c,
+      activeEditors: countsByCanvas.get(c.id) ?? 0,
+    }));
+  } else {
+    list = list.map((c) => ({ ...c, activeEditors: 0 }));
+  }
+
   res.json({ canvases: list });
 });
 

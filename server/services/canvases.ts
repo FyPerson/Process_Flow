@@ -54,6 +54,9 @@ export interface CanvasListItem {
   published_note: string | null;
   unpublished_at: number | null;
   unpublished_by: number | null;
+  // 阶段 4 P4C：列表页"X 人在编辑"角标；route 层注入（route 拿不到 user 时为 0）
+  // 该字段不在 toListItem service 里产生，由 GET /api/canvases route 批量注入
+  activeEditors?: number;
 }
 
 function toListItem(row: CanvasRow): CanvasListItem {

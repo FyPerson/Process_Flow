@@ -132,6 +132,8 @@ export interface CanvasListItem {
   published_note: string | null;
   unpublished_at: number | null;
   unpublished_by: number | null;
+  // 阶段 4 P4C：列表页"X 人在编辑"角标；服务端按 90s 心跳过滤注入；游客时为 0；不计自己
+  activeEditors?: number;
 }
 
 export interface CanvasFull extends CanvasListItem {
@@ -243,5 +245,64 @@ export async function unpublishCanvas(id: number): Promise<void> {
   await apiFetch<{ ok: true }>(`/api/canvases/${id}/unpublish`, {
     method: 'POST',
     body: JSON.stringify({}),
+  });
+}
+
+// =====================================================================
+// 阶段 4 P4A 心跳 + P4B 草稿
+// =====================================================================
+
+export interface ActiveEditor {
+  userId: number;
+  username: string;
+  lastSeenAt: number;
+}
+
+/** 上报心跳；返回除自己外的活跃编辑者列表。30s 一次，document.hidden 时暂停（判断点 6） */
+export async function postHeartbeat(canvasId: number): Promise<ActiveEditor[]> {
+  const r = await apiFetch<{ otherEditors: ActiveEditor[] }>(
+    `/api/canvases/${canvasId}/heartbeat`,
+    { method: 'POST', body: JSON.stringify({}) },
+  );
+  return r.otherEditors;
+}
+
+export interface DraftPayload {
+  canvasId: number;
+  data: string; // JSON 字符串（FlowDefinition / MultiCanvasProject 序列化）
+  baseVersion: number;
+  savedAt: number;
+}
+
+/** 取草稿；不存在抛 ApiError status=404 + error="no_draft" */
+export async function getDraft(canvasId: number): Promise<DraftPayload> {
+  const r = await apiFetch<{ draft: DraftPayload }>(
+    `/api/canvases/${canvasId}/draft`,
+  );
+  return r.draft;
+}
+
+/** 上传草稿；413 too large / 429 quota 通过 ApiError 抛出。
+ *  keepalive=true 在 visibilitychange/pagehide 兜底场景下使用（判断点 5）。 */
+export async function putDraft(
+  canvasId: number,
+  data: string,
+  baseVersion: number,
+  options?: { keepalive?: boolean },
+): Promise<{ ok: true; savedAt: number }> {
+  return apiFetch<{ ok: true; savedAt: number }>(
+    `/api/canvases/${canvasId}/draft`,
+    {
+      method: 'PUT',
+      body: JSON.stringify({ data, baseVersion }),
+      keepalive: options?.keepalive,
+    },
+  );
+}
+
+/** 删草稿（幂等） */
+export async function deleteDraft(canvasId: number): Promise<void> {
+  await apiFetch<{ ok: true }>(`/api/canvases/${canvasId}/draft`, {
+    method: 'DELETE',
   });
 }

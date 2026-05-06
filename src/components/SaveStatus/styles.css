@@ -122,3 +122,30 @@
   background: rgba(148, 163, 184, 0.08);
   color: #94a3b8;
 }
+
+/* 阶段 4 P4D：草稿状态文案（与主版本 dirty 视觉拆开 — 判断点 4）*/
+.save-status__draft {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 11px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.save-status__draft--saving {
+  color: #2563eb;
+}
+
+.save-status__draft--saved {
+  color: #16a34a;
+}
+
+.save-status__draft--failed {
+  color: #ea580c;
+}
+
+.save-status__draft--too_large,
+.save-status__draft--quota {
+  color: #dc2626;
+  font-weight: 600;
+}

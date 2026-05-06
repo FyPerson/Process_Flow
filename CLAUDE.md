@@ -81,7 +81,7 @@ powershell -File scripts/deploy.ps1        # 主 PowerShell 跑（不能在 hook
 
 ## 当前阶段
 
-阶段 3 完整 8/8 收尾（v1.10.0，2026-05-06）。下一阶段 4 = 心跳 + auto-save（方案文档原估 2 天）。
+阶段 4 心跳 + auto-save 完整闭环（v1.11.0，2026-05-06）：服务端 heartbeats/drafts CRUD（baseVersion 校验 + 配额 200 + 2MB + JSON 校验）+ 客户端 useHeartbeat（30s + hidden 暂停 + visible 补发）+ useDraftAutosave（canonical JSON diff + ref-stable interval + blockedSnapshot + keepalive 60KB 阈值 + pause/snapshot reset 模块协同）+ 草稿恢复弹窗 + 顶栏"草稿已保存 HH:mm" + 列表角标"X 人在编辑"（不计自己）。codex 4 轮审 confidence=high 通过。下一阶段 5 = 合并算法（4 天 MVP）。
 
 ## 给未来 Claude 的话
 

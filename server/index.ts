@@ -18,7 +18,9 @@ import { securityMiddleware } from './middleware/security.ts';
 import { annotationsRouter } from './routes/annotations.ts';
 import { authRouter } from './routes/auth.ts';
 import { canvasesRouter } from './routes/canvases.ts';
+import { draftsRouter } from './routes/drafts.ts';
 import { healthRouter } from './routes/health.ts';
+import { heartbeatsRouter } from './routes/heartbeats.ts';
 import { usersRouter } from './routes/users.ts';
 
 async function bootstrap() {
@@ -46,6 +48,8 @@ async function bootstrap() {
   app.use(healthRouter);
   app.use(authRouter);
   app.use(canvasesRouter);
+  app.use(draftsRouter);
+  app.use(heartbeatsRouter);
   app.use(annotationsRouter);
   app.use(usersRouter);
   logger.info({ ms: Date.now() - t2 }, '[startup] middlewares + routes registered');

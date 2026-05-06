@@ -1,0 +1,40 @@
+.other-editors-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #555;
+  background: #eef5ff;
+  border: 1px solid #cfe0ff;
+  border-radius: 12px;
+  padding: 2px 8px;
+  margin-right: 8px;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.other-editors-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.other-editor-chip {
+  display: inline-block;
+  background: #ffffff;
+  border: 1px solid #d0d7de;
+  border-radius: 10px;
+  padding: 0 6px;
+  font-size: 11px;
+  color: #1f2937;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.other-editor-overflow {
+  display: inline-block;
+  font-size: 11px;
+  color: #1f6fd0;
+  font-weight: 600;
+  padding-left: 2px;
+}
