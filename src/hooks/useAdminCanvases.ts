@@ -14,6 +14,8 @@ import {
   archiveCanvas as apiArchiveCanvas,
   listCanvases as apiListCanvases,
   patchCanvas as apiPatchCanvas,
+  publishCanvas as apiPublishCanvas,
+  unpublishCanvas as apiUnpublishCanvas,
 } from '../api/canvases';
 
 export interface UseAdminCanvasesResult {
@@ -24,6 +26,10 @@ export interface UseAdminCanvasesResult {
   patchCanvas: (id: number, patch: PatchCanvasInput) => Promise<void>;
   /** 归档（软删）；archived=1 后服务端列表过滤；成功/失败均 refetch */
   archiveCanvas: (id: number) => Promise<void>;
+  /** P3G publish：private → public + 写 published_*；refetch 拉新元信息 */
+  publishCanvas: (id: number, published_note: string) => Promise<void>;
+  /** P3G unpublish：public → private + 写 unpublished_*；refetch 拉新元信息 */
+  unpublishCanvas: (id: number) => Promise<void>;
   refetch: () => Promise<void>;
 }
 
@@ -103,12 +109,42 @@ export function useAdminCanvases(): UseAdminCanvasesResult {
     [performFetch],
   );
 
+  const publishCanvasCb = useCallback(
+    async (id: number, published_note: string): Promise<void> => {
+      try {
+        await apiPublishCanvas(id, published_note);
+        if (!mountedRef.current) return;
+        await performFetch();
+      } catch (e) {
+        if (mountedRef.current) void performFetch();
+        throw e;
+      }
+    },
+    [performFetch],
+  );
+
+  const unpublishCanvasCb = useCallback(
+    async (id: number): Promise<void> => {
+      try {
+        await apiUnpublishCanvas(id);
+        if (!mountedRef.current) return;
+        await performFetch();
+      } catch (e) {
+        if (mountedRef.current) void performFetch();
+        throw e;
+      }
+    },
+    [performFetch],
+  );
+
   return {
     canvases,
     loading,
     error,
     patchCanvas: patchCanvasCb,
     archiveCanvas: archiveCanvasCb,
+    publishCanvas: publishCanvasCb,
+    unpublishCanvas: unpublishCanvasCb,
     refetch: performFetch,
   };
 }
