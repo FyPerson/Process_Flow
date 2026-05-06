@@ -124,6 +124,14 @@ export interface CanvasListItem {
   updated_by: number;
   updated_at: number;
   archived: boolean;
+  // P3G 公共画布发布有摩擦治理（migration 0003）
+  // - published_*：最近一次发布的元信息（"最近一次"语义，重复发布会覆盖）
+  // - unpublished_*：最近一次撤回的元信息（撤回后保留 published_* 不清空）
+  published_at: number | null;
+  published_by: number | null;
+  published_note: string | null;
+  unpublished_at: number | null;
+  unpublished_by: number | null;
 }
 
 export interface CanvasFull extends CanvasListItem {
@@ -213,5 +221,27 @@ export async function importCanvas(input: {
   return apiFetch<{ id: number; version: number }>('/api/canvases/import', {
     method: 'POST',
     body: JSON.stringify(input),
+  });
+}
+
+// =====================================================================
+// P3G publish/unpublish
+// =====================================================================
+
+/** 发布画布（private → public）。published_note 1-500 字非空。
+ *  失败时抛 ApiError（status=403/409/400/404）。 */
+export async function publishCanvas(id: number, published_note: string): Promise<void> {
+  await apiFetch<{ ok: true }>(`/api/canvases/${id}/publish`, {
+    method: 'POST',
+    body: JSON.stringify({ published_note }),
+  });
+}
+
+/** 撤回画布（public → private）。当前不需要参数。
+ *  失败时抛 ApiError（status=403/409/404）。 */
+export async function unpublishCanvas(id: number): Promise<void> {
+  await apiFetch<{ ok: true }>(`/api/canvases/${id}/unpublish`, {
+    method: 'POST',
+    body: JSON.stringify({}),
   });
 }

@@ -11,13 +11,15 @@
 // 阶段 2 暂不实现 export/import（P2F 单独写）
 
 import { Router, type Request, type Response } from 'express';
-import { optionalAuth, requireAuth } from '../middleware/auth.ts';
+import { optionalAuth, requireAuth, requireFreshAdmin } from '../middleware/auth.ts';
 import { validateBody } from '../middleware/validate.ts';
 import {
   CreateCanvasRequestSchema,
   ImportCanvasRequestSchema,
   PatchCanvasRequestSchema,
+  PublishCanvasRequestSchema,
   SaveCanvasRequestSchema,
+  UnpublishCanvasRequestSchema,
 } from '../schemas/canvas.ts';
 import {
   archiveCanvas,
@@ -30,7 +32,9 @@ import {
   listCanvasesForGuest,
   listCanvasesForUser,
   patchCanvasMeta,
+  publishCanvas,
   saveCanvas,
+  unpublishCanvas,
 } from '../services/canvases.ts';
 import type { MultiCanvasProjectInput } from '../schemas/canvas.ts';
 
@@ -175,11 +179,14 @@ canvasesRouter.post(
     const body = req.body as import('../schemas/canvas.ts').CreateCanvasRequest;
     const user = req.user!;
 
-    // 权限：visibility=public 仅 admin（方案 §1.3）
-    if (body.visibility === 'public' && user.role !== 'admin') {
+    // P3G 规则 1（[01-取舍审查](../../docs/规划/codex审查记录/阶段3/P3G/01-取舍审查-P3G-公共画布发布治理.md)）：
+    // public 只能由 admin 通过 publish 端点产生；POST /api/canvases 的 visibility=public
+    // 路径**强制**关闭。schema 保留字段（避免破坏前端类型），route 强制必须 private。
+    // 即使是 admin 也走"先创建 private → publish 升级"。
+    if (body.visibility !== 'private') {
       res.status(403).json({
         error: 'forbidden',
-        message: 'only admin can create public canvas',
+        message: 'POST /api/canvases only accepts visibility=private; use POST /api/canvases/:id/publish to create public',
       });
       return;
     }
@@ -314,6 +321,74 @@ canvasesRouter.patch(
     } catch (err) {
       res.status(500).json({ error: 'patch_failed', message: (err as Error).message });
     }
+  }
+);
+
+// =====================================================================
+// POST /api/canvases/:id/publish —— 发布画布为 public（P3G）
+// 走 requireFreshAdmin（即时校验 admin 状态，避免被降权后旧 token 仍能发布）
+// 详见 [01-取舍审查-P3G](../../docs/规划/codex审查记录/阶段3/P3G/01-取舍审查-P3G-公共画布发布治理.md)
+// =====================================================================
+
+canvasesRouter.post(
+  '/api/canvases/:id/publish',
+  requireFreshAdmin,
+  validateBody(PublishCanvasRequestSchema),
+  (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      res.status(400).json({ error: 'invalid_id' });
+      return;
+    }
+    const body = req.body as import('../schemas/canvas.ts').PublishCanvasRequest;
+    // schema 已通过 transform(trim).pipe(min(1).max(500)) 收敛 trim 语义
+    // → body.published_note 一定是 trim 后的非空 1-500 字
+    const result = publishCanvas({ id, note: body.published_note, user: req.user! });
+    if (!result.ok) {
+      const messages: Record<string, string> = {
+        not_found: 'canvas not found',
+        already_public: 'canvas is already public',
+        archived_canvas: 'cannot publish archived canvas; restore it first',
+      };
+      res.status(result.status).json({
+        error: result.error,
+        message: messages[result.error] ?? result.error,
+      });
+      return;
+    }
+    res.json({ ok: true });
+  }
+);
+
+// =====================================================================
+// POST /api/canvases/:id/unpublish —— 撤回 public 画布为 private（P3G）
+// 走 requireFreshAdmin
+// =====================================================================
+
+canvasesRouter.post(
+  '/api/canvases/:id/unpublish',
+  requireFreshAdmin,
+  validateBody(UnpublishCanvasRequestSchema),
+  (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      res.status(400).json({ error: 'invalid_id' });
+      return;
+    }
+    const result = unpublishCanvas({ id, user: req.user! });
+    if (!result.ok) {
+      const messages: Record<string, string> = {
+        not_found: 'canvas not found',
+        already_private: 'canvas is already private',
+        archived_canvas: 'cannot unpublish archived canvas',
+      };
+      res.status(result.status).json({
+        error: result.error,
+        message: messages[result.error] ?? result.error,
+      });
+      return;
+    }
+    res.json({ ok: true });
   }
 );
 

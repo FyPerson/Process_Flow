@@ -320,3 +320,27 @@ export const ImportCanvasRequestSchema = z
   .strict();
 
 export type ImportCanvasRequest = z.infer<typeof ImportCanvasRequestSchema>;
+
+// POST /api/canvases/:id/publish —— 发布画布为 public（P3G）
+// 校验语义（codex 02-审 medium #1）：published_note 是"trim 后 1-500 字"。
+// 用 transform(trim) → pipe(min(1).max(500)) 把 trim 收敛到 schema：
+// - 全空格 → trim 后 '' → min(1) 拒
+// - 前后大量空格 + 正文 ≤500 → trim 后通过
+// - 原始字符串 600 字其中 200 是空格 → trim 后正文 400 → 通过
+// route 层不需要再 trim，直接拿 body.published_note 即为已 trim 值
+export const PublishCanvasRequestSchema = z
+  .object({
+    published_note: z
+      .string()
+      .transform((s) => s.trim())
+      .pipe(z.string().min(1).max(500)),
+  })
+  .strict();
+
+export type PublishCanvasRequest = z.infer<typeof PublishCanvasRequestSchema>;
+
+// POST /api/canvases/:id/unpublish —— 撤回 public 画布回 private（P3G）
+// 当前不需要参数（撤回不需要说明），保留 schema 以便未来扩展（如 unpublished_note）
+export const UnpublishCanvasRequestSchema = z.object({}).strict();
+
+export type UnpublishCanvasRequest = z.infer<typeof UnpublishCanvasRequestSchema>;

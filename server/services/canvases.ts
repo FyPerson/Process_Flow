@@ -28,6 +28,12 @@ export interface CanvasRow {
   updated_by: number;
   updated_at: number;
   archived: number;
+  // P3G：发布元信息（migration 0003）
+  published_at: number | null;
+  published_by: number | null;
+  published_note: string | null;
+  unpublished_at: number | null;
+  unpublished_by: number | null;
 }
 
 export interface CanvasListItem {
@@ -43,6 +49,11 @@ export interface CanvasListItem {
   updated_by: number;
   updated_at: number;
   archived: boolean;
+  published_at: number | null;
+  published_by: number | null;
+  published_note: string | null;
+  unpublished_at: number | null;
+  unpublished_by: number | null;
 }
 
 function toListItem(row: CanvasRow): CanvasListItem {
@@ -59,6 +70,11 @@ function toListItem(row: CanvasRow): CanvasListItem {
     updated_by: row.updated_by,
     updated_at: row.updated_at,
     archived: row.archived === 1,
+    published_at: row.published_at,
+    published_by: row.published_by,
+    published_note: row.published_note,
+    unpublished_at: row.unpublished_at,
+    unpublished_by: row.unpublished_by,
   };
 }
 
@@ -934,4 +950,125 @@ export function archiveCanvas(id: number, user: UserPublic): void {
       `UPDATE canvases SET archived = 1, updated_by = ?, updated_at = ? WHERE id = ?`
     )
     .run(user.id, now, id);
+}
+
+// =====================================================================
+// P3G 公共画布发布有摩擦治理
+// =====================================================================
+//
+// 规则文档：[01-取舍审查-P3G](../../docs/规划/codex审查记录/阶段3/P3G/01-取舍审查-P3G-公共画布发布治理.md)
+//
+// 核心不变量：
+// - publish 仅允许 visibility='private' && archived=0；状态错返 already_public/archived_canvas
+// - unpublish 仅允许 visibility='public' && archived=0；状态错返 already_private/archived_canvas
+// - publish/unpublish 都**不动 owner_id**（codex 审 #1：保留发布前归属，避免悄悄夺权）
+// - publish 默认 is_public_to_guest=0（codex 审 #8：避免发布同时误开游客）
+// - 历史 public 已在 migration 0003 回填 published_*，前端不需要兜底"无发布记录"分支
+
+export type PublishCanvasResult =
+  | { ok: true }
+  | { ok: false; status: 409; error: 'already_public' | 'archived_canvas' }
+  | { ok: false; status: 404; error: 'not_found' };
+
+export type UnpublishCanvasResult =
+  | { ok: true }
+  | { ok: false; status: 409; error: 'already_private' | 'archived_canvas' }
+  | { ok: false; status: 404; error: 'not_found' };
+
+/**
+ * 发布画布（private → public）。
+ *
+ * 单事务：BEGIN IMMEDIATE 拿写锁 → SELECT 当前态校验 → UPDATE。
+ * 不使用 nodes_meta / canvas_versions（发布只改元信息不改 data）。
+ *
+ * publish 后：visibility='public' / published_at=now / published_by=user.id /
+ *   published_note=note / is_public_to_guest=0（强制重置，admin 后续单独 PATCH 勾选）/
+ *   updated_by=user.id / updated_at=now
+ * 不动：owner_id / data / version / unpublished_at / unpublished_by
+ *   （unpublished_* 保留，作为"上一次撤回"的历史；下一次 publish 不清空它）
+ */
+export function publishCanvas(input: {
+  id: number;
+  note: string;
+  user: UserPublic;
+}): PublishCanvasResult {
+  const db = getDb();
+  const { id, note, user } = input;
+  const now = Date.now();
+
+  const tx = db.transaction((): PublishCanvasResult => {
+    const row = db
+      .prepare('SELECT visibility, archived FROM canvases WHERE id = ?')
+      .get(id) as { visibility: Visibility; archived: number } | undefined;
+    if (!row) {
+      return { ok: false, status: 404, error: 'not_found' };
+    }
+    if (row.archived === 1) {
+      return { ok: false, status: 409, error: 'archived_canvas' };
+    }
+    if (row.visibility === 'public') {
+      return { ok: false, status: 409, error: 'already_public' };
+    }
+    db.prepare(
+      `UPDATE canvases
+         SET visibility = 'public',
+             is_public_to_guest = 0,
+             published_at = ?,
+             published_by = ?,
+             published_note = ?,
+             updated_by = ?,
+             updated_at = ?
+       WHERE id = ?`
+    ).run(now, user.id, note, user.id, now, id);
+    return { ok: true };
+  });
+
+  return tx.immediate();
+}
+
+/**
+ * 撤回画布（public → private）。
+ *
+ * 单事务：BEGIN IMMEDIATE → SELECT 当前态校验 → UPDATE。
+ *
+ * unpublish 后：visibility='private' / unpublished_at=now / unpublished_by=user.id /
+ *   updated_by=user.id / updated_at=now
+ * 不动：owner_id（codex 审 #1：保留发布前归属，避免悄悄夺权——若原本是普通用户的私有画布
+ *   被 admin 发布后撤回，原 owner 仍能看到）/ published_at/by/note（"最近一次发布"语义保留）/
+ *   is_public_to_guest（保留旧值即可，下次 publish 时会被强制重置为 0）
+ */
+export function unpublishCanvas(input: {
+  id: number;
+  user: UserPublic;
+}): UnpublishCanvasResult {
+  const db = getDb();
+  const { id, user } = input;
+  const now = Date.now();
+
+  const tx = db.transaction((): UnpublishCanvasResult => {
+    const row = db
+      .prepare('SELECT visibility, archived FROM canvases WHERE id = ?')
+      .get(id) as { visibility: Visibility; archived: number } | undefined;
+    if (!row) {
+      return { ok: false, status: 404, error: 'not_found' };
+    }
+    if (row.archived === 1) {
+      return { ok: false, status: 409, error: 'archived_canvas' };
+    }
+    if (row.visibility === 'private') {
+      return { ok: false, status: 409, error: 'already_private' };
+    }
+    db.prepare(
+      `UPDATE canvases
+         SET visibility = 'private',
+             unpublished_at = ?,
+             unpublished_by = ?,
+             updated_by = ?,
+             updated_at = ?
+       WHERE id = ?`
+    ).run(now, user.id, user.id, now, id);
+    return { ok: true };
+  });
+
+  return tx.immediate();
 }
