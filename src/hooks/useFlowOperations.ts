@@ -11,6 +11,7 @@ import {
     getSavedDirectoryHandle,
 } from '../utils/flowVersionStorage';
 import { getUniqueName } from '../utils/uniqueName';
+import { newNodeId, newGroupId } from '../utils/ids';
 import { canEditNodeData } from '../auth/canEditNode';
 import type { UserPublic } from '../auth/api';
 
@@ -48,7 +49,7 @@ export function useFlowOperations({
     // 添加节点
     const onAddNode = useCallback(
         (type: 'process' | 'decision' | 'terminator' | 'data') => {
-            const id = `new_node_${Date.now()}`;
+            const id = newNodeId();
             const name =
                 type === 'process'
                     ? '新流程节点'
@@ -59,9 +60,6 @@ export function useFlowOperations({
                             : '新起止节点';
 
             // 确保名称唯一
-            const currentNodes = setNodes instanceof Function ? [] : []; // Hack to get types right, actually we need getNodes or passed nodes
-            // But wait, we have `nodes` in props!
-
             const existingNames = nodes.map((n) => {
                 if (n.type === 'group') {
                     return (n.data as any).label || (n.data as any).name;
@@ -336,7 +334,7 @@ export function useFlowOperations({
         const headerHeight = 40;
 
         // 创建分组节点
-        const groupId = `group_${Date.now()}`;
+        const groupId = newGroupId();
 
         const existingNames = currentNodes.map((n) => {
             if (n.type === 'group') {

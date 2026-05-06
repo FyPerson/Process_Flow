@@ -14,6 +14,7 @@ import {
 } from '@xyflow/react';
 import { FlowNodeData } from '../types/flow';
 import type { UserPublic } from '../auth/api';
+import { newEdgeId } from '../utils/ids';
 import {
     canApplyNodeUpdate,
     filterNodeChangesByPermission,
@@ -287,7 +288,7 @@ export function useFlowHandlers({
 
             setEdges((eds) => {
                 const newEdge: Edge = {
-                    id: `edge-${params.source}-${params.target}-${Date.now()}`,
+                    id: newEdgeId(),
                     source: params.source!,
                     target: params.target!,
                     sourceHandle: sourceHandle ?? null,

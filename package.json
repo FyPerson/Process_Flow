@@ -1,6 +1,6 @@
 {
   "name": "business-flow-react",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "业务流程全景图 - React Flow 实现",
   "type": "module",
   "scripts": {
@@ -11,8 +11,10 @@
     "start": "cross-env NODE_ENV=production tsx server/index.ts",
     "preview": "vite preview",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+    "lint:ids": "node scripts/check-id-generation.mjs",
+    "typecheck:test": "tsc --noEmit -p tsconfig.test.json",
     "format": "prettier --write .",
-    "test": "node --import tsx --test \"src/**/*.test.ts\" \"server/**/*.test.ts\""
+    "test": "npm run lint:ids && npm run typecheck:test && node --import tsx --test \"src/**/*.test.ts\" \"server/**/*.test.ts\""
   },
   "dependencies": {
     "@types/dagre": "^0.7.53",

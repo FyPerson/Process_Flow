@@ -16,6 +16,7 @@ import {
   getCanvas as apiGetCanvas,
   saveCanvas as apiSaveCanvas,
 } from '../api/canvases';
+import { newNodeId, newGroupId, newEdgeId } from '../utils/ids';
 
 // 存储节点格式（用于保存）
 interface StorageNode {
@@ -720,17 +721,15 @@ export function useMultiCanvas(
       if (!sourceSheet) return null;
 
       const newId = `sheet_${Date.now().toString(36)}`;
-      // base36 时间戳：缩短到 7-8 字符，对比原十进制 13 字符
-      const ts = Date.now().toString(36);
 
+      // P3B codex 二审 #2：按节点类型分派 helper（group → g_ 前缀；其他 → n_ 前缀）
       const nodeIdMap = new Map<string, string>();
+      for (const node of sourceSheet.nodes) {
+        nodeIdMap.set(node.id, node.type === 'group' ? newGroupId() : newNodeId());
+      }
 
-      const newNodes = sourceSheet.nodes.map((node, index) => {
-        // 不再 prefix 旧 ID，避免多次复制画布累积 _copy_copy_... 超 64 字符
-        // 当前格式：n_<base36 时间戳>_<index>，约 12-15 字符
-        const newNodeId = `n_${ts}_${index}`;
-        nodeIdMap.set(node.id, newNodeId);
-
+      const newNodes = sourceSheet.nodes.map((node) => {
+        const newNodeIdValue = nodeIdMap.get(node.id)!;
         const copiedNode = safeDeepCopy(node, autoSaveFilter);
         // P3D-1 codex 三审 Finding 2：duplicateSheet 复制画布时是"本地新增节点"路径
         // （codex 必修 5 第四个来源）。strip 源节点归属字段 → 让服务端 saveCanvas
@@ -748,33 +747,44 @@ export function useMultiCanvas(
 
         return {
           ...copiedNode,
-          id: newNodeId,
+          id: newNodeIdValue,
         };
       });
 
+      // P3B codex 二审 #1：duplicateSheet 复制整张 sheet 内所有节点都在 nodeIdMap 内
+      // parentId / relatedNodeIds / 端点 fallback 用 `|| id` 留旧 ID 是错的（指向不存在的源）
+      // 改为：命中 → remap；未命中 → 删除该引用
       newNodes.forEach((node) => {
-        if (node.parentId && nodeIdMap.has(node.parentId)) {
-          node.parentId = nodeIdMap.get(node.parentId);
+        if (node.parentId) {
+          if (nodeIdMap.has(node.parentId)) {
+            node.parentId = nodeIdMap.get(node.parentId);
+          } else {
+            delete node.parentId;
+          }
         }
-        if (node.relatedNodeIds && Array.isArray(node.relatedNodeIds)) {
-          node.relatedNodeIds = node.relatedNodeIds.map((id: string) =>
-            nodeIdMap.get(id) || id
-          );
+        if (Array.isArray(node.relatedNodeIds)) {
+          const remapped = node.relatedNodeIds
+            .filter((id: string) => typeof id === 'string' && nodeIdMap.has(id))
+            .map((id: string) => nodeIdMap.get(id)!);
+          if (remapped.length > 0) {
+            node.relatedNodeIds = remapped;
+          } else {
+            delete (node as { relatedNodeIds?: unknown }).relatedNodeIds;
+          }
         }
       });
 
-      const newConnectors = sourceSheet.connectors.map((connector, index) => {
-        // 同样不 prefix 旧 ID
-        const newConnectorId = `e_${ts}_${index}`;
-        const copiedConnector = safeDeepCopy(connector, autoSaveFilter);
-
-        return {
-          ...copiedConnector,
-          id: newConnectorId,
-          sourceID: nodeIdMap.get(connector.sourceID) || connector.sourceID,
-          targetID: nodeIdMap.get(connector.targetID) || connector.targetID,
-        };
-      });
+      const newConnectors = sourceSheet.connectors
+        .filter((c) => nodeIdMap.has(c.sourceID) && nodeIdMap.has(c.targetID))
+        .map((connector) => {
+          const copiedConnector = safeDeepCopy(connector, autoSaveFilter);
+          return {
+            ...copiedConnector,
+            id: newEdgeId(),
+            sourceID: nodeIdMap.get(connector.sourceID)!,
+            targetID: nodeIdMap.get(connector.targetID)!,
+          };
+        });
 
       const newSheet: CanvasSheet = {
         id: newId,
