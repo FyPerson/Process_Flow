@@ -122,6 +122,11 @@ const NodeSchema = z
     created_at: z.number().int().optional(),
     updated_by: z.number().int().optional(),
     updated_at: z.number().int().optional(),
+    // 废弃单向语义（M3 codex Day 1 审）：客户端可传 true 或 false，但 saveCanvas
+    // 路径强制 newDeprecated = isDeprecatingNow || !!meta.is_deprecated（line 820），
+    // 已废弃节点不可被 incoming 传 false 回退；computeDelta 路径 NodeDelta.changedFields
+    // 不含 is_deprecated（白名单不含此字段），applyDelta 应用到 currentData 后 dep 状态
+    // 仍来自 currentData。schema 层不强制 refine（需查当前态），双层防御已就位。
     is_deprecated: z.boolean().optional(),
     // P3D-1：creator_username 由 GET 时 JOIN users hydrate；save 时 strip 掉。
     // 客户端若伪造此字段，stripServerAttributionForSaveInput 会清掉，无法绕过。
@@ -195,7 +200,13 @@ export const MultiCanvasProjectSchema = z
   .strict()
   .superRefine((project, ctx) => {
     // 跨字段一致性校验（v3 新增，方案 §4.7）
+    // codex Day 1 四审 M2 修订：parentId 真校验（之前是空注释 placeholder）
+    // 用两遍循环避免拓扑顺序误伤：先收集所有 nodeIds（含分组内子节点），再二遍校验 parentId
     const sheetIds = new Set<string>();
+
+    // 第一遍：sheet/node/edge ID 唯一性 + edge 端点
+    // 同时收集每个 sheet 的 (nodeId → node) 索引供第二遍 parentId 校验用
+    const sheetNodeIndex = new Map<string, Map<string, typeof project.sheets[number]['nodes'][number]>>();
 
     for (const sheet of project.sheets) {
       // 1. sheet ID 全局唯一
@@ -210,6 +221,7 @@ export const MultiCanvasProjectSchema = z
 
       // 2. node ID 在 sheet 内唯一
       const nodeIds = new Set<string>();
+      const nodeMap = new Map<string, typeof project.sheets[number]['nodes'][number]>();
       for (const node of sheet.nodes) {
         if (nodeIds.has(node.id)) {
           ctx.addIssue({
@@ -219,14 +231,9 @@ export const MultiCanvasProjectSchema = z
           });
         }
         nodeIds.add(node.id);
-
-        // 节点 parentId 必须指向同 sheet 内已存在节点（顺序检查：必须出现在前面）
-        // 简化：parentId 不为空时只校验存在，不校验顺序
-        if (node.parentId && !nodeIds.has(node.parentId)) {
-          // 暂时只 warn 不阻塞（前端可能按拓扑顺序混乱保存）
-          // 真要严格可放进 superRefine 第二遍循环
-        }
+        nodeMap.set(node.id, node);
       }
+      sheetNodeIndex.set(sheet.id, nodeMap);
 
       // 3. edge ID 在 sheet 内唯一 + sourceID/targetID 必须指向本 sheet 已存在节点
       const edgeIds = new Set<string>();
@@ -252,6 +259,56 @@ export const MultiCanvasProjectSchema = z
             code: 'custom',
             message: `Edge ${edge.id} has invalid targetID ${edge.targetID} (not in sheet ${sheet.id})`,
             path: ['sheets', sheet.id, 'connectors'],
+          });
+        }
+      }
+    }
+
+    // 第二遍：parentId 真校验（codex 四审 M2 + 五审 M1 收紧 + 六审 L1 拍板）
+    // 规则：
+    //   - parentId 必须指向同 sheet 内已存在的 group 类型节点
+    //   - 拒绝自引用（node.parentId === node.id）
+    //   - group 节点本身不能有 parentId（不允许 group 嵌套；与 useFlowOperations:315
+    //     "选中节点新建分组时过滤 type=group && !parentId" 对齐）
+    //   - **允许** parentId 指向 is_deprecated=true 的 group：本项目 P3C 语义是
+    //     "标废弃只是节点状态，节点仍存在"，废弃 group 仍可作为 parent 合理（codex 六审 L1）
+    for (const sheet of project.sheets) {
+      const nodeMap = sheetNodeIndex.get(sheet.id);
+      if (!nodeMap) continue;
+      for (const node of sheet.nodes) {
+        if (node.parentId === undefined) continue;
+        // 拒自引用
+        if (node.parentId === node.id) {
+          ctx.addIssue({
+            code: 'custom',
+            message: `Node ${node.id} parentId points to itself (self-reference)`,
+            path: ['sheets', sheet.id, 'nodes'],
+          });
+          continue;
+        }
+        // group 不能嵌套
+        if (node.type === 'group') {
+          ctx.addIssue({
+            code: 'custom',
+            message: `Node ${node.id} is a group with parentId ${node.parentId}; group nesting is not allowed`,
+            path: ['sheets', sheet.id, 'nodes'],
+          });
+          continue;
+        }
+        const parent = nodeMap.get(node.parentId);
+        if (!parent) {
+          ctx.addIssue({
+            code: 'custom',
+            message: `Node ${node.id} parentId ${node.parentId} not found in sheet ${sheet.id}`,
+            path: ['sheets', sheet.id, 'nodes'],
+          });
+          continue;
+        }
+        if (parent.type !== 'group') {
+          ctx.addIssue({
+            code: 'custom',
+            message: `Node ${node.id} parentId ${node.parentId} points to non-group node (type=${parent.type})`,
+            path: ['sheets', sheet.id, 'nodes'],
           });
         }
       }

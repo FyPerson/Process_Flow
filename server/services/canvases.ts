@@ -391,7 +391,14 @@ export interface SaveCanvasInput {
 
 export type SaveCanvasResult =
   | { ok: true; version: number; merged: false }
-  | { ok: false; status: 409; error: 'conflict'; currentVersion: number }
+  // 阶段 5 Day 3 起：merged=true 时返 mergedData + mergedFromVersion 给客户端做状态替换（GATE-1）
+  // Day 1-2 此分支不会被命中（合并算法 stub 阶段）。
+  | { ok: true; version: number; merged: true; mergedData: unknown; mergedFromVersion: number; report: unknown }
+  // 情况 3：基础冲突 —— 当前用户与对方修改有真冲突或合并 stub 未实现时落到此分支
+  | { ok: false; status: 409; error: 'conflict'; currentVersion: number; conflicts?: unknown[] }
+  // 阶段 5 D1 新增：客户端 baseVersion 太旧（canvas_versions 已被清理或从未存在）
+  // → 客户端必须 GET 最新画布重载，drafts 仍保留
+  | { ok: false; status: 409; error: 'base_version_expired'; currentVersion: number }
   | { ok: false; status: 409; error: 'node_id_collision'; currentVersion: number }
   | { ok: false; status: 409; error: 'node_meta_missing'; currentVersion: number }
   | { ok: false; status: 403; error: 'forbidden_modify_others_node'; message: string; currentVersion: number }
@@ -569,8 +576,16 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
     if (!row) {
       throw new Error('canvas_not_found');
     }
-    // 2. 版本对齐
-    if (row.version !== baseVersion) {
+    // 2. 版本分支（阶段 5 Day 1 改造）
+    //
+    // - baseVersion > currentVersion：客户端伪造（不可能从 GET 拿到比当前还新的版本）→ 409 conflict
+    // - baseVersion === currentVersion：情况 1 无并发 → 走原有快速路径（直接写）
+    // - baseVersion < currentVersion：情况 2/3 有并发 → 走合并算法（Day 2 实现）
+    //
+    // Day 1 阶段：合并路径仅做"取 baseData → 找不到则返 base_version_expired；
+    // 找到则返 conflict 等同情况 3 stub"。Day 2 起接入 detectNodeConflicts /
+    // detectEdgeConflicts / applyDelta，转为真合并 / 真冲突两分支。
+    if (baseVersion > row.version) {
       return {
         ok: false,
         status: 409,
@@ -578,6 +593,35 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
         currentVersion: row.version,
       };
     }
+    if (baseVersion < row.version) {
+      // 情况 2/3：取 baseData 走合并算法
+      const baseSnapshot = db
+        .prepare(
+          'SELECT data FROM canvas_versions WHERE canvas_id = ? AND version = ?'
+        )
+        .get(id, baseVersion) as { data: string } | undefined;
+      if (!baseSnapshot) {
+        // canvas_versions 找不到 baseVersion 快照（被清理 / 从未存在）
+        // → 客户端必须 GET 重载（drafts 保留）
+        return {
+          ok: false,
+          status: 409,
+          error: 'base_version_expired',
+          currentVersion: row.version,
+        };
+      }
+      // Day 1 stub：合并算法未实现，统一回退到 conflict（行为等同原版）
+      // Day 2 起：在此处调 tryMerge(baseData, currentData, clientData) → 真合并 / 真冲突 / E7 警告
+      // baseSnapshot.data 已查出（防止 Day 2 实施时漏拿），但此处仅作存在性证明
+      void baseSnapshot;
+      return {
+        ok: false,
+        status: 409,
+        error: 'conflict',
+        currentVersion: row.version,
+      };
+    }
+    // baseVersion === row.version：情况 1，走原有快速路径
 
     // 3. 计算 deltaB（按 sheet+node 复合 ID）
     const baseData = JSON.parse(row.data) as { sheets: StorageSheet[] };

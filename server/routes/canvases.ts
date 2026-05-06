@@ -272,13 +272,32 @@ canvasesRouter.put(
         const message =
           result.error === 'conflict'
             ? 'canvas was modified by another user; reload and retry'
-            : result.error === 'node_id_collision'
-              ? 'node ID collision detected (server already has a node with this id)'
-              : 'node meta inconsistency (a modified node has no record in nodes_meta)';
+            : result.error === 'base_version_expired'
+              ? 'base version snapshot expired; please reload to get the latest version'
+              : result.error === 'node_id_collision'
+                ? 'node ID collision detected (server already has a node with this id)'
+                : 'node meta inconsistency (a modified node has no record in nodes_meta)';
+        // conflicts 字段在 Day 2 起被填充（detectNodeConflicts/detectEdgeConflicts 输出）
+        // Day 1 stub 阶段始终为空
+        const conflicts =
+          result.error === 'conflict' && 'conflicts' in result ? result.conflicts : undefined;
         res.status(409).json({
           error: result.error,
           currentVersion: result.currentVersion,
           message,
+          ...(conflicts ? { conflicts } : {}),
+        });
+        return;
+      }
+      // 阶段 5 Day 3 起：merged=true 时返 mergedData + mergedFromVersion 给客户端做状态替换（GATE-1）
+      if (result.merged) {
+        res.json({
+          ok: true,
+          version: result.version,
+          merged: true,
+          mergedData: result.mergedData,
+          mergedFromVersion: result.mergedFromVersion,
+          report: result.report,
         });
         return;
       }

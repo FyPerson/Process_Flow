@@ -148,7 +148,7 @@ CREATE TABLE IF NOT EXISTS conflict_logs (
   user_b_id INTEGER NOT NULL,                      -- 后保存的人（基于 v_old）
   base_version INTEGER NOT NULL,
   current_version INTEGER NOT NULL,
-  resolution TEXT NOT NULL CHECK(resolution IN ('auto_merged', 'conflict', 'overwrite', 'cancelled')),
+  resolution TEXT NOT NULL CHECK(resolution IN ('auto_merged', 'conflict', 'overwrite', 'cancelled', 'base_version_expired')),
   details TEXT,                                    -- JSON：冲突的具体节点/边 ID
   created_at INTEGER NOT NULL
 );
