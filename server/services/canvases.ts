@@ -14,6 +14,7 @@ import type { UserPublic } from '../types/user.ts';
 import { computeDelta, DataIntegrityError } from './merge/computeDelta.ts';
 import { tryMerge } from './merge/tryMerge.ts';
 import type { Conflict, MergeReport, MultiCanvasProjectShape } from './merge/types.ts';
+import { logConflictResolution } from './conflict_logs.ts';
 import {
   asProjectShape,
   PermissionError,
@@ -576,23 +577,9 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
       //  5. tryMerge —— ok:false 透传 conflicts；ok:true 拿 mergedData + report
       //  6. ok:true → metaIndex + rewriteNodesFromMeta(mergedData, deltaB, ...) → UPDATE + INSERT version + syncMeta
       //  7. DataIntegrityError 不 catch，让事务回滚后透传给 route 层映射 500 + 'data_integrity_error'
-      const baseSnapshot = db
-        .prepare(
-          'SELECT data FROM canvas_versions WHERE canvas_id = ? AND version = ?'
-        )
-        .get(id, baseVersion) as { data: string } | undefined;
-      if (!baseSnapshot) {
-        // canvas_versions 找不到 baseVersion 快照（被清理 / 从未存在）
-        // → 客户端必须 GET 重载（drafts 保留）
-        return {
-          ok: false,
-          status: 409,
-          error: 'base_version_expired',
-          currentVersion: row.version,
-        };
-      }
-
-      // 取当前版本保存者（codex 修订 #2 #3：用 canvas_versions.saved_by 不用 canvases.updated_by）
+      // 取当前版本保存者（Day 3 取舍审 medium 风险吸收 + 隐藏判断 #2：
+      // 提到 baseSnapshot 检查之前，让 base_version_expired 路径也能拿 user_a_id 写 conflict_logs；
+      // codex 修订 #2 #3：用 canvas_versions.saved_by 不用 canvases.updated_by）
       const currentVersionAuthor = db
         .prepare(
           `SELECT cv.saved_by AS userId, u.username AS username
@@ -611,6 +598,32 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
           `canvas ${id} current version ${row.version} missing in canvas_versions`,
           `saveCanvas merge path`
         );
+      }
+
+      // 取 baseVersion 快照（在 currentVersionAuthor 之后，让 base_version_expired 路径已能拿 user_a_id）
+      const baseSnapshot = db
+        .prepare(
+          'SELECT data FROM canvas_versions WHERE canvas_id = ? AND version = ?'
+        )
+        .get(id, baseVersion) as { data: string } | undefined;
+      if (!baseSnapshot) {
+        // canvas_versions 找不到 baseVersion 快照（被清理 / 从未存在）
+        // → 客户端必须 GET 重载（drafts 保留）
+        // Day 3 D-2：写 conflict_logs（无 debugDelta —— 没 baseSnapshot 不能 computeDelta）
+        logConflictResolution(db, {
+          canvasId: id,
+          userAId: currentVersionAuthor.userId,
+          userBId: user.id,
+          baseVersion,
+          currentVersion: row.version,
+          resolution: 'base_version_expired',
+        });
+        return {
+          ok: false,
+          status: 409,
+          error: 'base_version_expired',
+          currentVersion: row.version,
+        };
       }
 
       // 三方数据 parse（不预 strip — codex 判断点 1：computeDelta 内部已 strip）
@@ -653,7 +666,8 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
         throw e;
       }
 
-      // 调 tryMerge（includeDebugDelta=false — codex 判断点 7：Map 结构留 Day 3 序列化）
+      // 调 tryMerge（includeDebugDelta=true — Day 3 取舍审判断点 10：与 conflict_logs.details 链路对齐）
+      // mergeResult.debugDelta 含 deltaA/deltaB（tryMerge 内部 computeDelta×2）；conflict_logs 写入路径序列化使用
       const mergeResult = tryMerge({
         baseData: baseProject,
         currentData: currentProject,
@@ -666,12 +680,23 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
         currentVersion: row.version,
         mergedFromUserId: currentVersionAuthor.userId,
         mergedFromUsername: currentVersionAuthor.username,
-        includeDebugDelta: false,
+        includeDebugDelta: true,
       });
 
       if (!mergeResult.ok) {
         // 真冲突（detector 4 段 + applyDelta active_sheet_missing 透传）
         // codex 隐藏判断点 7 + 9：error='conflict' + conflicts 数组；不携带 warnings
+        // Day 3 D-2：写 conflict_logs（含 debugDelta —— tryMerge includeDebugDelta=true 已开）
+        logConflictResolution(db, {
+          canvasId: id,
+          userAId: currentVersionAuthor.userId,
+          userBId: user.id,
+          baseVersion,
+          currentVersion: row.version,
+          resolution: 'conflict',
+          conflicts: mergeResult.conflicts,
+          debugDelta: mergeResult.debugDelta,
+        });
         return {
           ok: false,
           status: 409,
@@ -716,6 +741,18 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
 
       // codex 隐藏判断点 8：合并成功路径必须复用 syncNodesMetaFromDeltaB（B 删 sheet 时 annotations 同事务清理）
       syncNodesMetaFromDeltaB(db, id, deltaB, user, now);
+
+      // Day 3 D-2：写 conflict_logs auto_merged（含 report + debugDelta）
+      logConflictResolution(db, {
+        canvasId: id,
+        userAId: currentVersionAuthor.userId,
+        userBId: user.id,
+        baseVersion,
+        currentVersion: row.version,
+        resolution: 'auto_merged',
+        report: mergeResult.report,
+        debugDelta: mergeResult.debugDelta,
+      });
 
       return {
         ok: true,

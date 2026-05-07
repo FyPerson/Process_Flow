@@ -240,7 +240,18 @@ export function BusinessFlowVisualization() {
         case 'saved':
           // 顶栏徽标会显示"已保存（刚刚）"
           break;
+        case 'merged': {
+          // Day 3 D-4：服务端已真合并；useMultiCanvas.save() 内已按 B 方案处理：
+          // - 默认路径（无后续编辑）：整体替换 project + 推进 serverVersion + 删草稿
+          // - 有后续编辑（changeSeq 不等）：不动 project / 不推进 ref / 保留 dirty → 下轮 autosave 用旧 baseVersion 再合并
+          // 顶栏会显示"已保存"——同 saved 路径；Day 4 加 toast 显示"已合并对方改动"+ mergeReport 详情
+          // 当前 v1.13.0 阶段：用户体感与 saved 一致，无新弹窗
+          break;
+        }
         case 'conflict': {
+          // Day 3 D-4：真合并冲突（detector 4 段 + applyDelta active_sheet_missing）
+          // result.conflicts 数组将在 Day 4 真冲突 UI 实施时展示给用户（4B 流程：保存草稿 / 继续编辑）
+          // 当前 v1.13.0：沿用 v1.x 旧 confirm 文案兜底（Day 4 替换为弹窗）
           const ok = window.confirm(
             `检测到服务端有更新（v${result.currentVersion}）。\n\n` +
               `选择"确定"丢弃本地改动并重载服务端版本；\n` +
@@ -249,6 +260,16 @@ export function BusinessFlowVisualization() {
           if (ok) {
             await discardAndReload();
           }
+          break;
+        }
+        case 'base_version_expired': {
+          // Day 3 D-4：客户端 baseVersion 太旧（canvas_versions 已被清理）—— 无法走合并算法
+          // 隐藏判断 #9：保留草稿，让用户重载后继续基于最新版本工作
+          window.alert(
+            `画布历史版本已超出可合并范围（服务端 v${result.currentVersion}）。\n\n` +
+              `已保留你的本地草稿。点击"确定"重载最新版本后，可以从"草稿恢复"继续编辑。`
+          );
+          await discardAndReload();
           break;
         }
         case 'skipped':

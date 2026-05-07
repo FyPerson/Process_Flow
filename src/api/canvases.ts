@@ -2,6 +2,7 @@
 // 复用 src/auth/api.ts 的 fetch 封装风格（自动带 Authorization、ApiError 归一）
 
 import type { MultiCanvasProject } from '../types/flow.ts';
+import type { Conflict, SaveCanvasResultClient } from './canvases.types.ts';
 
 const TOKEN_KEY = 'business-flow:jwt';
 
@@ -21,6 +22,9 @@ export interface ApiError {
   currentVersion?: number;
   // 字段校验失败时携带
   issues?: Array<{ path: string; message: string }>;
+  // PUT 409 conflict 真合并冲突时携带（Day 3 取舍审 high 风险 1 修法）
+  // D-3 已建 canvases.types.ts Conflict 镜像，类型从 unknown[] 收紧到 Conflict[]
+  conflicts?: Conflict[];
 }
 
 async function apiFetch<T>(path: string, init?: RequestInit & { authed?: boolean }): Promise<T> {
@@ -96,6 +100,9 @@ async function apiFetch<T>(path: string, init?: RequestInit & { authed?: boolean
         (typeof body === 'string' ? body : undefined),
       currentVersion: obj?.currentVersion as number | undefined,
       issues: obj?.issues as Array<{ path: string; message: string }> | undefined,
+      // Day 3 取舍审 high 风险 1：解析 409 conflict 的 conflicts 数组让 hook 拿到
+      // 类型从服务端契约保证（详见 src/api/canvases.types.contract.test.ts）
+      conflicts: Array.isArray(obj?.conflicts) ? (obj.conflicts as Conflict[]) : undefined,
     };
     throw err;
   }
@@ -169,16 +176,13 @@ export async function createCanvas(input: CreateCanvasInput): Promise<{ id: numb
   });
 }
 
-export interface SaveCanvasResult {
-  ok: true;
-  version: number;
-  merged: false;
-}
+// SaveCanvasResult re-export — Day 3 D-3 收紧为 SaveCanvasResultClient（含 merged=true 路径）
+export type SaveCanvasResult = SaveCanvasResultClient;
 
 /**
  * 保存画布（PUT，乐观锁）
- * - 成功：返回 SaveCanvasResult
- * - 冲突：抛 ApiError，status=409，含 currentVersion
+ * - 成功：返回 SaveCanvasResult（merged=false 直接保存 / merged=true 服务端真合并 mergedData 含双方）
+ * - 冲突：抛 ApiError，status=409，含 currentVersion + 可能的 conflicts 数组（真合并冲突）
  */
 export async function saveCanvas(
   id: number,

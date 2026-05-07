@@ -17,6 +17,7 @@ import {
   deleteDraft as apiDeleteDraft,
   saveCanvas as apiSaveCanvas,
 } from '../api/canvases';
+import type { Conflict } from '../api/canvases.types';
 import {
   pauseDraftAutosave,
   resetDraftAutosaveSnapshot,
@@ -63,7 +64,12 @@ export interface UseMultiCanvasOptions {
  * caller 用 switch(result.status) 强制处理所有分支，避免漏处理 conflict/skipped/discarded */
 export type SaveResult =
   | { status: 'saved' }
-  | { status: 'conflict'; currentVersion: number }
+  // Day 3 D-4：merged=true 服务端真合并完成；mergedData 已 loadProject + serverVersion 更新
+  | { status: 'merged'; version: number; mergedFromVersion: number }
+  // Day 3 D-4：真合并冲突；conflicts 数组用于真冲突弹窗（Day 4 实施）
+  | { status: 'conflict'; currentVersion: number; conflicts?: Conflict[] }
+  // Day 3 D-4：base_version_expired，客户端已被 server 提示重载
+  | { status: 'base_version_expired'; currentVersion: number }
   | { status: 'skipped' }
   | { status: 'discarded' };
 
@@ -452,7 +458,12 @@ export function useMultiCanvas(
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [serverError, setServerError] = useState<ApiError | null>(null);
-  const [conflict, setConflict] = useState<{ currentVersion: number } | null>(null);
+  // Day 3 D-3 高风险吸收：conflict state 扩 conflicts 数组（携 detector 4 段产的真合并冲突）
+  // base_version_expired 路径用 reason='base_version_expired' 区分（不带 conflicts）
+  const [conflict, setConflict] = useState<
+    | { currentVersion: number; reason?: 'conflict' | 'base_version_expired'; conflicts?: Conflict[] }
+    | null
+  >(null);
   const [autoSaveDisabled, setAutoSaveDisabled] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
 
@@ -948,6 +959,64 @@ export function useMultiCanvas(
       if (canvasIdRef.current !== capturedCanvasId) {
         return { status: 'discarded' };
       }
+
+      // Day 3 D-4：merged=true 路径 — 服务端真合并 mergedData 含双方改动
+      //
+      // codex Day 3 末尾审复审 high #2 修法（B 方案；A 方案被戳穿不变量破坏）：
+      //
+      // 核心不变量：serverVersionRef.current 必须描述当前 projectRef.current 的服务端基线。
+      //
+      // A 方案错误（已废弃）：单边推进 serverVersionRef = result.version 但保留 projectRef
+      // = mergedFromVersion 基线 + 后续编辑 → 不变量破坏 → 下次 save baseVersion = result.version
+      // = server currentVersion → 进直接保存路径覆盖 mergedData → A 改动丢失。
+      //
+      // B 方案：changeSeq 不等时 **server-side state 全部不动**（保不变量）：
+      // - serverVersionRef 不推进（保持 mergedFromVersion）→ 下次 save 用旧 baseVersion
+      //   → 服务端再次走合并路径自动并入 A 改动（与"未做这次合并"等价但保留本地编辑）
+      // - project 不替换（保留本地后续编辑）
+      // - dirty 保持 true → 下个防抖 save
+      // - 不删草稿（与 base_version_expired 同策略保留兜底）
+      //
+      // 5 人内网下第二轮合并便宜，用户感知 = "保存期间继续编辑 → 下轮 save 时再次合并 A 改动"。
+      if (result.merged) {
+        // 标志型 state 两路径都做（不影响合并基线一致性）
+        setLastSavedAt(Date.now());
+        setConflict(null);
+        setAutoSaveDisabled(false);
+
+        if (changeSeqRef.current === capturedSeq) {
+          // 默认路径（无后续编辑）：整体替换 + 推进 ref + 清 dirty + 删草稿
+          serverVersionRef.current = result.version;
+          setServerVersion(result.version);
+          setProject(result.mergedData);
+          projectRef.current = result.mergedData;
+          bumpLoadRevision();
+          setDirty(false);
+          try {
+            await apiDeleteDraft(capturedCanvasId);
+          } catch (delErr) {
+            console.warn('[draft] delete after merged save failed', delErr);
+          }
+          resetDraftAutosaveSnapshot();
+        } else {
+          // B 方案：有后续编辑 → 所有 server-side state 都不动（核心不变量保持）
+          // - serverVersionRef / setServerVersion 不动（保持 mergedFromVersion）
+          // - project / projectRef 不动（保留本地后续编辑）
+          // - dirty 保持 true（已经是 true 因为有后续编辑）
+          // - 不删草稿（保留兜底）+ 不 resetDraftAutosaveSnapshot
+          console.warn(
+            '[merge] keep local edits during merged save; next save will re-merge A changes'
+          );
+        }
+
+        return {
+          status: 'merged',
+          version: result.version,
+          mergedFromVersion: result.mergedFromVersion,
+        };
+      }
+
+      // 直接保存路径（baseVersion === currentVersion，无合并）
       // 真正 ref-first：先同步 ref，再 setState，避免极短窗口内二次 save 用旧 baseVersion
       serverVersionRef.current = result.version;
       setServerVersion(result.version);
@@ -977,9 +1046,31 @@ export function useMultiCanvas(
       setServerError(apiErr);
       // 任何保存失败都暂停自动保存，避免循环重试 / 用户感知不到
       setAutoSaveDisabled(true);
+      // Day 3 D-4：base_version_expired 路径 — 强制重载 + 保留草稿（隐藏判断 #9）
+      if (
+        apiErr.status === 409 &&
+        apiErr.error === 'base_version_expired' &&
+        typeof apiErr.currentVersion === 'number'
+      ) {
+        setConflict({
+          currentVersion: apiErr.currentVersion,
+          reason: 'base_version_expired',
+        });
+        // 不调 apiDeleteDraft —— 草稿保留给用户后续重载后继续工作（隐藏判断 #9）
+        return { status: 'base_version_expired', currentVersion: apiErr.currentVersion };
+      }
+      // Day 3 D-4：真合并冲突 — 携 conflicts 数组（high 风险 1 修法 + apiFetch 已解析）
       if (apiErr.status === 409 && typeof apiErr.currentVersion === 'number') {
-        setConflict({ currentVersion: apiErr.currentVersion });
-        return { status: 'conflict', currentVersion: apiErr.currentVersion };
+        setConflict({
+          currentVersion: apiErr.currentVersion,
+          reason: 'conflict',
+          conflicts: apiErr.conflicts,
+        });
+        return {
+          status: 'conflict',
+          currentVersion: apiErr.currentVersion,
+          conflicts: apiErr.conflicts,
+        };
       }
       throw err;
     } finally {
