@@ -13,9 +13,10 @@
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "lint:ids": "node scripts/check-id-generation.mjs",
     "check:invariants": "node scripts/check-b-plan-invariant.mjs",
+    "check:conflict-guards": "node scripts/check-conflict-guards.mjs",
     "typecheck:test": "tsc --noEmit -p tsconfig.test.json",
     "format": "prettier --write .",
-    "test": "npm run lint:ids && npm run check:invariants && npm run typecheck:test && node --import tsx --test \"src/**/*.test.ts\" \"server/**/*.test.ts\""
+    "test": "npm run lint:ids && npm run check:invariants && npm run check:conflict-guards && npm run typecheck:test && node --import tsx --test \"src/**/*.test.ts\" \"server/**/*.test.ts\""
   },
   "dependencies": {
     "@types/dagre": "^0.7.53",

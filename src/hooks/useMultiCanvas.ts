@@ -155,8 +155,14 @@ export interface UseMultiCanvasReturn {
    * 不要让下游 hooks/面板各自 useAuth() 算各自的 readOnly —— P3D-2 入口全覆盖
    * 的前置不变量。 */
   canvasMetaState: CanvasMetaState;
-  /** 出现 409 冲突时记录服务端 currentVersion；用户重载或手动覆盖后清零 */
-  conflict: { currentVersion: number } | null;
+  /** 出现 409 冲突时记录服务端 currentVersion + 冲突原因 + conflicts 数组（Day 4 暴露）
+   *  reason='conflict' = detector 真冲突（含 conflicts 数组）；'base_version_expired' = 客户端 baseVersion 太旧
+   *  Day 4 BFV 用 reason 字段决定渲染 ConflictResolutionDialog 还是 BaseVersionExpiredDialog */
+  conflict: {
+    currentVersion: number;
+    reason?: 'conflict' | 'base_version_expired';
+    conflicts?: Conflict[];
+  } | null;
   /** 冲突期间 / 致命错误期间，自动保存被禁用（红字提示用户手动处理） */
   autoSaveDisabled: boolean;
   /** 最近一次成功保存的时间戳（用于显示"X 秒前已保存"） */

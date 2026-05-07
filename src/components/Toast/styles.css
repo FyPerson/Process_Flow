@@ -1,0 +1,109 @@
+/* Day 4 F-8 + M5：Toast 样式（Portal 挂 document.body / 少动画 / 不用 backdrop-filter） */
+
+.toast-host {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 3000;
+  /* z-index 高于 DraftRecoveryDialog (2000)，但弹窗组件用更高的 z-index 4000 + portal */
+  pointer-events: none;
+  /* 容器不抢点击；只 toast item 接收点击 */
+  max-width: 420px;
+}
+
+.toast-item {
+  pointer-events: auto;
+  background: #ffffff;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  border-left: 3px solid transparent;
+  animation: toast-slide-in 150ms ease-out;
+}
+
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.toast-item--info {
+  border-left-color: #2563eb;
+  color: #1e3a8a;
+}
+
+.toast-item--success {
+  border-left-color: #16a34a;
+  color: #166534;
+}
+
+.toast-item--warning {
+  border-left-color: #f59e0b;
+  color: #78350f;
+  background: #fffbeb;
+}
+
+.toast-item__main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.toast-item__title {
+  flex: 1;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.toast-item__close {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  opacity: 0.6;
+}
+
+.toast-item__close:hover {
+  opacity: 1;
+}
+
+.toast-item__expand {
+  margin-top: 4px;
+  background: transparent;
+  border: none;
+  color: #2563eb;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.toast-item__expand:hover {
+  color: #1d4ed8;
+}
+
+.toast-item__detail {
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  max-height: 200px;
+  overflow-y: auto;
+  word-break: break-all;
+}

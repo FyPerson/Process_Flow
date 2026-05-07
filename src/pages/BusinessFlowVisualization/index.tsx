@@ -4,8 +4,13 @@ import { CanvasSwitcher } from '../../components/CanvasSwitcher';
 import { FlowCanvas } from '../../components/FlowCanvas';
 import { OtherEditorsBadge } from '../../components/OtherEditorsBadge';
 import { SaveStatus } from '../../components/SaveStatus';
+import { ConflictResolutionDialog } from '../../components/ConflictResolutionDialog';
+import { BaseVersionExpiredDialog } from '../../components/BaseVersionExpiredDialog';
+import { useToast } from '../../components/Toast';
 import { downloadCanvasFromServer, downloadProjectAsLocal } from '../../utils/canvas-export';
-import { importCanvas } from '../../api/canvases';
+import { importCanvas, putDraft as apiPutDraft } from '../../api/canvases';
+import { canonicalizeProject } from '../../hooks/useDraftAutosave';
+import type { MergeReport, MergeWarning } from '../../api/canvases.types';
 import { Node, Edge } from '@xyflow/react';
 import {
   FlowDefinition,
@@ -94,7 +99,19 @@ export function BusinessFlowVisualization() {
     save,
     createOnServer,
     discardAndReload,
+    clearConflictAndResumeAutosave,
   } = useMultiCanvas({ canvasId: canvasIdFromUrl, storageKey: 'saved-flow-data' });
+
+  const toast = useToast();
+
+  // Day 4 D-14 + X2：取消按钮关弹窗后用顶栏可重开入口
+  // null = 不显示弹窗；true = 显示（基于 conflict state.reason 决定哪个弹窗）
+  const [conflictDialogOpen, setConflictDialogOpen] = useState(false);
+
+  // Day 4 D-8 + A2：deferred merge toast session-once 业务级去重
+  // 一次 dirty/editing session 只提示一次"延后合并"toast
+  // 重置时机：正常 saved/applied/reload/切画布
+  const deferredMergeToastShownRef = useRef(false);
 
   // 阶段 4 P4C：心跳——只在登录 + 服务端画布场景上报
   // 游客 / 本地草稿（canvasIdFromUrl=null）模式不上报，因为没有"在编辑哪张画布"的语义
@@ -220,9 +237,10 @@ export function BusinessFlowVisualization() {
     ],
   );
 
-  // beforeunload：dirty 或 saving 时拦截关闭
+  // beforeunload：dirty / saving / conflict 时拦截关闭
+  // Day 4 H5 + L2：conflict 期间也必须拦（用户离开页面会丢失草稿/冲突状态）
   useEffect(() => {
-    if (!dirty && !saving) return;
+    if (!dirty && !saving && !conflict) return;
     const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault();
       // 现代浏览器忽略自定义文本，但 returnValue 仍是触发提示的"开关"
@@ -230,7 +248,34 @@ export function BusinessFlowVisualization() {
     };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
-  }, [dirty, saving]);
+  }, [dirty, saving, conflict]);
+
+  // Day 4 F-11：合并报告 toast 文案构造（D-7 + D-pre-2）
+  // applied 路径："已与 alice 的改动合并：节点 +2 / 边 +1（详情可展开）"
+  // deferred 路径（B 方案）："已与对方改动合并，但你的最新编辑会在下次保存合并"
+  const buildMergeToastDetail = useCallback((report: MergeReport): string | undefined => {
+    const parts: string[] = [];
+    const nodeOps = report.nodesAddedCount + report.nodesModifiedCount + report.nodesDeprecatedCount + report.nodesRemovedCount;
+    const edgeOps = report.edgesAddedCount + report.edgesModifiedCount + report.edgesRemovedCount;
+    if (nodeOps > 0) {
+      parts.push(`节点：新增 ${report.nodesAddedCount} / 修改 ${report.nodesModifiedCount} / 废弃 ${report.nodesDeprecatedCount} / 删除 ${report.nodesRemovedCount}`);
+    }
+    if (edgeOps > 0) {
+      parts.push(`连线：新增 ${report.edgesAddedCount} / 修改 ${report.edgesModifiedCount} / 删除 ${report.edgesRemovedCount}`);
+    }
+    if (report.warnings.length > 0) {
+      parts.push(`\n⚠️ 自动丢弃了 ${report.warnings.length} 条悬空边（端点已被对方删除）：`);
+      // 列前 5 条 warning（避免 toast 过长）
+      const previews = report.warnings.slice(0, 5).map((w: MergeWarning) =>
+        `  · ${w.sheetId} / ${w.edgeId}（缺失端点 ${w.missingEndpoint}）`
+      );
+      parts.push(...previews);
+      if (report.warnings.length > 5) {
+        parts.push(`  …（还有 ${report.warnings.length - 5} 条）`);
+      }
+    }
+    return parts.length > 0 ? parts.join('\n') : undefined;
+  }, []);
 
   // 保存按钮：已挂接服务端画布
   const handleSave = useCallback(async () => {
@@ -239,37 +284,46 @@ export function BusinessFlowVisualization() {
       switch (result.status) {
         case 'saved':
           // 顶栏徽标会显示"已保存（刚刚）"
+          // 重置 deferred toast 去重 ref（D-8）：成功 saved 后下个 dirty session 重新允许提示
+          deferredMergeToastShownRef.current = false;
           break;
         case 'merged': {
-          // Day 3 D-4：服务端已真合并；useMultiCanvas.save() 内已按 B 方案处理：
-          // - 默认路径（无后续编辑）：整体替换 project + 推进 serverVersion + 删草稿
-          // - 有后续编辑（changeSeq 不等）：不动 project / 不推进 ref / 保留 dirty → 下轮 autosave 用旧 baseVersion 再合并
-          // 顶栏会显示"已保存"——同 saved 路径；Day 4 加 toast 显示"已合并对方改动"+ mergeReport 详情
-          // 当前 v1.13.0 阶段：用户体感与 saved 一致，无新弹窗
-          break;
-        }
-        case 'conflict': {
-          // Day 3 D-4：真合并冲突（detector 4 段 + applyDelta active_sheet_missing）
-          // result.conflicts 数组将在 Day 4 真冲突 UI 实施时展示给用户（4B 流程：保存草稿 / 继续编辑）
-          // 当前 v1.13.0：沿用 v1.x 旧 confirm 文案兜底（Day 4 替换为弹窗）
-          const ok = window.confirm(
-            `检测到服务端有更新（v${result.currentVersion}）。\n\n` +
-              `选择"确定"丢弃本地改动并重载服务端版本；\n` +
-              `选择"取消"保留本地改动（稍后可手动处理）。`
-          );
-          if (ok) {
-            await discardAndReload();
+          // Day 4 D-pre-2 + D-7 + D-8 + X1：根据 appliedToLocal 区分 toast 文案
+          if (result.appliedToLocal) {
+            // applied 路径：projectRef 已替换 + serverVersionRef 已推进 + 草稿已删
+            const who = result.report.mergedFromUsername ?? '对方';
+            toast.show({
+              key: 'merge-applied',
+              severity: 'success',
+              title: `已与 ${who} 的改动合并`,
+              detail: buildMergeToastDetail(result.report),
+              durationMs: 6000,
+            });
+            deferredMergeToastShownRef.current = false; // 重置去重
+          } else if (!deferredMergeToastShownRef.current) {
+            // deferred 路径（B 方案）：server-side state 全不动；session 内只提示一次（D-8 + M3）
+            const who = result.report.mergedFromUsername ?? '对方';
+            toast.show({
+              key: 'merge-deferred',
+              severity: 'info',
+              title: `已与 ${who} 的改动合并，你的最新编辑会在下次保存合并`,
+              detail: buildMergeToastDetail(result.report),
+              durationMs: 8000,
+            });
+            deferredMergeToastShownRef.current = true;
           }
           break;
         }
+        case 'conflict': {
+          // Day 4 F-11：替换旧 confirm 兜底为 ConflictResolutionDialog（4B 流程）
+          // useMultiCanvas 已在 setConflict 把 conflicts 数组写进 hook state；这里只需开弹窗
+          setConflictDialogOpen(true);
+          break;
+        }
         case 'base_version_expired': {
-          // Day 3 D-4：客户端 baseVersion 太旧（canvas_versions 已被清理）—— 无法走合并算法
-          // 隐藏判断 #9：保留草稿，让用户重载后继续基于最新版本工作
-          window.alert(
-            `画布历史版本已超出可合并范围（服务端 v${result.currentVersion}）。\n\n` +
-              `已保留你的本地草稿。点击"确定"重载最新版本后，可以从"草稿恢复"继续编辑。`
-          );
-          await discardAndReload();
+          // Day 4 F-11 + M4：替换旧 alert 为 BaseVersionExpiredDialog
+          // useMultiCanvas 已 setConflict reason='base_version_expired'；开弹窗（与 conflict 共用 conflictDialogOpen state）
+          setConflictDialogOpen(true);
           break;
         }
         case 'skipped':
@@ -286,11 +340,53 @@ export function BusinessFlowVisualization() {
       }
     } catch (err) {
       const apiErr = err as ApiError;
-      window.alert(
-        `保存失败：${apiErr?.error || apiErr?.message || '未知错误'}`
-      );
+      toast.show({
+        key: 'save-error',
+        severity: 'warning',
+        title: `保存失败：${apiErr?.error || apiErr?.message || '未知错误'}`,
+        durationMs: 8000,
+      });
     }
-  }, [save, discardAndReload]);
+  }, [save, toast, buildMergeToastDetail]);
+
+  // Day 4 F-11 + D-1 + H1：「保存草稿并查看最新版本」按钮
+  // 主动 PUT draft 成功后再 discardAndReload；PUT 失败不 reload，保留弹窗 + dirty
+  const handleSaveDraftAndReload = useCallback(async () => {
+    if (canvasId == null || serverVersion == null) {
+      throw new Error('no canvas / serverVersion to save draft');
+    }
+    const current = getProjectData();
+    const snapshot = canonicalizeProject(current);
+    // PUT draft 用 hook 内当前 serverVersion 作为 baseVersion（与 useDraftAutosave 同口径）
+    await apiPutDraft(canvasId, snapshot, serverVersion);
+    // PUT 成功 → 关弹窗 + 重载（discardAndReload 不删草稿，让用户重载后从草稿恢复继续）
+    setConflictDialogOpen(false);
+    await discardAndReload();
+    // reload 后重置 deferred toast 去重（D-8 重置时机之一）
+    deferredMergeToastShownRef.current = false;
+  }, [canvasId, serverVersion, getProjectData, discardAndReload]);
+
+  // Day 4 F-11 + D-2 + H2：「继续编辑草稿」按钮
+  // 调 hook 命令式封装清 conflict + 恢复 autosave；不动 server-side state（B 方案不变量）
+  const handleContinueEdit = useCallback(() => {
+    setConflictDialogOpen(false);
+    clearConflictAndResumeAutosave();
+  }, [clearConflictAndResumeAutosave]);
+
+  // Day 4 F-11 + D-14 + X2：「取消」按钮
+  // 关弹窗保留 conflict state；BFV 顶栏 pendingConflict UI 显示可重开入口
+  const handleCancelConflictDialog = useCallback(() => {
+    setConflictDialogOpen(false);
+    // 不清 conflict / 不恢复 autosave；用户在顶栏点「冲突待处理」可重开
+  }, []);
+
+  // Day 4 F-11 + M4 + A1：BaseVersionExpiredDialog「留在草稿」按钮
+  // 关弹窗但不恢复 autosave（base_version_expired 无法走合并，必须重载）
+  const handleStayInDraft = useCallback(() => {
+    setConflictDialogOpen(false);
+    // 不清 conflict / 不恢复 autosave（A1：onStayInDraft 不调用 hook 恢复）
+    // 用户在顶栏点「冲突待处理」可重开弹窗
+  }, []);
 
   // 另存到服务器（首次创建）—— 成功后用返回的 id 显式写 URL（单向同步）
   const handleSaveAsNew = useCallback(async () => {
@@ -840,6 +936,25 @@ export function BusinessFlowVisualization() {
           onKeep={handleKeep}
         />
       )}
+      {/* Day 4 F-11：真冲突弹窗（4B 流程） / base_version_expired 独立弹窗
+          用 conflict.reason 区分两种语义：'conflict' / 'base_version_expired' */}
+      {conflictDialogOpen && conflict !== null && (
+        conflict.reason === 'base_version_expired' ? (
+          <BaseVersionExpiredDialog
+            currentVersion={conflict.currentVersion}
+            onSaveDraftAndReload={handleSaveDraftAndReload}
+            onStayInDraft={handleStayInDraft}
+          />
+        ) : (
+          <ConflictResolutionDialog
+            conflicts={conflict.conflicts}
+            currentVersion={conflict.currentVersion}
+            onSaveDraftAndReload={handleSaveDraftAndReload}
+            onContinueEdit={handleContinueEdit}
+            onCancel={handleCancelConflictDialog}
+          />
+        )
+      )}
       <div className="flow-header">
         <div className="header-left">
           <h1 className="flow-title">{project?.name || '业务流程图'}</h1>
@@ -886,6 +1001,17 @@ export function BusinessFlowVisualization() {
             onExportServer={handleExportServer}
             onExportLocal={handleExportLocal}
           />
+          {/* Day 4 D-14 + X2 + H3：用户取消冲突弹窗后，顶栏显示重开入口 */}
+          {conflict !== null && !conflictDialogOpen && (
+            <button
+              type="button"
+              className="bfv-pending-conflict-btn"
+              onClick={() => setConflictDialogOpen(true)}
+              title="打开冲突处理弹窗"
+            >
+              ⚠️ 冲突待处理（点击查看）
+            </button>
+          )}
         </div>
       </div>
       <div className="flow-content">

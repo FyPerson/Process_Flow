@@ -1,0 +1,164 @@
+/* Day 4 F-9：ConflictResolutionDialog 样式
+ * Portal 挂 document.body / aria-modal=true / 不用 backdrop-filter / 少动画 */
+
+.conflict-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4000;
+  /* 高于 DraftRecoveryDialog (2000) 和 Toast (3000) */
+}
+
+.conflict-dialog {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 24px 28px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.3);
+  font-family: inherit;
+}
+
+.conflict-dialog-title {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+.conflict-dialog-body {
+  flex: 1;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.conflict-dialog-summary {
+  margin: 0 0 12px 0;
+}
+
+.conflict-dialog-summary strong {
+  color: #b91c1c;
+}
+
+.conflict-dialog-fallback {
+  background: #fef3c7;
+  border-left: 3px solid #f59e0b;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #78350f;
+  border-radius: 4px;
+  margin: 12px 0;
+}
+
+.conflict-dialog-list {
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
+
+.conflict-dialog-list-item {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f3f4f6;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  font-size: 13px;
+  align-items: baseline;
+}
+
+.conflict-dialog-list-item:last-child {
+  border-bottom: none;
+}
+
+.conflict-dialog-list-type {
+  font-weight: 600;
+  color: #b91c1c;
+  flex-basis: 100%;
+}
+
+.conflict-dialog-list-meta {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.conflict-dialog-list-meta code {
+  background: #f3f4f6;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+}
+
+.conflict-dialog-list-message {
+  color: #374151;
+  font-size: 12px;
+  font-style: italic;
+}
+
+.conflict-dialog-help {
+  margin: 16px 0 0 0;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.conflict-dialog-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.conflict-dialog-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+  font-family: inherit;
+}
+
+.conflict-dialog-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.conflict-dialog-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.conflict-dialog-btn--primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.conflict-dialog-btn--primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.conflict-dialog-btn--ghost {
+  border-color: transparent;
+  color: #6b7280;
+}
+
+.conflict-dialog-btn--ghost:hover:not(:disabled) {
+  background: #f3f4f6;
+}

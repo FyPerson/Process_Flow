@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext.tsx';
 import { LoginPage } from './auth/LoginPage.tsx';
 import { Navigation } from './components/Navigation';
+import { ToastProvider } from './components/Toast';
 import { AdminPage } from './pages/Admin';
 import { BusinessFlowVisualization } from './pages/BusinessFlowVisualization';
 
@@ -176,16 +177,19 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <div
-          style={{
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            background: '#0f172a',
-          }}
-        >
-          <AppShell />
-        </div>
+        {/* Day 4 F-8 + H2：ToastProvider 挂应用根，所有页面 useToast() 可用 */}
+        <ToastProvider>
+          <div
+            style={{
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              background: '#0f172a',
+            }}
+          >
+            <AppShell />
+          </div>
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   );

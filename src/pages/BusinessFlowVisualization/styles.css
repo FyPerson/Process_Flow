@@ -134,6 +134,27 @@
   font-size: 16px;
 }
 
+/* Day 4 D-14 + X2 + H3：取消冲突弹窗后顶栏可重开入口 */
+.bfv-pending-conflict-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fef3c7;
+  padding: 8px 14px;
+  background: rgba(220, 38, 38, 0.85);
+  border: 1px solid #f87171;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.bfv-pending-conflict-btn:hover {
+  background: rgba(220, 38, 38, 1);
+}
+
 .flow-content {
   flex: 1;
   min-height: 0;
