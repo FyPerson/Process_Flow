@@ -34,7 +34,7 @@
 npm run dev              # api + vite 双进程并发，端口 5173
 
 # 验证（npm test 已串好 lint:ids → typecheck:test → 单测）
-npm test                 # 293 测试 + lint:ids 兜底 + 测试 type-check
+npm test                 # 389 测试 + lint:ids 兜底 + 测试 type-check
 npx tsc --noEmit -p tsconfig.client.json   # 前端类型检查（必须显式 -p）
 npx tsc --noEmit -p tsconfig.server.json   # 服务端类型检查
 npx tsc --noEmit -p tsconfig.test.json     # 测试类型检查
@@ -81,17 +81,23 @@ powershell -File scripts/deploy.ps1        # 主 PowerShell 跑（不能在 hook
 
 ## 当前阶段
 
-阶段 5 合并算法 4 天 MVP —— **Day 1 完工 + Day 2 进行中**（截至 2026-05-07）：
+阶段 5 合并算法 4 天 MVP —— **Day 1 + Day 2 完工**（截至 2026-05-07）：
 - **Day 1**（v1.12.0，2026-05-06）：类型/框架/saveCanvas 入口三分支改造 + schema parentId 真校验 + 旧数据审计脚本。codex 7 轮审 final 0 high + 0 medium，单测 282→293
-- **Day 2 阶段 A 已完工**（2026-05-07，未 bump）：saveCanvas 快速路径迁移到 Day 1 `Delta` 形态 + 提取 3 helper（`canvases-merge-helpers.ts` 491 行）+ DataIntegrityError 路由映射闭环
-  - 用户拍板 Day 2 11 项决策（7 判断点全 X + 4 新增风险）见 [Day2-合并算法/03-拍板记录.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day2-合并算法/03-拍板记录.md)
-  - 阶段 A codex 审查：1 真 high（routes catch）已修 / 1 伪 high（types.ts AssertNever 已防御）不采纳。归档 [Day2-合并算法/04-阶段A-代码审查-helper提取.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day2-合并算法/04-阶段A-代码审查-helper提取.md)
-  - saveCanvas 主体从 ~370 行缩到 ~120 行；行为完全保留；4 处 integrity 收紧（schema + 生产 db 审计已防误伤）
-- **Day 2 阶段 B/C/D 待启动**：B-1 detectNodeConflicts → B-2 detectEdgeConflicts → B-3 applyDelta（含 codex 风险 2 复跑 assertProjectIntegrity 兜底）→ B-4 tryMerge 编排 → C saveCanvas 接合并 → D 末尾 codex 审 + bump v1.13.0
+- **Day 2**（v1.13.0，2026-05-07）：合并算法主体 — detector + applyDelta + tryMerge + saveCanvas 接合并完整闭环
+  - **阶段 A**：saveCanvas 快速路径迁移 Delta 形态 + 提取 3 helper（`canvases-merge-helpers.ts` 491 行）+ DataIntegrityError 路由映射
+  - **阶段 B 五切片**：B-1 detectNodeConflicts / B-2 detectEdgeConflicts（H1 修法 SEMANTIC_CONNECTOR_FIELDS + M1 deepEqualJsonShape）/ B-2.5 detectSheet+detectProject / B-3 applyDelta（E2 防御抛 DataIntegrityError + active_sheet_missing 内部映射 + R-Day2-2 复跑 assertProjectIntegrity）/ B-4 tryMerge 编排（computeDelta×2 + 4 段 detect 全收集）；codex 9 轮复审通过
+  - **阶段 C**：saveCanvas 接合并算法完整链路（取舍审 11 项 + 4 风险全吸收 + 7 case 验收）。codex 修订 #2 #3：currentVersion 保存者用 `canvas_versions.saved_by` 不是 `canvases.updated_by`（PATCH/publish/archive 会改脏主表 updated_by 但不写 version）。high 风险吸收：saveCanvas 独立持有 deltaB 给 helper 用；tryMerge 内部 deltaB 不外传避免漂移
+  - **阶段 D**：末尾审 codex 0 issue / canEnterD: true / confidence=high；4 test_gap 挂账 #33（PUT route 层 DataIntegrityError + conflict 序列化复测）+ #34（合并端到端遗漏路径）→ Day 4 Playwright e2e 一并兑现
+  - 单测 **293 → 389** 全过 / tsc 三端 0 错 / lint:ids 0 违规
 
-阶段 5 整体进度 **1/4 → 1.5/4**。单测仍 293/293（阶段 A 是行为不变的纯重构）。
+阶段 5 整体进度 **1/4 → 3/4**。
 - 整阶段时间线：[阶段5/P5-合并算法/README.md](docs/规划/codex审查记录/阶段5/P5-合并算法/README.md)
 - Day 1 收尾：[Day1-基建/99-收尾.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day1-基建/99-收尾.md)
+- Day 2 收尾：[Day2-合并算法/99-收尾.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day2-合并算法/99-收尾.md)
+- Day 2 11 项决策：[Day2-合并算法/03-拍板记录.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day2-合并算法/03-拍板记录.md)
+- 阶段 C 取舍审：[Day2-合并算法/10-阶段C-取舍审-saveCanvas接合并.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day2-合并算法/10-阶段C-取舍审-saveCanvas接合并.md)
+
+**下次 next**：Day 3 客户端（merged 响应 + 状态替换 + conflict_logs 写入），覆盖 5.4 N1-N10 + 5.5 E1-E7 + sheet 增删 + 端点校验 + nodes_meta 越权 25+ 单测。
 
 **codex 调用 Windows sandbox 1326 + ARG_MAX 32KB 双坑根治**：大 prompt 必须用 stdin 注入 + 前置代码内容（避开 PowerShell 子进程 1326 / Windows 命令行长度限制）。详见 [P5-合并算法/README.md § codex 协作模式](docs/规划/codex审查记录/阶段5/P5-合并算法/README.md)。
 

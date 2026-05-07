@@ -3,7 +3,7 @@
 | Day | 主题 | 状态 | 版本 | 归档 |
 |---|---|---|---|---|
 | Day 1 | 基建（类型 + computeDelta + schema parentId 真校验） | ✅ 完工 2026-05-06 | v1.12.0 | [Day1-基建/](Day1-基建/) |
-| Day 2 | 合并算法（detector + applyDelta + tryMerge + saveCanvas 接合并） | 🔄 进行中（阶段 A + B 系列已完工 / C + D 待启动） | - | [Day2-合并算法/](Day2-合并算法/) |
+| Day 2 | 合并算法（detector + applyDelta + tryMerge + saveCanvas 接合并） | ✅ 完工 2026-05-07 | v1.13.0 | [Day2-合并算法/](Day2-合并算法/) |
 | Day 3 | 客户端（merged 响应 + 状态替换 + conflict_logs 写入） | ⏳ 待启动 | - | - |
 | Day 4 | 真冲突 UI + Playwright + 部署 | ⏳ 待启动 | - | - |
 
@@ -17,8 +17,8 @@
 | **B-2.5** | detectSheetConflicts + detectProjectConflicts（sheet_id_collision / sheet_removed_modified 双向 / *_meta_conflict G3 保守；13 case） | ✅ 完工 2026-05-07（commit `60d4f26`；codex 一轮审 canEnterB3: true） |
 | **B-3** | applyDelta（纯函数字段补丁 + E7 dangling endpoint warning + active_sheet_missing 内部映射 + R-Day2-2 复跑 assertProjectIntegrity；E2 防御抛 DataIntegrityError；18 case） | ✅ 完工 2026-05-07（commit `60d4f26`；codex 一轮审 canEnterB4: true） |
 | **B-4** | tryMerge 编排（computeDelta×2 + 四段 detect 全收集 + applyDelta + mergeReport 计数 + debugDelta?；ok:false 不携带 warnings；11 case） | ✅ 完工 2026-05-07（commit `60d4f26`；codex 两轮审 canEnterC: true） |
-| **C** | saveCanvas 接合并算法 + 端到端（**codex H1 验收必修**：DataIntegrityError catch 映射 500 + data_integrity_error，覆盖 currentData 历史脏数据路径） | ⏳ 待启动 |
-| **D** | Day 2 末尾 codex 审 + bump v1.13.0 | ⏳ 待启动 |
+| **C** | saveCanvas 接合并算法 + 端到端（codex H1 验收已兑现：DataIntegrityError 透传 + 7 case 端到端） | ✅ 完工 2026-05-07（commit 待 + 取舍审 11 项 + 4 风险全吸收） |
+| **D** | Day 2 末尾 codex 审 + bump v1.13.0 | ✅ 完工 2026-05-07（codex 0 issue / canEnterD: true / confidence=high / 4 test_gap 挂账 #33/#34） |
 
 ## 关键决策快速索引
 
@@ -31,6 +31,8 @@
 - [B-2.5 detector sheet/project 段代码审查](Day2-合并算法/07-阶段B-2.5-代码审查-detector-sheet-project段.md)
 - [B-3 applyDelta 代码审查（含路径 b 不可达性后续修正）](Day2-合并算法/08-阶段B-3-代码审查-applyDelta.md)
 - [B-4 tryMerge 代码审查（两轮 + 阶段 C 验收清单）](Day2-合并算法/09-阶段B-4-代码审查-tryMerge.md)
+- [阶段 C 取舍审 saveCanvas 接合并（11 项判断点 + 4 风险吸收）](Day2-合并算法/10-阶段C-取舍审-saveCanvas接合并.md)
+- [Day 2 99-收尾（v1.13.0）](Day2-合并算法/99-收尾.md)
 
 ## codex 协作模式（Windows sandbox 1326 解决方案）
 
