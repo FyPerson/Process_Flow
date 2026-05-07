@@ -11,7 +11,9 @@ import type { Database as DatabaseType } from 'better-sqlite3';
 import { getDb } from '../db/index.ts';
 import type { MultiCanvasProjectInput } from '../schemas/canvas.ts';
 import type { UserPublic } from '../types/user.ts';
-import { computeDelta } from './merge/computeDelta.ts';
+import { computeDelta, DataIntegrityError } from './merge/computeDelta.ts';
+import { tryMerge } from './merge/tryMerge.ts';
+import type { Conflict, MergeReport, MultiCanvasProjectShape } from './merge/types.ts';
 import {
   asProjectShape,
   PermissionError,
@@ -399,11 +401,12 @@ export interface SaveCanvasInput {
 
 export type SaveCanvasResult =
   | { ok: true; version: number; merged: false }
-  // 阶段 5 Day 3 起：merged=true 时返 mergedData + mergedFromVersion 给客户端做状态替换（GATE-1）
-  // Day 1-2 此分支不会被命中（合并算法 stub 阶段）。
-  | { ok: true; version: number; merged: true; mergedData: unknown; mergedFromVersion: number; report: unknown }
-  // 情况 3：基础冲突 —— 当前用户与对方修改有真冲突或合并 stub 未实现时落到此分支
-  | { ok: false; status: 409; error: 'conflict'; currentVersion: number; conflicts?: unknown[] }
+  // 阶段 5 Day 2 阶段 C 起：合并成功路径（baseVersion < currentVersion，detector 全空，applyDelta ok:true）
+  // mergedData 是 rewriteNodesFromMeta 后的版本，与主表持久化完全一致（codex 阶段 C 取舍审隐藏判断点 5）
+  | { ok: true; version: number; merged: true; mergedData: MultiCanvasProjectShape;
+      mergedFromVersion: number; report: MergeReport }
+  // 情况 3：基础冲突 —— 阶段 C 起 conflicts 由 tryMerge 真实产出（detector 4 段 + applyDelta active_sheet_missing）
+  | { ok: false; status: 409; error: 'conflict'; currentVersion: number; conflicts?: Conflict[] }
   // 阶段 5 D1 新增：客户端 baseVersion 太旧（canvas_versions 已被清理或从未存在）
   // → 客户端必须 GET 最新画布重载，drafts 仍保留
   | { ok: false; status: 409; error: 'base_version_expired'; currentVersion: number }
@@ -560,7 +563,19 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
       };
     }
     if (baseVersion < row.version) {
-      // 情况 2/3：取 baseData 走合并算法
+      // 情况 2/3：取 baseData 走合并算法（阶段 5 Day 2 阶段 C 接入）
+      //
+      // 实施流程（取舍审 10-阶段C-取舍审-saveCanvas接合并.md 已固化）：
+      //  1. SELECT baseSnapshot —— 找不到 → base_version_expired
+      //  2. SELECT canvas_versions(version=row.version) JOIN users 取 currentVersionAuthor
+      //     （codex 修订：不能用 canvases.updated_by，元信息 PATCH/publish 会改脏；只有 canvas_versions.saved_by
+      //     才是当前 data version 的真实保存者）
+      //  3. 三方 asProjectShape + saveCanvas 独立 computeDelta(baseData, incomingData) 拿 deltaB
+      //     （codex high 风险吸收：tryMerge 内部也会 computeDelta 一次但不外传，避免 deltaB 漂移破坏 G4）
+      //  4. validateDeltaBPermissions —— 先权限（403/409 节点级先于 409 合并冲突；medium 风险吸收）
+      //  5. tryMerge —— ok:false 透传 conflicts；ok:true 拿 mergedData + report
+      //  6. ok:true → metaIndex + rewriteNodesFromMeta(mergedData, deltaB, ...) → UPDATE + INSERT version + syncMeta
+      //  7. DataIntegrityError 不 catch，让事务回滚后透传给 route 层映射 500 + 'data_integrity_error'
       const baseSnapshot = db
         .prepare(
           'SELECT data FROM canvas_versions WHERE canvas_id = ? AND version = ?'
@@ -576,15 +591,139 @@ export function saveCanvas(input: SaveCanvasInput): SaveCanvasResult {
           currentVersion: row.version,
         };
       }
-      // Day 1 stub：合并算法未实现，统一回退到 conflict（行为等同原版）
-      // Day 2 起：在此处调 tryMerge(baseData, currentData, clientData) → 真合并 / 真冲突 / E7 警告
-      // baseSnapshot.data 已查出（防止 Day 2 实施时漏拿），但此处仅作存在性证明
-      void baseSnapshot;
-      return {
-        ok: false,
-        status: 409,
-        error: 'conflict',
+
+      // 取当前版本保存者（codex 修订 #2 #3：用 canvas_versions.saved_by 不用 canvases.updated_by）
+      const currentVersionAuthor = db
+        .prepare(
+          `SELECT cv.saved_by AS userId, u.username AS username
+             FROM canvas_versions cv
+             LEFT JOIN users u ON u.id = cv.saved_by
+            WHERE cv.canvas_id = ? AND cv.version = ?`
+        )
+        .get(id, row.version) as
+        | { userId: number; username: string | null }
+        | undefined;
+      if (!currentVersionAuthor) {
+        // canvas_versions(version=row.version) 缺失 —— canvas_versions.saved_by NOT NULL（migration 0001）
+        // 同事务 saveCanvas/createCanvas 都会写 version。此处缺失说明 DB 损坏（手工修 / 迁移漏写）
+        // 不静默 fallback，按 DataIntegrityError 抛让 route 层映射 500
+        throw new DataIntegrityError(
+          `canvas ${id} current version ${row.version} missing in canvas_versions`,
+          `saveCanvas merge path`
+        );
+      }
+
+      // 三方数据 parse（不预 strip — codex 判断点 1：computeDelta 内部已 strip）
+      const baseProject = asProjectShape(JSON.parse(baseSnapshot.data));
+      const currentProject = asProjectShape(JSON.parse(row.data));
+      const incomingProject = asProjectShape(data);
+
+      // saveCanvas 独立持有 deltaB（codex high 风险吸收：tryMerge 内部 deltaB 不外传，避免漂移）
+      const deltaB = computeDelta(baseProject, incomingProject);
+
+      // 先权限（codex medium 风险吸收：403/409 节点级先于 409 合并冲突）
+      try {
+        validateDeltaBPermissions(db, id, deltaB, user, row.visibility, row.owner_id);
+      } catch (e) {
+        if (e instanceof PermissionError) {
+          if (e.code === 'node_id_collision') {
+            return { ok: false, status: 409, error: 'node_id_collision', currentVersion: row.version };
+          }
+          if (e.code === 'node_meta_missing') {
+            return { ok: false, status: 409, error: 'node_meta_missing', currentVersion: row.version };
+          }
+          if (e.code === 'forbidden_modify_others_node') {
+            return {
+              ok: false,
+              status: 403,
+              error: 'forbidden_modify_others_node',
+              message: e.detail ?? e.message,
+              currentVersion: row.version,
+            };
+          }
+          // forbidden_remove_node
+          return {
+            ok: false,
+            status: 403,
+            error: 'forbidden_remove_node',
+            message: e.detail ?? e.message,
+            currentVersion: row.version,
+          };
+        }
+        throw e;
+      }
+
+      // 调 tryMerge（includeDebugDelta=false — codex 判断点 7：Map 结构留 Day 3 序列化）
+      const mergeResult = tryMerge({
+        baseData: baseProject,
+        currentData: currentProject,
+        incomingData: incomingProject,
+        ctx: {
+          userA: currentVersionAuthor.userId,
+          userB: user.id,
+          visibility: row.visibility,
+        },
         currentVersion: row.version,
+        mergedFromUserId: currentVersionAuthor.userId,
+        mergedFromUsername: currentVersionAuthor.username,
+        includeDebugDelta: false,
+      });
+
+      if (!mergeResult.ok) {
+        // 真冲突（detector 4 段 + applyDelta active_sheet_missing 透传）
+        // codex 隐藏判断点 7 + 9：error='conflict' + conflicts 数组；不携带 warnings
+        return {
+          ok: false,
+          status: 409,
+          error: 'conflict',
+          currentVersion: row.version,
+          conflicts: mergeResult.conflicts,
+        };
+      }
+
+      // 合并成功 → rewrite + 写主表 + 写版本 + sync meta（与快速路径同款顺序）
+      const allMetaRows = db.prepare(
+        `SELECT node_id, sheet_id, creator_id, created_at, updated_by, updated_at,
+                is_deprecated, deprecated_by, deprecated_at
+         FROM nodes_meta WHERE canvas_id=?`
+      ).all(id) as NodeMetaRow[];
+      const metaIndex = new Map<string, NodeMetaRow>();
+      for (const m of allMetaRows) {
+        metaIndex.set(`${m.sheet_id}|${m.node_id}`, m);
+      }
+      // codex 判断点 10：rewrite(mergedData, deltaB, ...) — 用 deltaB 驱动归属写入；与快速路径一致
+      const rewrittenData = rewriteNodesFromMeta(
+        mergeResult.mergedData,
+        deltaB,
+        metaIndex,
+        user,
+        now
+      );
+      const dataJson = JSON.stringify(rewrittenData);
+      const newVersion = row.version + 1;
+
+      db.prepare(
+        `UPDATE canvases
+           SET data = ?, version = ?, updated_by = ?, updated_at = ?
+         WHERE id = ?`
+      ).run(dataJson, newVersion, user.id, now, id);
+
+      // codex 判断点 11：saved_by = user.id (B 触发保存)；A 单独记 mergeReport.mergedFromUserId
+      db.prepare(
+        `INSERT INTO canvas_versions (canvas_id, version, data, saved_by, saved_at)
+         VALUES (?, ?, ?, ?, ?)`
+      ).run(id, newVersion, dataJson, user.id, now);
+
+      // codex 隐藏判断点 8：合并成功路径必须复用 syncNodesMetaFromDeltaB（B 删 sheet 时 annotations 同事务清理）
+      syncNodesMetaFromDeltaB(db, id, deltaB, user, now);
+
+      return {
+        ok: true,
+        version: newVersion,
+        merged: true,
+        mergedData: rewrittenData,
+        mergedFromVersion: row.version,
+        report: mergeResult.report,
       };
     }
     // baseVersion === row.version：情况 1，走快速路径
