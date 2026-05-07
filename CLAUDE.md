@@ -97,14 +97,34 @@ powershell -File scripts/deploy.ps1        # 主 PowerShell 跑（不能在 hook
   - **D-3 high #1 修法**：契约测试改 `Assert<T extends true>` + `IsEqual<X,Y>` 真 compile-fail pattern；旧 `type X = ... ? true : never` 沉默通过；反向验证 2 次都让 tsc 真报错
   - 单测 **389 → 406** 全过 / tsc 三端 0 错 / lint:ids 0 违规
 
-阶段 5 整体进度 **1/4 → 3/4**（Day 4 真冲突 UI + Playwright + 部署待启动）。
+- **Day 4 进行中**（2026-05-07，未 bump）：真冲突 UI + Playwright + 部署
+  - **取舍审 + 拍板 + 切片设计审完工**：codex 两轮审 (取舍审 15 条 / 切片设计审 16 条) → 用户全部采纳推荐 → 19 项决策锁定 + 22 切片重排
+  - **切片 1+2 完工**（commit `d301fb2`）：类型层 SaveResult.merged 加必填 `report` + `appliedToLocal` / hook 暴露 `clearConflictAndResumeAutosave()` 命令式封装 / B 方案不变量**三层守门**（类型层 mergeSavePlan 纯函数 + 单测 g1/g2 + grep 脚本 check:invariants）+ 反向验证脚本能戳穿
+  - **切片 3+4 完工**（commit `7ee4ad5`）：Toast 基建 (ToastProvider + useToast() hook + Portal) / ConflictResolutionDialog 三按钮 4B 流程 / BaseVersionExpiredDialog 独立弹窗 / BFV `handleSave` 三个 case 改造（merged 双文案 + session-once / conflict 接弹窗 / base_version_expired 接弹窗）/ 顶栏 pendingConflict 重开入口 / beforeunload 加 conflict 判断 + check:conflict-guards 守门
+  - **进度 13/22 切片完成**：F-1 → F-13 全部落地
+  - 单测 406 → **416**（+10：mergeSavePlan g1/g2/sanity）/ tsc 三端 0 错 / lint + check:invariants + check:conflict-guards 全过
+
+阶段 5 整体进度 **3/4 → 3.5/4**（Day 4 进行中：13/22 切片完成）。
 - 整阶段时间线：[阶段5/P5-合并算法/README.md](docs/规划/codex审查记录/阶段5/P5-合并算法/README.md)
 - Day 1 收尾：[Day1-基建/99-收尾.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day1-基建/99-收尾.md)
 - Day 2 收尾：[Day2-合并算法/99-收尾.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day2-合并算法/99-收尾.md)
 - Day 3 收尾：[Day3-客户端/99-收尾.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day3-客户端/99-收尾.md)
-- Day 3 末尾审三审（B 方案 PASS）：[Day3-客户端/04-末尾审-三审.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day3-客户端/04-末尾审-三审.md)
+- **Day 4 取舍审**：[Day4-真冲突UI/01-取舍审-Day4-真冲突UI.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day4-真冲突UI/01-取舍审-Day4-真冲突UI.md)
+- **Day 4 拍板（22 切片）**：[Day4-真冲突UI/02-拍板记录.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day4-真冲突UI/02-拍板记录.md)
+- **Day 4 切片设计审**：[Day4-真冲突UI/03-切片设计审.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day4-真冲突UI/03-切片设计审.md)
 
-**下次 next**：Day 4 真冲突弹窗 UI（4B 流程：保存草稿 / 继续编辑）+ toast 自动合并报告 + E7 warning + Playwright e2e + codex 门禁审 + 部署 v1.x.0；同时兑现 #33/#34 测试债务。
+**下次 next**（Day 4 剩余 9/22 切片，预估 5-7 小时）：
+1. **F-15 + F-16 测试债务**（1.5-2h）：#34 a/b/c/d/e/f/h 7 子项（去 g 已被 F-6/F-7 覆盖）+ #33 PUT 路由层 supertest
+2. **F-14a smoke + F-14b 主体**（2-3h）：双 browser context 隔离验证 + 3 路径 e2e（直接保存 / 真合并自动通过 / 真冲突弹窗）
+3. **F-17 codex 末尾审 + 修法迭代**（30-90 min；可能戳穿 high 需多轮）
+4. **F-18 bump v1.15.0 + F-19 deploy.ps1（不 -SkipBuild）+ 部署前通知 5 人 + F-20 99-收尾**（30-45 min）
+
+**Day 4 已沉淀的关键约束**（写入 02-拍板记录）：
+- B 方案不变量已升级为类型不变量：`mergeSavePlan` 纯函数的 `DeferMergedPlan` 不携带任何"推进 ref/替换 project"字段，编译期堵绕过路径
+- BFV 持有 `deferredMergeToastShownRef` 做业务级 session-once（A2 调整：Toast 基建只做通用 key replacement）
+- 三个 modal 弹窗（Conflict / BaseVersionExpired / DraftRecovery）都用 React Portal 挂 document.body
+- ESC 不隐式关闭弹窗（H5：document.addEventListener('keydown', stopPropagation, true)）
+- aria-modal=true + pending action 中 disable 全按钮（D-15 + X3）
 
 **codex 调用 Windows sandbox 1326 + ARG_MAX 32KB 双坑根治**：大 prompt 必须用 stdin 注入 + 前置代码内容（避开 PowerShell 子进程 1326 / Windows 命令行长度限制）。详见 [P5-合并算法/README.md § codex 协作模式](docs/规划/codex审查记录/阶段5/P5-合并算法/README.md)。
 
