@@ -118,28 +118,32 @@ export interface Delta {
 }
 
 // ============================================================
-// DetectContext：detect 函数所需的用户身份上下文（codex Day 1 四审 M3）
+// DetectContext：detect 函数的辅助上下文（D3 修订后节点段不依赖此对象）
 // ============================================================
 //
-// 合并算法 detector（Day 2 实施）需要知道两端的用户身份才能正确判定 node_modified_both：
-// - userA = currentVersion 的 saved_by（"对方"，已写入 DB）
-// - userB = SaveCanvasInput.user.id（"当前用户"，正在保存）
+// 历史背景（codex Day 1 四审 M3）：早期方案打算让 detector 按 userA !== userB 判定
+// node_modified_both，userA === userB 时同人多窗口也判冲突保守。
 //
-// 用法（Day 2 detectNodeConflicts(deltaA, deltaB, ctx)）：
-// - 同节点同字段 + userA !== userB → node_modified_both 真冲突
-// - 同节点同字段 + userA === userB → 同人多窗口；MVP 也判冲突保守
-//   （否则 Delta 不带 userId 时无法区分静默覆盖 vs 后者覆盖语义）
+// **D3 修订后**（Day 2 拍板 03）：N4 改为按 changedFields 字段交集精确判定——
+// 同字段重叠 → 每个重叠字段一条 node_modified_both；
+// 不重叠 → auto-merge（含同人多窗口改不同字段的合法 N3 路径）。
 //
-// userA 的取值：从 canvas_versions WHERE version=currentVersion 查 saved_by 字段。
-// 如果 currentVersion 来自 createCanvas 初始快照，userA 是创建者；如果来自后续
-// saveCanvas，userA 是该次保存者。
+// 因此 detectNodeConflicts(deltaA, deltaB, ctx) 中 ctx.userA / ctx.userB **不参与**
+// 节点段判定。本对象仅保留两个用途：
+// 1. ctx.visibility：N7 admin 物删可达性的展示语义（保留供 detector 给前端 message 时用，
+//    但不影响 conflict 是否产出）；
+// 2. 后续编排（B-3 applyDelta / B-4 tryMerge）若需要按 saved_by 写归属字段时复用。
+//
+// userA 的取值（仍记录供后续切片用）：从 canvas_versions WHERE version=currentVersion
+// 查 saved_by。若 currentVersion 来自 createCanvas 初始快照，userA 是创建者；后续
+// saveCanvas 则是该次保存者。
 
 export interface DetectContext {
-  /** currentVersion 的 saved_by（"对方"，已写入 DB） */
+  /** currentVersion 的 saved_by（"对方"，已写入 DB）；节点段 detector 不读此字段 */
   userA: number;
-  /** 当前保存者 ID（来自 SaveCanvasInput.user.id） */
+  /** 当前保存者 ID（来自 SaveCanvasInput.user.id）；节点段 detector 不读此字段 */
   userB: number;
-  /** 当前画布的 visibility（影响 N7 admin 物删规则的可达性） */
+  /** 当前画布的 visibility（影响 N7 admin 物删规则的可达性的展示语义） */
   visibility: 'public' | 'private';
 }
 
@@ -154,9 +158,11 @@ export interface DetectContext {
 //   N1 加不同节点         → auto-merge（无冲突类型）
 //   N2 各改自己不同节点    → auto-merge（无冲突类型）
 //   N3 同人多窗口同节点改不同字段 → auto-merge（字段级不重叠；本 MVP 字段级精细化合并）
-//   N4 同节点同字段双方都改 → node_modified_both（codex 四审 M3 修订：admin/创建者/同人多窗口都可能触发）
-//      MVP 策略：DetectContext.userA !== userB 显式冲突；userA === userB（同人多窗口）也判冲突保守
-//      detector 必须接 DetectContext 才能判定，不能仅靠 Delta（Delta 不携带 userId）
+//   N4 同节点同字段双方都改 → node_modified_both
+//      Day 2 D3 修订：按 changedFields 字段交集精确判定——
+//        同字段重叠（含 admin / 创建者 / 同人多窗口） → 每个重叠字段一条 node_modified_both；
+//        字段不重叠（含 N3 同人多窗口改不同字段） → auto-merge。
+//      detector 不依赖 ctx.userA/userB，纯靠 Delta 字段交集即可判定。
 //   N5 双方同标废弃        → auto-merge 幂等（无冲突类型）
 //   N6 A 标废弃 + B 改字段 → node_deprecated_modified
 //   N7 admin 物删 + B 改字段 → node_removed_modified
@@ -198,12 +204,17 @@ export type ConflictType =
   | 'node_meta_missing'               // modified/deprecated 节点找不到 nodes_meta
   // 边级（5 项）
   | 'edge_id_collision'               // 同一 edge ID 但 semanticKey 不同（两人 add 撞 ID）
-  // edge_semantic_conflict：semanticKey 相同但**非语义字段内容不一致**（codex 四审 M4 扩展定义）
+  // edge_semantic_conflict：3 个子场景（codex 四审 M4 扩展 + B-2 H1 修法登记 modified 子场景）
   // 触发场景：
-  //   a) ID 相同 + semanticKey 相同 + 非语义字段（label/style/waypoints/...）不同
-  //   b) ID 不同 + semanticKey 相同 + 非语义字段不同
-  // E2 幂等去重仅在 ID 不同 + semanticKey 相同 + 非语义字段也相同 时成立（保留 A）
-  // detector 必须比对所有非语义 CONNECTOR_DIFF_FIELDS（除 sourceID/targetID/sourceHandle/targetHandle 外）
+  //   a) added 路径 同 ID + semanticKey 相同 + 非语义字段（label/style/waypoints/...）不同
+  //   b) added 路径 不同 ID + semanticKey 相同 + 非语义字段不同
+  //   c) modified 路径 双方都触及语义字段（sourceID/targetID/sourceHandle/targetHandle）且 sem-key 分歧
+  //      —— B-2 H1 修法收紧：仅一方触及语义字段时不产 semantic conflict，按字段交集判 E4 / auto-merge
+  // 两条 detector 不产冲突的路径（applyDelta 处理）：
+  //   - added 路径 同 ID 完全等价 → 幂等保留一份（codex B-2 复审 L1' 修订：之前注释只覆盖了不同 ID 路径）
+  //   - added 路径 不同 ID + sem-key 相同 + 非语义字段也相同 → E2 去重保留 A
+  // detector 用 NON_SEMANTIC_CONNECTOR_FIELDS（types.ts 已编译期保证 = CONNECTOR_DIFF_FIELDS - SEMANTIC_CONNECTOR_FIELDS）
+  // 比对非语义字段时用 deepEqualJsonShape（key 顺序无关，避免对象 key 顺序不同的误报）
   | 'edge_semantic_conflict'
   | 'edge_modified_both'              // E4: A B 改同一边同字段
   | 'edge_removed_modified'           // E5: A 删边 + B 改边
@@ -269,16 +280,22 @@ export interface MergeReport {
   mergedFromVersion: number;
 }
 
-/** tryMerge 返回值 */
+/** tryMerge 返回值
+ *
+ *  D2 修订（B-4 切片）：加 debugDelta? 可选字段给 Day 3 conflict_logs 用。
+ *  ok:false 路径不携带 warnings（codex B-3 L1 验收）——前端弹窗只展示 conflicts；
+ *  warnings 仅在 ok:true 路径下随 report 返回。 */
 export type MergeResult =
   | {
       ok: true;
       mergedData: MultiCanvasProjectShape;
       report: MergeReport;
+      debugDelta?: { deltaA: Delta; deltaB: Delta };
     }
   | {
       ok: false;
       conflicts: Conflict[];
+      debugDelta?: { deltaA: Delta; deltaB: Delta };
     };
 
 // ============================================================
@@ -448,6 +465,29 @@ export const CONNECTOR_DIFF_FIELDS = [
   'data',
 ] as const;
 
+/** connector 语义键字段（参与 connectorSemanticKey 编码的字段，用于 E2 / edge_id_collision /
+ *  edge_semantic_conflict / H1 modified 端点变化判定）
+ *
+ *  必须与 connectorSemanticKey() 实现严格对齐：
+ *    JSON.stringify([sheetId, sourceID, targetID, sourceHandle ?? null, targetHandle ?? null])
+ *
+ *  本常量是 detector / applyDelta / 未来 conflict_logs 的单一信息源；改它必须同步改 connectorSemanticKey
+ *  和文件末尾的双向 AssertNever 静态断言（编译期防漂移）。 */
+export const SEMANTIC_CONNECTOR_FIELDS = [
+  'sourceID',
+  'targetID',
+  'sourceHandle',
+  'targetHandle',
+] as const;
+
+/** connector 非语义字段：CONNECTOR_DIFF_FIELDS 排除 SEMANTIC_CONNECTOR_FIELDS 后的剩余字段
+ *  detector 用于 edge_semantic_conflict 判定（同 sem-key 但非语义字段不同 → 冲突）
+ *  注意：编译期由 _SemanticConnectorFieldsForward/Backward 断言守住语义字段集合一致性 */
+export const NON_SEMANTIC_CONNECTOR_FIELDS = CONNECTOR_DIFF_FIELDS.filter(
+  (f): f is Exclude<typeof CONNECTOR_DIFF_FIELDS[number], typeof SEMANTIC_CONNECTOR_FIELDS[number]> =>
+    !(SEMANTIC_CONNECTOR_FIELDS as readonly string[]).includes(f)
+);
+
 /** sheet 元信息 diff 字段（不含 nodes / connectors，G3 任意字段冲突就 409） */
 export const SHEET_META_DIFF_FIELDS = ['name'] as const;
 
@@ -548,3 +588,30 @@ type _ConnectorDiffFieldsBackward = Exclude<
 type _ConnectorDiffFieldsForwardAssert = AssertNever<_ConnectorDiffFieldsForward>;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type _ConnectorDiffFieldsBackwardAssert = AssertNever<_ConnectorDiffFieldsBackward>;
+
+// SEMANTIC_CONNECTOR_FIELDS 与 connectorSemanticKey 实际编码字段对齐（B-2 codex H1+L1 修法）
+//
+// 编译期保证 SEMANTIC_CONNECTOR_FIELDS ⊂ CONNECTOR_DIFF_FIELDS（语义字段必须是 diff 字段子集；
+// 否则下游"非语义字段 = diff 字段 - 语义字段"的差集会缺漏字段）。
+//
+// connectorSemanticKey 实际编码 4 字段（sourceID / targetID / sourceHandle / targetHandle）；
+// 第二个断言用元组保证常量值与函数实现严格一致——若加 5 个语义字段或漏掉一个都编译报错。
+//
+// 验证方法：临时把 SEMANTIC_CONNECTOR_FIELDS 删一个字段（如 'sourceID'），tsc -p tsconfig.server.json
+// 应直接报 "Type 'X' does not satisfy the constraint 'never'"。
+
+type _SemanticConnectorFieldsSubset = Exclude<
+  typeof SEMANTIC_CONNECTOR_FIELDS[number],
+  typeof CONNECTOR_DIFF_FIELDS[number]
+>;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _SemanticConnectorFieldsSubsetAssert = AssertNever<_SemanticConnectorFieldsSubset>;
+
+// 与 connectorSemanticKey 实现的 4 字段元组严格对齐（顺序无关，集合相等）
+type _ExpectedSemanticFields = 'sourceID' | 'targetID' | 'sourceHandle' | 'targetHandle';
+type _SemanticForwardMissing = Exclude<typeof SEMANTIC_CONNECTOR_FIELDS[number], _ExpectedSemanticFields>;
+type _SemanticBackwardMissing = Exclude<_ExpectedSemanticFields, typeof SEMANTIC_CONNECTOR_FIELDS[number]>;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _SemanticForwardAssert = AssertNever<_SemanticForwardMissing>;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _SemanticBackwardAssert = AssertNever<_SemanticBackwardMissing>;
