@@ -2,7 +2,7 @@
 
 基于 React Flow 的业务流程可视化协作工具。集团内部 5 人并发使用，支持多人节点级权限、批注、admin 管理后台。
 
-- **当前版本**：v1.14.0（阶段 5 Day 3 完工，2026-05-07）
+- **当前版本**：v1.15.0（阶段 5 Day 4 完工 / 合并算法 4 天 MVP 全闭环，2026-05-08）
 - **生产**：http://172.16.0.138:3001/
 - **技术栈**：React 19 + TypeScript + Vite + React Flow / Express + better-sqlite3 + PM2
 
@@ -22,7 +22,7 @@ npm run dev
 ## 验证 + 部署
 
 ```bash
-# 一键验证（lint:ids → typecheck:test → 单测 406 项）
+# 一键验证（lint:ids → check:invariants → check:conflict-guards → typecheck:test → 单测 447 项）
 npm test
 
 # 端到端（dev server 起后另开终端）

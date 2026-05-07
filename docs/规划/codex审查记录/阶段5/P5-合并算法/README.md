@@ -5,7 +5,7 @@
 | Day 1 | 基建（类型 + computeDelta + schema parentId 真校验） | ✅ 完工 2026-05-06 | v1.12.0 | [Day1-基建/](Day1-基建/) |
 | Day 2 | 合并算法（detector + applyDelta + tryMerge + saveCanvas 接合并） | ✅ 完工 2026-05-07 | v1.13.0 | [Day2-合并算法/](Day2-合并算法/) |
 | Day 3 | 客户端（merged 响应 + 状态替换 + conflict_logs 写入） | ✅ 完工 2026-05-07 | v1.14.0 | [Day3-客户端/](Day3-客户端/) |
-| Day 4 | 真冲突 UI + Playwright + 部署 | ⏳ 待启动 | - | - |
+| Day 4 | 真冲突 UI + Playwright e2e + BFV bug 修法 | ✅ 完工 2026-05-08 | v1.15.0 | [Day4-真冲突UI/](Day4-真冲突UI/) |
 
 ## Day 2 子阶段进度
 
@@ -38,6 +38,14 @@
 - [Day 3 末尾审复审（戳穿 A 方案破坏不变量）](Day3-客户端/03-末尾审-复审.md)
 - [Day 3 末尾审三审（B 方案 PASS / canEnterBump: true）](Day3-客户端/04-末尾审-三审.md)
 - [Day 3 99-收尾（v1.14.0）](Day3-客户端/99-收尾.md)
+- [Day 4 取舍审 真冲突 UI（19 项决策锁定）](Day4-真冲突UI/01-取舍审-Day4-真冲突UI.md)
+- [Day 4 拍板记录（22 切片 / 子断言→测试落点映射表）](Day4-真冲突UI/02-拍板记录.md)
+- [Day 4 切片设计审（16 项调整全采纳 / 加 F-3.5 hook API 封装切片）](Day4-真冲突UI/03-切片设计审.md)
+- [Day 4 F-16 (f)/(h) 范围判读审（codex 拒"注释/grep 关闭"; 推 A+ 路线 + dispatcher）](Day4-真冲突UI/04-F16-fh范围判读审.md)
+- [Day 4 F-16b 小范围 code-review（0 critical/high/medium / L2 switch never + R5 类型非法测试）](Day4-真冲突UI/05-F16b-小范围code-review.md)
+- [Day 4 F-14b 设计取舍审（X vs Y 选 X / 7 修法全采纳）](Day4-真冲突UI/06-F14b-设计取舍审.md)
+- [Day 4 F-17 末尾审（canEnterBump=true / M1 修法 / L1+L2 挂账 #35 #36）](Day4-真冲突UI/07-F17-末尾审.md)
+- [Day 4 99-收尾（v1.15.0 / 阶段 5 4/4 全闭环）](Day4-真冲突UI/99-收尾.md)
 
 ## codex 协作模式（Windows sandbox 1326 解决方案）
 

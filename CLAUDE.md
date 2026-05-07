@@ -34,7 +34,7 @@
 npm run dev              # api + vite 双进程并发，端口 5173
 
 # 验证（npm test 已串好 lint:ids → typecheck:test → 单测）
-npm test                 # 406 测试 + lint:ids 兜底 + 测试 type-check
+npm test                 # 447 测试 + lint:ids + check:invariants + check:conflict-guards + 测试 type-check
 npx tsc --noEmit -p tsconfig.client.json   # 前端类型检查（必须显式 -p）
 npx tsc --noEmit -p tsconfig.server.json   # 服务端类型检查
 npx tsc --noEmit -p tsconfig.test.json     # 测试类型检查
@@ -81,7 +81,7 @@ powershell -File scripts/deploy.ps1        # 主 PowerShell 跑（不能在 hook
 
 ## 当前阶段
 
-阶段 5 合并算法 4 天 MVP —— **Day 1 + Day 2 + Day 3 完工**（截至 2026-05-07）：
+阶段 5 合并算法 4 天 MVP —— **Day 1 + Day 2 + Day 3 + Day 4 完工 / 4/4 全闭环**（截至 2026-05-08）：
 - **Day 1**（v1.12.0，2026-05-06）：类型/框架/saveCanvas 入口三分支改造 + schema parentId 真校验 + 旧数据审计脚本。codex 7 轮审 final 0 high + 0 medium，单测 282→293
 - **Day 2**（v1.13.0，2026-05-07）：合并算法主体 — detector + applyDelta + tryMerge + saveCanvas 接合并完整闭环
   - 阶段 A：saveCanvas 快速路径迁移 Delta + 3 helper / 阶段 B 五切片 detector+applyDelta+tryMerge / 阶段 C saveCanvas 接合并 7 case 端到端 / 阶段 D 末尾审 0 issue
@@ -97,34 +97,35 @@ powershell -File scripts/deploy.ps1        # 主 PowerShell 跑（不能在 hook
   - **D-3 high #1 修法**：契约测试改 `Assert<T extends true>` + `IsEqual<X,Y>` 真 compile-fail pattern；旧 `type X = ... ? true : never` 沉默通过；反向验证 2 次都让 tsc 真报错
   - 单测 **389 → 406** 全过 / tsc 三端 0 错 / lint:ids 0 违规
 
-- **Day 4 进行中**（2026-05-07，未 bump）：真冲突 UI + Playwright + 部署
-  - **取舍审 + 拍板 + 切片设计审完工**：codex 两轮审 (取舍审 15 条 / 切片设计审 16 条) → 用户全部采纳推荐 → 19 项决策锁定 + 22 切片重排
-  - **切片 1+2 完工**（commit `d301fb2`）：类型层 SaveResult.merged 加必填 `report` + `appliedToLocal` / hook 暴露 `clearConflictAndResumeAutosave()` 命令式封装 / B 方案不变量**三层守门**（类型层 mergeSavePlan 纯函数 + 单测 g1/g2 + grep 脚本 check:invariants）+ 反向验证脚本能戳穿
-  - **切片 3+4 完工**（commit `7ee4ad5`）：Toast 基建 (ToastProvider + useToast() hook + Portal) / ConflictResolutionDialog 三按钮 4B 流程 / BaseVersionExpiredDialog 独立弹窗 / BFV `handleSave` 三个 case 改造（merged 双文案 + session-once / conflict 接弹窗 / base_version_expired 接弹窗）/ 顶栏 pendingConflict 重开入口 / beforeunload 加 conflict 判断 + check:conflict-guards 守门
-  - **进度 13/22 切片完成**：F-1 → F-13 全部落地
-  - 单测 406 → **416**（+10：mergeSavePlan g1/g2/sanity）/ tsc 三端 0 错 / lint + check:invariants + check:conflict-guards 全过
+- **Day 4**（v1.15.0，2026-05-08）：真冲突 UI + Playwright e2e + BFV bug 修法
+  - **codex 7 次审查链**：01 取舍审 → 02 拍板（22 切片）→ 03 切片设计审 → 04 F16-fh 范围判读审 → 05 F16b 小范围审 → 06 F14b 设计取舍审 → 07 末尾审 canEnterBump=true
+  - **切片 1+2**（commit `d301fb2`）：类型层 + B 方案不变量三层守门（类型 mergeSavePlan + 单测 g1/g2 + grep check:invariants）
+  - **切片 3+4**（commit `7ee4ad5`）：Toast 基建 + ConflictResolutionDialog + BaseVersionExpired 弹窗 + BFV 接入 + check:conflict-guards
+  - **F-16a 服务端 5 case**（#34 (a)-(e) 偿还）：annotations 级联 / sheet_removed_modified / deprecated 路径 / E7 warnings / connector E1+E3
+  - **F-16b 抽 saveErrorDispatcher 纯函数**（#34 (f)/(h) 偿还）：04 范围判读审拍板"不引入 RTL/jsdom"+ 类型层 `shouldDeleteDraft: false` 字面常量守门 (h) + L2 switch never 穷尽检查 + R5 currentVersion 类型非法测试
+  - **F-15 PUT route supertest**（#33 偿还）：6 it 覆盖 DataIntegrityError 500 / conflict 409 + conflicts JSON 序列化 / base_version_expired / 权限优先级 403 / merged 200
+  - **F-14a smoke 12/12 + F-14b conflict-flow 32/32**：双 ctx 隔离基建验证 + 3 路径 e2e（直接保存 / 真合并自动通过 / 真冲突弹窗）；06 设计审拍板"单浏览器 + API 模拟对方"模式
+  - **F-14b 揪出 BFV 真 bug + C 修法**：BFV [887] 错误兜底页判 `serverError || !project` 让 conflict 路径 setServerError 触发兜底页吞 ConflictResolutionDialog；修法把 setServerError 挪到 rethrow 分支
+  - **F-17 末尾审**：canEnterBump=true / 0 critical+high / M1 修法（planSaveError 入参 unknown + 形状守卫防非 ApiError 二次异常）/ L1+L2 挂账 #35 #36
+  - 单测 416 → **447**（+31：dispatcher 19 / merge.test +6 / put.test 6）/ tsc 三端 0 错 / lint + check:invariants + check:conflict-guards + typecheck:test 全过
 
-阶段 5 整体进度 **3/4 → 3.5/4**（Day 4 进行中：13/22 切片完成）。
+阶段 5 整体进度 **3.5/4 → 4/4**（Day 1 + 2 + 3 + 4 完工，合并算法 4 天 MVP 全闭环）。
 - 整阶段时间线：[阶段5/P5-合并算法/README.md](docs/规划/codex审查记录/阶段5/P5-合并算法/README.md)
 - Day 1 收尾：[Day1-基建/99-收尾.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day1-基建/99-收尾.md)
 - Day 2 收尾：[Day2-合并算法/99-收尾.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day2-合并算法/99-收尾.md)
 - Day 3 收尾：[Day3-客户端/99-收尾.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day3-客户端/99-收尾.md)
-- **Day 4 取舍审**：[Day4-真冲突UI/01-取舍审-Day4-真冲突UI.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day4-真冲突UI/01-取舍审-Day4-真冲突UI.md)
-- **Day 4 拍板（22 切片）**：[Day4-真冲突UI/02-拍板记录.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day4-真冲突UI/02-拍板记录.md)
-- **Day 4 切片设计审**：[Day4-真冲突UI/03-切片设计审.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day4-真冲突UI/03-切片设计审.md)
+- **Day 4 收尾**：[Day4-真冲突UI/99-收尾.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day4-真冲突UI/99-收尾.md)
 
-**下次 next**（Day 4 剩余 9/22 切片，预估 5-7 小时）：
-1. **F-15 + F-16 测试债务**（1.5-2h）：#34 a/b/c/d/e/f/h 7 子项（去 g 已被 F-6/F-7 覆盖）+ #33 PUT 路由层 supertest
-2. **F-14a smoke + F-14b 主体**（2-3h）：双 browser context 隔离验证 + 3 路径 e2e（直接保存 / 真合并自动通过 / 真冲突弹窗）
-3. **F-17 codex 末尾审 + 修法迭代**（30-90 min；可能戳穿 high 需多轮）
-4. **F-18 bump v1.15.0 + F-19 deploy.ps1（不 -SkipBuild）+ 部署前通知 5 人 + F-20 99-收尾**（30-45 min）
+**下次 next**（阶段 5 完工后下个阶段方向待用户拍板）：
+- 选项 A：阶段 6 多人协作 v2 / 演示 / 培训
+- 选项 B：代码质量子阶段（清 lint 74 项 + 偿还 #22-#27 安全债 + 偿还 #35/#36 Day 4 挂账）
 
-**Day 4 已沉淀的关键约束**（写入 02-拍板记录）：
-- B 方案不变量已升级为类型不变量：`mergeSavePlan` 纯函数的 `DeferMergedPlan` 不携带任何"推进 ref/替换 project"字段，编译期堵绕过路径
-- BFV 持有 `deferredMergeToastShownRef` 做业务级 session-once（A2 调整：Toast 基建只做通用 key replacement）
+**Day 4 已沉淀的关键约束**（写入 02-拍板记录 + 99-收尾）：
+- B 方案不变量已升级为**类型不变量**：`mergeSavePlan` 纯函数 `DeferMergedPlan` 不携带"推进 ref/替换 project"字段；`saveErrorDispatcher` 的 `shouldDeleteDraft: false` 字面常量守门 (h)
+- 三层守门齐全：类型层 + 单测 g1/g2 + grep `check:invariants` / `check:conflict-guards`
 - 三个 modal 弹窗（Conflict / BaseVersionExpired / DraftRecovery）都用 React Portal 挂 document.body
-- ESC 不隐式关闭弹窗（H5：document.addEventListener('keydown', stopPropagation, true)）
-- aria-modal=true + pending action 中 disable 全按钮（D-15 + X3）
+- ESC 不隐式关闭弹窗 + aria-modal=true + pending action 中 disable 全按钮
+- **catch 块决策走 saveErrorDispatcher 纯函数 plan**（switch + never 穷尽检查 + 入参 unknown 形状守卫）；setServerError 仅在 rethrow 路径写（C 修法防 BFV 错误兜底页吞弹窗）
 
 **codex 调用 Windows sandbox 1326 + ARG_MAX 32KB 双坑根治**：大 prompt 必须用 stdin 注入 + 前置代码内容（避开 PowerShell 子进程 1326 / Windows 命令行长度限制）。详见 [P5-合并算法/README.md § codex 协作模式](docs/规划/codex审查记录/阶段5/P5-合并算法/README.md)。
 
