@@ -17,11 +17,12 @@ import {
   deleteDraft as apiDeleteDraft,
   saveCanvas as apiSaveCanvas,
 } from '../api/canvases';
-import type { Conflict } from '../api/canvases.types';
+import type { Conflict, MergeReport } from '../api/canvases.types';
 import {
   pauseDraftAutosave,
   resetDraftAutosaveSnapshot,
 } from './useDraftAutosave';
+import { planMergedSave } from './mergeSavePlan';
 import { newNodeId, newGroupId, newEdgeId } from '../utils/ids';
 
 // 存储节点格式（用于保存）
@@ -61,11 +62,24 @@ export interface UseMultiCanvasOptions {
 }
 
 /** save() 返回值 —— discriminated union
- * caller 用 switch(result.status) 强制处理所有分支，避免漏处理 conflict/skipped/discarded */
+ * caller 用 switch(result.status) 强制处理所有分支，避免漏处理 conflict/skipped/discarded
+ *
+ * Day 4 D-6 + D-13 收紧 merged 分支：
+ * - report: MergeReport — 服务端透传的合并摘要（用于 BFV toast 概要 + E7 warning 详情）
+ * - appliedToLocal: boolean — 本次 merged 是否已应用到本地：
+ *   true  = 默认路径（changeSeqRef === capturedSeq）：projectRef 已替换 + serverVersionRef 已推进
+ *   false = B 方案 deferred（changeSeq 不等）：所有 server-side state 不动，下次 save 用旧 baseVersion 让服务端再合并
+ *   BFV 用此字段决定 toast 文案（applied vs deferred 两种） */
 export type SaveResult =
   | { status: 'saved' }
-  // Day 3 D-4：merged=true 服务端真合并完成；mergedData 已 loadProject + serverVersion 更新
-  | { status: 'merged'; version: number; mergedFromVersion: number }
+  // Day 3 D-4 + Day 4 D-6 + D-13：merged=true 服务端真合并完成
+  | {
+      status: 'merged';
+      version: number;
+      mergedFromVersion: number;
+      report: MergeReport;
+      appliedToLocal: boolean;
+    }
   // Day 3 D-4：真合并冲突；conflicts 数组用于真冲突弹窗（Day 4 实施）
   | { status: 'conflict'; currentVersion: number; conflicts?: Conflict[] }
   // Day 3 D-4：base_version_expired，客户端已被 server 提示重载
@@ -174,6 +188,12 @@ export interface UseMultiCanvasReturn {
   }) => Promise<{ id: number; version: number; discarded: boolean }>;
   /** 用户在冲突弹框选"丢弃本地、重载服务端"时调用 */
   discardAndReload: () => Promise<void>;
+  /** Day 4 D-2 + H1（codex 切片设计审）：用户在 ConflictResolutionDialog 选"继续编辑草稿"时调用
+   *
+   * 命令式封装，避免 BFV/Dialog 直接拼 setConflict + setAutoSaveDisabled 绕过 hook 边界。
+   * 语义 Y：清 conflict state + 恢复 autosave，但**不动** serverVersionRef / projectRef / dirty / 草稿
+   * （B 方案不变量：下次 save 用旧 baseVersion 让服务端再合并把 A 改动并入）。 */
+  clearConflictAndResumeAutosave: () => void;
 }
 
 // 过滤保存时不需要的字段
@@ -979,17 +999,30 @@ export function useMultiCanvas(
       //
       // 5 人内网下第二轮合并便宜，用户感知 = "保存期间继续编辑 → 下轮 save 时再次合并 A 改动"。
       if (result.merged) {
+        // Day 4 D-13 + M3：进入 merged 分支立即冻结 appliedToLocal
+        // 后续任何 await / setState 都不能再读 changeSeqRef.current，避免异步漂移导致判定与实际行为不一致
+        const appliedToLocal = changeSeqRef.current === capturedSeq;
+
+        // Day 4 F-6 + H4：纯函数 plan 把 B 方案不变量提升为类型不变量
+        // defer plan 在类型层就不能携带 newVersion/newProjectData 等推进字段 → 绕过的可能性被编译期堵住
+        const plan = planMergedSave(appliedToLocal, {
+          version: result.version,
+          mergedFromVersion: result.mergedFromVersion,
+          mergedData: result.mergedData,
+          report: result.report,
+        });
+
         // 标志型 state 两路径都做（不影响合并基线一致性）
         setLastSavedAt(Date.now());
         setConflict(null);
         setAutoSaveDisabled(false);
 
-        if (changeSeqRef.current === capturedSeq) {
+        if (plan.action === 'apply') {
           // 默认路径（无后续编辑）：整体替换 + 推进 ref + 清 dirty + 删草稿
-          serverVersionRef.current = result.version;
-          setServerVersion(result.version);
-          setProject(result.mergedData);
-          projectRef.current = result.mergedData;
+          serverVersionRef.current = plan.newVersion;
+          setServerVersion(plan.newVersion);
+          setProject(plan.newProjectData);
+          projectRef.current = plan.newProjectData;
           bumpLoadRevision();
           setDirty(false);
           try {
@@ -999,20 +1032,17 @@ export function useMultiCanvas(
           }
           resetDraftAutosaveSnapshot();
         } else {
-          // B 方案：有后续编辑 → 所有 server-side state 都不动（核心不变量保持）
-          // - serverVersionRef / setServerVersion 不动（保持 mergedFromVersion）
-          // - project / projectRef 不动（保留本地后续编辑）
-          // - dirty 保持 true（已经是 true 因为有后续编辑）
-          // - 不删草稿（保留兜底）+ 不 resetDraftAutosaveSnapshot
-          console.warn(
-            '[merge] keep local edits during merged save; next save will re-merge A changes'
-          );
+          // plan.action === 'defer'：B 方案保持不变量
+          // 编译期保证：plan 这里没有 newVersion/newProjectData 等字段可访问
+          console.warn(`[merge] ${plan.reason}: keep local edits; next save will re-merge`);
         }
 
         return {
           status: 'merged',
           version: result.version,
           mergedFromVersion: result.mergedFromVersion,
+          report: result.report,
+          appliedToLocal,
         };
       }
 
@@ -1126,6 +1156,14 @@ export function useMultiCanvas(
       }
     }
   }, [bumpLoadRevision]);
+
+  /** Day 4 D-2 + H1：ConflictResolutionDialog "继续编辑草稿"按钮调用此封装
+   * 清 conflict state + 恢复 autosave，但**不动** serverVersionRef / projectRef / dirty / 草稿
+   * B 方案不变量：下次 save 用旧 baseVersion 让服务端再合并 */
+  const clearConflictAndResumeAutosave = useCallback(() => {
+    setConflict(null);
+    setAutoSaveDisabled(false);
+  }, []);
 
   const createOnServer = useCallback(
     async (input: {
@@ -1272,5 +1310,6 @@ export function useMultiCanvas(
     save,
     createOnServer,
     discardAndReload,
+    clearConflictAndResumeAutosave,
   };
 }
