@@ -23,6 +23,7 @@ import {
   resetDraftAutosaveSnapshot,
 } from './useDraftAutosave';
 import { planMergedSave } from './mergeSavePlan';
+import { planSaveError } from './saveErrorDispatcher';
 import { newNodeId, newGroupId, newEdgeId } from '../utils/ids';
 
 // 存储节点格式（用于保存）
@@ -1078,37 +1079,47 @@ export function useMultiCanvas(
       if (canvasIdRef.current !== capturedCanvasId) {
         return { status: 'discarded' };
       }
-      const apiErr = err as ApiError;
-      setServerError(apiErr);
       // 任何保存失败都暂停自动保存，避免循环重试 / 用户感知不到
       setAutoSaveDisabled(true);
-      // Day 3 D-4：base_version_expired 路径 — 强制重载 + 保留草稿（隐藏判断 #9）
-      if (
-        apiErr.status === 409 &&
-        apiErr.error === 'base_version_expired' &&
-        typeof apiErr.currentVersion === 'number'
-      ) {
-        setConflict({
-          currentVersion: apiErr.currentVersion,
-          reason: 'base_version_expired',
-        });
-        // 不调 apiDeleteDraft —— 草稿保留给用户后续重载后继续工作（隐藏判断 #9）
-        return { status: 'base_version_expired', currentVersion: apiErr.currentVersion };
+      // Day 4 F-16b：catch 块决策走 saveErrorDispatcher 纯函数 plan
+      // (h) 类型层守门：plan.shouldDeleteDraft 是字面 false，不调 apiDeleteDraft
+      // L2 修法（codex 05 末尾审）：switch + never 穷尽检查 — SaveErrorPlan 新增 action 时编译期强制处理
+      // F-14b 修法（C 选项）：setServerError 挪到 rethrow 分支
+      // 原因：BFV [887] 错误兜底页判 `serverError || !project` 退化整个画布；conflict/base_version_expired
+      // 路径下错误兜底页会覆盖 ConflictResolutionDialog/BaseVersionExpiredDialog 让弹窗永远不渲染。
+      // setConflict + setAutoSaveDisabled 已经表达了"保存冲突待处理"的语义，serverError 仅用于真致命错误。
+      // F-17 M1 修法：planSaveError 入参改为 unknown + 形状守卫，防 catch 接到非 ApiError 二次异常
+      const errorPlan = planSaveError(err);
+      switch (errorPlan.action) {
+        case 'base_version_expired':
+          setConflict({
+            currentVersion: errorPlan.currentVersion,
+            reason: errorPlan.conflictReason,
+          });
+          return errorPlan.returnValue;
+        case 'conflict':
+          setConflict({
+            currentVersion: errorPlan.currentVersion,
+            reason: errorPlan.conflictReason,
+            conflicts: errorPlan.conflicts,
+          });
+          return errorPlan.returnValue;
+        case 'rethrow': {
+          // 真致命错误（非 409 / 数据形状非法）才 setServerError，让 BFV 错误兜底页 / SaveStatus--error 渲染
+          // F-17 M1：errorPlan.error 在非 ApiError 路径下是占位（status=0），仍是 ApiError shape；
+          //   写 serverError 让 BFV 兜底页能显示原始错误兜底文案；hook 内仍 throw 原始 err 保 stack trace
+          setServerError(errorPlan.error);
+          // 保留 throw err 而非 throw errorPlan.error 以维持旧语义（codex 05 R3 原话）
+          throw err;
+        }
+        default: {
+          const _exhaustive: never = errorPlan;
+          void _exhaustive;
+          // 防御性兜底：未来新增 action 未处理时仍走 rethrow 路径设 serverError
+          setServerError({ status: 0, error: 'unknown_action' });
+          throw err;
+        }
       }
-      // Day 3 D-4：真合并冲突 — 携 conflicts 数组（high 风险 1 修法 + apiFetch 已解析）
-      if (apiErr.status === 409 && typeof apiErr.currentVersion === 'number') {
-        setConflict({
-          currentVersion: apiErr.currentVersion,
-          reason: 'conflict',
-          conflicts: apiErr.conflicts,
-        });
-        return {
-          status: 'conflict',
-          currentVersion: apiErr.currentVersion,
-          conflicts: apiErr.conflicts,
-        };
-      }
-      throw err;
     } finally {
       saveInFlightRef.current = false;
       // saving 是本次 operation 自己打开的全局 UI 状态，不按 canvas 身份关 ——

@@ -672,3 +672,463 @@ describe('Day 3 D-2 - base_version_expired conflict_logs 写入', () => {
     assert.equal(logDetails.conflicts, undefined);
   });
 });
+
+// =====================================================================
+// F-16a — #34 端到端补丁 5 case（2026-05-08 04 范围判读审拍板 4）
+// =====================================================================
+//
+// 闭环口径（详见 02-拍板记录 § F-16 子断言映射表）：
+//   (a) annotations 表级联删除      → case 1
+//   (b) sheet_removed_modified 副作用型 → case 2
+//   (c) deprecated/alsoDeprecated 路径合并 → case 3
+//   (d) E7 warnings 流入 mergeReport → case 4
+//   (e) connector 自动合并 E1/E2/E3 → case 5
+//
+// 这 5 case 验证 saveCanvas 合并路径（baseVersion < currentVersion + 无冲突）
+// 在端到端层面正确触发了：annotations 级联清理 / 删 sheet 阻断合并 /
+// 标废弃元字段 rewrite / E7 dangling warning / connector 三类自动合并。
+
+describe('F-16a case 1 — annotations 表级联删除（合并成功路径）', () => {
+  it('A 改 s1 节点 + B 删 s2（s2 含节点 + annotations）→ 合并成功 + s2 annotations 级联清理', () => {
+    seedUsers();
+
+    // 构造 base：2 sheet / s1 含 n1（Alice 创建）/ s2 含 n_s2（admin 创建，方便后续 admin 删 sheet）
+    const now = Date.now();
+    const baseData: MultiCanvasProjectInput = {
+      version: 2,
+      id: 'p1',
+      name: 'test',
+      activeSheetId: 's1',
+      sheets: [
+        {
+          id: 's1',
+          name: 'sheet 1',
+          nodes: [
+            {
+              id: 'n1',
+              name: 'n1',
+              type: 'process',
+              position: { x: 0, y: 0 },
+              size: { width: 100, height: 50 },
+              expandable: false,
+            },
+          ],
+          connectors: [],
+        },
+        {
+          id: 's2',
+          name: 'sheet 2',
+          nodes: [
+            {
+              id: 'n_s2',
+              name: 'n_s2',
+              type: 'process',
+              position: { x: 0, y: 0 },
+              size: { width: 100, height: 50 },
+              expandable: false,
+            },
+          ],
+          connectors: [],
+        },
+      ],
+    };
+
+    const ins = db.prepare(
+      `INSERT INTO canvases
+         (name, description, visibility, is_public_to_guest, owner_id, data, version,
+          created_by, created_at, updated_by, updated_at, archived)
+       VALUES (?, ?, 'public', 0, NULL, ?, 1, ?, ?, ?, ?, 0)`,
+    ).run('test', null, JSON.stringify(baseData), ALICE.id, now, ALICE.id, now);
+    const canvasId = Number(ins.lastInsertRowid);
+
+    db.prepare(
+      `INSERT INTO canvas_versions (canvas_id, version, data, saved_by, saved_at)
+       VALUES (?, 1, ?, ?, ?)`,
+    ).run(canvasId, JSON.stringify(baseData), ALICE.id, now);
+
+    const insertMeta = db.prepare(
+      `INSERT INTO nodes_meta
+         (canvas_id, sheet_id, node_id, creator_id, created_at, updated_by, updated_at,
+          is_deprecated, deprecated_by, deprecated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL, NULL)`,
+    );
+    insertMeta.run(canvasId, 's1', 'n1', ALICE.id, now, ALICE.id, now);
+    insertMeta.run(canvasId, 's2', 'n_s2', ADMIN.id, now, ADMIN.id, now);
+
+    // 在 s2 / n_s2 上插一条 annotation
+    db.prepare(
+      `INSERT INTO annotations (canvas_id, sheet_id, node_id, author_id, content, created_at)
+       VALUES (?, 's2', 'n_s2', ?, '关于 n_s2 的批注', ?)`,
+    ).run(canvasId, ADMIN.id, now);
+
+    // sanity：annotation 已存在
+    const annoBefore = db.prepare(
+      `SELECT COUNT(*) as c FROM annotations WHERE canvas_id=? AND sheet_id='s2'`,
+    ).get(canvasId) as { c: number };
+    assert.equal(annoBefore.c, 1);
+
+    // Alice 推到 v=2：改 n1.name（不动 s2）
+    const aliceData: MultiCanvasProjectInput = {
+      ...baseData,
+      sheets: [
+        {
+          ...baseData.sheets[0],
+          nodes: baseData.sheets[0].nodes.map((n) => ({ ...n, name: 'n1 by alice' })),
+        },
+        baseData.sheets[1],
+      ],
+    };
+    const aliceR = saveCanvas({ id: canvasId, baseVersion: 1, data: aliceData, user: ALICE });
+    assert.equal(aliceR.ok, true);
+
+    // admin 基于 v=1 删 s2（admin 在 public canvas 才能删节点 / 进合并路径）
+    const adminData: MultiCanvasProjectInput = {
+      ...baseData,
+      sheets: [baseData.sheets[0]],
+    };
+    const result = saveCanvas({ id: canvasId, baseVersion: 1, data: adminData, user: ADMIN });
+
+    assert.equal(result.ok, true);
+    if (result.ok === true && result.merged) {
+      assert.equal(result.version, 3);
+      // mergedData 应只含 s1（s2 被 admin 删）+ s1.n1 应是 Alice 改的版本
+      assert.equal(result.mergedData.sheets.length, 1);
+      assert.equal(result.mergedData.sheets[0].id, 's1');
+      const n1 = result.mergedData.sheets[0].nodes.find((n) => (n as { id: string }).id === 'n1');
+      assert.equal((n1 as { name: string }).name, 'n1 by alice');
+    } else {
+      assert.fail(`expected merged ok, got: ${JSON.stringify(result)}`);
+    }
+
+    // 关键断言：s2 的 annotations 已被同事务级联清理
+    const annoAfter = db.prepare(
+      `SELECT COUNT(*) as c FROM annotations WHERE canvas_id=? AND sheet_id='s2'`,
+    ).get(canvasId) as { c: number };
+    assert.equal(annoAfter.c, 0, 's2 annotations should be cascade-deleted on sheet removal');
+
+    // s2 的 nodes_meta 也应一并清理
+    const metaAfter = db.prepare(
+      `SELECT COUNT(*) as c FROM nodes_meta WHERE canvas_id=? AND sheet_id='s2'`,
+    ).get(canvasId) as { c: number };
+    assert.equal(metaAfter.c, 0, 's2 nodes_meta should be cleared on sheet removal');
+  });
+});
+
+describe('F-16a case 2 — sheet_removed_modified 副作用型真冲突', () => {
+  it('A 删 s2 + B 改 s2 内节点 → ok:false / 409 / sheet_removed_modified 冲突', () => {
+    seedUsers();
+
+    // 2 sheet base：s2 内有 n_s2（ADMIN 创建，便于双方都能改）
+    const now = Date.now();
+    const baseData: MultiCanvasProjectInput = {
+      version: 2,
+      id: 'p1',
+      name: 'test',
+      activeSheetId: 's1',
+      sheets: [
+        { id: 's1', name: 'sheet 1', nodes: [], connectors: [] },
+        {
+          id: 's2',
+          name: 'sheet 2',
+          nodes: [
+            {
+              id: 'n_s2',
+              name: 'n_s2',
+              type: 'process',
+              position: { x: 0, y: 0 },
+              size: { width: 100, height: 50 },
+              expandable: false,
+            },
+          ],
+          connectors: [],
+        },
+      ],
+    };
+    const ins = db.prepare(
+      `INSERT INTO canvases
+         (name, description, visibility, is_public_to_guest, owner_id, data, version,
+          created_by, created_at, updated_by, updated_at, archived)
+       VALUES (?, ?, 'public', 0, NULL, ?, 1, ?, ?, ?, ?, 0)`,
+    ).run('test', null, JSON.stringify(baseData), ADMIN.id, now, ADMIN.id, now);
+    const canvasId = Number(ins.lastInsertRowid);
+    db.prepare(
+      `INSERT INTO canvas_versions (canvas_id, version, data, saved_by, saved_at)
+       VALUES (?, 1, ?, ?, ?)`,
+    ).run(canvasId, JSON.stringify(baseData), ADMIN.id, now);
+    db.prepare(
+      `INSERT INTO nodes_meta
+         (canvas_id, sheet_id, node_id, creator_id, created_at, updated_by, updated_at,
+          is_deprecated, deprecated_by, deprecated_at)
+       VALUES (?, 's2', 'n_s2', ?, ?, ?, ?, 0, NULL, NULL)`,
+    ).run(canvasId, ADMIN.id, now, ADMIN.id, now);
+
+    // ADMIN(A) 推到 v=2：删 s2
+    const aliceData: MultiCanvasProjectInput = { ...baseData, sheets: [baseData.sheets[0]] };
+    const aliceR = saveCanvas({ id: canvasId, baseVersion: 1, data: aliceData, user: ADMIN });
+    assert.equal(aliceR.ok, true);
+
+    // ALICE(B) 基于 v=1 改 s2 内节点（admin role 才能改他人节点；ALICE 是普通用户但 n_s2 是 ADMIN 创建）
+    // 这里改用 ADMIN 重新作 B 行不通（同 actor）；用 ALICE 会先撞 forbidden_modify_others_node
+    // 解法：改 sheet 元字段触发 sheetsModified 不触发节点权限
+    const bobData: MultiCanvasProjectInput = {
+      ...baseData,
+      sheets: [
+        baseData.sheets[0],
+        { ...baseData.sheets[1], name: 'sheet 2 renamed' }, // 仅改 sheet meta，不动节点
+      ],
+    };
+    const result = saveCanvas({ id: canvasId, baseVersion: 1, data: bobData, user: ALICE });
+
+    assert.equal(result.ok, false);
+    if (result.ok === false && result.error === 'conflict') {
+      assert.equal(result.status, 409);
+      assert.equal(result.currentVersion, 2);
+      assert.ok(result.conflicts);
+      const c = result.conflicts!.find((x) => x.type === 'sheet_removed_modified');
+      assert.ok(c, `expected sheet_removed_modified, got: ${JSON.stringify(result.conflicts)}`);
+      assert.equal(c.sheetId, 's2');
+    } else {
+      assert.fail(`expected sheet_removed_modified conflict, got: ${JSON.stringify(result)}`);
+    }
+
+    // DB 仍 v=2（合并被冲突拦下）
+    const dbRow = db.prepare('SELECT version FROM canvases WHERE id=?').get(canvasId) as { version: number };
+    assert.equal(dbRow.version, 2);
+  });
+});
+
+describe('F-16a case 3 — deprecated/alsoDeprecated 路径合并', () => {
+  it('A 改 n2 字段 + B 标废弃 n1（deprecated 公开权限）→ 合并成功 + n1.is_deprecated=true / deprecated_by=Bob', () => {
+    seedUsers();
+    const { canvasId, baseData } = seedBaseCanvas(); // n1, n2 都是 Alice 创建
+    aliceAdvanceToV2(canvasId, baseData); // Alice 改 n1.name 推到 v=2
+
+    // Bob 基于 v=1 标废弃 n2（标废弃是公开权限，不查 creator）
+    const bobData: MultiCanvasProjectInput = {
+      ...baseData,
+      sheets: [
+        {
+          ...baseData.sheets[0],
+          nodes: baseData.sheets[0].nodes.map((n) =>
+            n.id === 'n2' ? { ...n, is_deprecated: true } : n,
+          ),
+        },
+      ],
+    };
+    const result = saveCanvas({ id: canvasId, baseVersion: 1, data: bobData, user: BOB });
+
+    assert.equal(result.ok, true);
+    if (result.ok === true && result.merged) {
+      assert.equal(result.version, 3);
+      // mergedData：n1 = Alice 改的 name；n2 = Bob 标废弃
+      const n1 = result.mergedData.sheets[0].nodes.find((n) => (n as { id: string }).id === 'n1');
+      const n2 = result.mergedData.sheets[0].nodes.find((n) => (n as { id: string }).id === 'n2');
+      assert.equal((n1 as { name: string }).name, 'node 1 by alice');
+      assert.equal((n2 as { is_deprecated: boolean }).is_deprecated, true);
+      // deprecated_by/at rewrite 应是 Bob+now（不读旧 meta，旧 meta 是 null）
+      assert.equal((n2 as { deprecated_by: number }).deprecated_by, BOB.id);
+      // deprecatedChanged 计入 mergeReport
+      assert.equal(result.report.nodesDeprecatedCount, 1);
+    } else {
+      assert.fail(`expected merged ok, got: ${JSON.stringify(result)}`);
+    }
+
+    // 主表 nodes_meta n2 应被同步：is_deprecated=1 / deprecated_by=Bob
+    const meta = db.prepare(
+      `SELECT is_deprecated, deprecated_by FROM nodes_meta
+       WHERE canvas_id=? AND sheet_id='s1' AND node_id='n2'`,
+    ).get(canvasId) as { is_deprecated: number; deprecated_by: number };
+    assert.equal(meta.is_deprecated, 1);
+    assert.equal(meta.deprecated_by, BOB.id);
+  });
+});
+
+describe('F-16a case 4 — E7 warnings 流入 mergeReport', () => {
+  it('A 加边 e_new 端点是 n2 + B 删 n2（admin）→ 合并成功 + warnings 含 edge_dropped_dangling_endpoint', () => {
+    // detector N9-1/N9-2：B 加边引用 A 已删节点 → edge_endpoint_removed_by_other（真冲突）
+    // 反向（detectEdgeConflicts L1 复审 N9-3）：A 加边 + B 删点 → 无冲突，applyDelta E7 丢边 + warning
+    // 这里 A=Alice 加边、B=ADMIN 删点（public canvas 只 admin 能物删 + admin 删 Alice 节点合法）
+    seedUsers();
+    const { canvasId, baseData } = seedBaseCanvas(); // n1, n2 都是 Alice 创建
+
+    // Alice 推到 v=2：加新边 e_new (n1→n2)
+    const aliceData: MultiCanvasProjectInput = {
+      ...baseData,
+      sheets: [
+        {
+          ...baseData.sheets[0],
+          connectors: [{ id: 'e_new', sourceID: 'n1', targetID: 'n2' }],
+        },
+      ],
+    };
+    const aliceR = saveCanvas({ id: canvasId, baseVersion: 1, data: aliceData, user: ALICE });
+    assert.equal(aliceR.ok, true);
+
+    // ADMIN 基于 v=1 物删 n2（admin 才能在 public canvas 物删；reverse 方向 detector 不产 conflict）
+    // applyDelta E7 dangling endpoint 扫描应丢 e_new + 产 warning
+    const bobData: MultiCanvasProjectInput = {
+      ...baseData,
+      sheets: [
+        {
+          ...baseData.sheets[0],
+          nodes: baseData.sheets[0].nodes.filter((n) => n.id !== 'n2'),
+        },
+      ],
+    };
+    const result = saveCanvas({ id: canvasId, baseVersion: 1, data: bobData, user: ADMIN });
+
+    assert.equal(result.ok, true);
+    if (result.ok === true && result.merged) {
+      // mergedData 不含 e_new（被 E7 丢弃）
+      const conns = result.mergedData.sheets[0].connectors;
+      assert.equal(conns.length, 0, 'e_new should be dropped by E7 dangling endpoint');
+      // mergeReport.warnings 含一条 edge_dropped_dangling_endpoint
+      assert.equal(result.report.warnings.length, 1);
+      const w = result.report.warnings[0];
+      assert.equal(w.type, 'edge_dropped_dangling_endpoint');
+      assert.equal(w.edgeId, 'e_new');
+      assert.equal(w.missingEndpoint, 'n2');
+      assert.equal(w.missingEndpointSide, 'target');
+    } else {
+      assert.fail(`expected merged ok with E7 warning, got: ${JSON.stringify(result)}`);
+    }
+  });
+});
+
+describe('F-16a case 5 — connector 自动合并（E1 双方加不同边 + E3 同边改不同字段）', () => {
+  it('A 加边 e_a (n1→n2) + B 加边 e_b (n2→n1 反向) → 合并成功 + 两条边都在 mergedData', () => {
+    seedUsers();
+    const { canvasId, baseData } = seedBaseCanvas();
+
+    // Alice 推 v=2：加 e_a (n1→n2)
+    const aliceData: MultiCanvasProjectInput = {
+      ...baseData,
+      sheets: [
+        {
+          ...baseData.sheets[0],
+          connectors: [{ id: 'e_a', sourceID: 'n1', targetID: 'n2' }],
+        },
+      ],
+    };
+    const aliceR = saveCanvas({ id: canvasId, baseVersion: 1, data: aliceData, user: ALICE });
+    assert.equal(aliceR.ok, true);
+
+    // Bob 基于 v=1 加 e_b (n2→n1 反向，不同 ID + 不同 sem-key)
+    const bobData: MultiCanvasProjectInput = {
+      ...baseData,
+      sheets: [
+        {
+          ...baseData.sheets[0],
+          connectors: [{ id: 'e_b', sourceID: 'n2', targetID: 'n1' }],
+        },
+      ],
+    };
+    const result = saveCanvas({ id: canvasId, baseVersion: 1, data: bobData, user: BOB });
+
+    assert.equal(result.ok, true);
+    if (result.ok === true && result.merged) {
+      // mergedData 含双方两条边
+      const conns = result.mergedData.sheets[0].connectors;
+      assert.equal(conns.length, 2);
+      const ids = new Set(conns.map((c) => (c as { id: string }).id));
+      assert.ok(ids.has('e_a'), 'e_a from Alice should be present');
+      assert.ok(ids.has('e_b'), 'e_b from Bob should be present');
+      // mergeReport.edgesAddedCount = 1（B 单边加的）
+      assert.equal(result.report.edgesAddedCount, 1);
+    } else {
+      assert.fail(`expected merged ok, got: ${JSON.stringify(result)}`);
+    }
+  });
+
+  it('E3 同边改不同字段：A 改 e_pre.label / B 改 e_pre.style → 合并成功 + 两个改动都进 mergedData', () => {
+    seedUsers();
+
+    // 自定义 base：含一条 connector e_pre (n1→n2)，n1/n2 都是 Alice 创建
+    const now = Date.now();
+    const baseData: MultiCanvasProjectInput = {
+      version: 2,
+      id: 'p1',
+      name: 'test',
+      activeSheetId: 's1',
+      sheets: [
+        {
+          id: 's1',
+          name: 'sheet 1',
+          nodes: [
+            { id: 'n1', name: 'n1', type: 'process', position: { x: 0, y: 0 }, size: { width: 100, height: 50 }, expandable: false },
+            { id: 'n2', name: 'n2', type: 'process', position: { x: 200, y: 0 }, size: { width: 100, height: 50 }, expandable: false },
+          ],
+          connectors: [
+            {
+              id: 'e_pre',
+              sourceID: 'n1',
+              targetID: 'n2',
+              data: { label: 'old' },
+            },
+          ],
+        },
+      ],
+    };
+    const ins = db.prepare(
+      `INSERT INTO canvases
+         (name, description, visibility, is_public_to_guest, owner_id, data, version,
+          created_by, created_at, updated_by, updated_at, archived)
+       VALUES (?, ?, 'public', 0, NULL, ?, 1, ?, ?, ?, ?, 0)`,
+    ).run('test', null, JSON.stringify(baseData), ALICE.id, now, ALICE.id, now);
+    const canvasId = Number(ins.lastInsertRowid);
+    db.prepare(
+      `INSERT INTO canvas_versions (canvas_id, version, data, saved_by, saved_at)
+       VALUES (?, 1, ?, ?, ?)`,
+    ).run(canvasId, JSON.stringify(baseData), ALICE.id, now);
+    const insertMeta = db.prepare(
+      `INSERT INTO nodes_meta
+         (canvas_id, sheet_id, node_id, creator_id, created_at, updated_by, updated_at,
+          is_deprecated, deprecated_by, deprecated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL, NULL)`,
+    );
+    insertMeta.run(canvasId, 's1', 'n1', ALICE.id, now, ALICE.id, now);
+    insertMeta.run(canvasId, 's1', 'n2', ALICE.id, now, ALICE.id, now);
+
+    // Alice 推 v=2：改 e_pre.data.label 'old'→'alice-label'
+    const aliceData: MultiCanvasProjectInput = {
+      ...baseData,
+      sheets: [
+        {
+          ...baseData.sheets[0],
+          connectors: [{ ...baseData.sheets[0].connectors[0], data: { label: 'alice-label' } }],
+        },
+      ],
+    };
+    const aliceR = saveCanvas({ id: canvasId, baseVersion: 1, data: aliceData, user: ALICE });
+    assert.equal(aliceR.ok, true);
+
+    // Bob 基于 v=1 改 e_pre.style（不同字段，E3 自动合并）— 加 style 字段不动 data
+    const bobData: MultiCanvasProjectInput = {
+      ...baseData,
+      sheets: [
+        {
+          ...baseData.sheets[0],
+          connectors: [
+            {
+              ...baseData.sheets[0].connectors[0],
+              style: { stroke: '#ff0000' },
+            },
+          ],
+        },
+      ],
+    };
+    const result = saveCanvas({ id: canvasId, baseVersion: 1, data: bobData, user: BOB });
+
+    assert.equal(result.ok, true);
+    if (result.ok === true && result.merged) {
+      const conn = result.mergedData.sheets[0].connectors[0];
+      // 双方改动都在 mergedData（按 StorageConnector 真实形状取）
+      assert.equal(conn.data?.label, 'alice-label', 'Alice 的 label 改动应保留');
+      assert.equal(conn.style?.stroke, '#ff0000', 'Bob 的 style 改动应合并进');
+      // mergeReport.edgesModifiedCount = 1（B 单边改的字段）
+      assert.equal(result.report.edgesModifiedCount, 1);
+    } else {
+      assert.fail(`expected E3 auto-merge ok, got: ${JSON.stringify(result)}`);
+    }
+  });
+});
