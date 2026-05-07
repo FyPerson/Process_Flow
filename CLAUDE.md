@@ -34,7 +34,7 @@
 npm run dev              # api + vite 双进程并发，端口 5173
 
 # 验证（npm test 已串好 lint:ids → typecheck:test → 单测）
-npm test                 # 389 测试 + lint:ids 兜底 + 测试 type-check
+npm test                 # 406 测试 + lint:ids 兜底 + 测试 type-check
 npx tsc --noEmit -p tsconfig.client.json   # 前端类型检查（必须显式 -p）
 npx tsc --noEmit -p tsconfig.server.json   # 服务端类型检查
 npx tsc --noEmit -p tsconfig.test.json     # 测试类型检查
@@ -81,23 +81,30 @@ powershell -File scripts/deploy.ps1        # 主 PowerShell 跑（不能在 hook
 
 ## 当前阶段
 
-阶段 5 合并算法 4 天 MVP —— **Day 1 + Day 2 完工**（截至 2026-05-07）：
+阶段 5 合并算法 4 天 MVP —— **Day 1 + Day 2 + Day 3 完工**（截至 2026-05-07）：
 - **Day 1**（v1.12.0，2026-05-06）：类型/框架/saveCanvas 入口三分支改造 + schema parentId 真校验 + 旧数据审计脚本。codex 7 轮审 final 0 high + 0 medium，单测 282→293
 - **Day 2**（v1.13.0，2026-05-07）：合并算法主体 — detector + applyDelta + tryMerge + saveCanvas 接合并完整闭环
-  - **阶段 A**：saveCanvas 快速路径迁移 Delta 形态 + 提取 3 helper（`canvases-merge-helpers.ts` 491 行）+ DataIntegrityError 路由映射
-  - **阶段 B 五切片**：B-1 detectNodeConflicts / B-2 detectEdgeConflicts（H1 修法 SEMANTIC_CONNECTOR_FIELDS + M1 deepEqualJsonShape）/ B-2.5 detectSheet+detectProject / B-3 applyDelta（E2 防御抛 DataIntegrityError + active_sheet_missing 内部映射 + R-Day2-2 复跑 assertProjectIntegrity）/ B-4 tryMerge 编排（computeDelta×2 + 4 段 detect 全收集）；codex 9 轮复审通过
-  - **阶段 C**：saveCanvas 接合并算法完整链路（取舍审 11 项 + 4 风险全吸收 + 7 case 验收）。codex 修订 #2 #3：currentVersion 保存者用 `canvas_versions.saved_by` 不是 `canvases.updated_by`（PATCH/publish/archive 会改脏主表 updated_by 但不写 version）。high 风险吸收：saveCanvas 独立持有 deltaB 给 helper 用；tryMerge 内部 deltaB 不外传避免漂移
-  - **阶段 D**：末尾审 codex 0 issue / canEnterD: true / confidence=high；4 test_gap 挂账 #33（PUT route 层 DataIntegrityError + conflict 序列化复测）+ #34（合并端到端遗漏路径）→ Day 4 Playwright e2e 一并兑现
-  - 单测 **293 → 389** 全过 / tsc 三端 0 错 / lint:ids 0 违规
+  - 阶段 A：saveCanvas 快速路径迁移 Delta + 3 helper / 阶段 B 五切片 detector+applyDelta+tryMerge / 阶段 C saveCanvas 接合并 7 case 端到端 / 阶段 D 末尾审 0 issue
+  - codex 修订 #2 #3：用 canvas_versions.saved_by 不用 canvases.updated_by（PATCH/publish 会改脏主表）
+  - high 风险吸收：saveCanvas 独立持有 deltaB 给 helper 用；tryMerge 内部 deltaB 不外传
+  - 单测 293 → 389 / 4 test_gap 挂账 #33/#34
+- **Day 3**（v1.14.0，2026-05-07）：客户端接合并响应 + conflict_logs 写入 + Delta 序列化 + 类型契约守门
+  - **前置 P-1/P-2/P-3**：开 includeDebugDelta=true / ApiError 扩 conflicts / base_version_expired 补查 currentVersionAuthor
+  - **D-1 D-2 D-3**：serialize.ts（7 Map → entries + 64KB 截断）/ conflict_logs.ts（3 种 resolution 同事务 INSERT）/ 客户端类型镜像 + 契约测试
+  - **D-4**：useMultiCanvas.save() 处理 merged=true / base_version_expired / conflict 携 conflicts
+  - **codex 4 轮审查**：取舍审 → 首轮末尾审戳穿 2 high → 复审戳穿 A 方案破坏不变量 → 三审 PASS B 方案；canEnterBump: true
+  - **B 方案核心不变量**：serverVersionRef ≡ projectRef 服务端基线；merged=true + changeSeq 不等时 server-side state 全不动；下次 save 用旧 baseVersion 让服务端再合并
+  - **D-3 high #1 修法**：契约测试改 `Assert<T extends true>` + `IsEqual<X,Y>` 真 compile-fail pattern；旧 `type X = ... ? true : never` 沉默通过；反向验证 2 次都让 tsc 真报错
+  - 单测 **389 → 406** 全过 / tsc 三端 0 错 / lint:ids 0 违规
 
-阶段 5 整体进度 **1/4 → 3/4**。
+阶段 5 整体进度 **1/4 → 3/4**（Day 4 真冲突 UI + Playwright + 部署待启动）。
 - 整阶段时间线：[阶段5/P5-合并算法/README.md](docs/规划/codex审查记录/阶段5/P5-合并算法/README.md)
 - Day 1 收尾：[Day1-基建/99-收尾.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day1-基建/99-收尾.md)
 - Day 2 收尾：[Day2-合并算法/99-收尾.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day2-合并算法/99-收尾.md)
-- Day 2 11 项决策：[Day2-合并算法/03-拍板记录.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day2-合并算法/03-拍板记录.md)
-- 阶段 C 取舍审：[Day2-合并算法/10-阶段C-取舍审-saveCanvas接合并.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day2-合并算法/10-阶段C-取舍审-saveCanvas接合并.md)
+- Day 3 收尾：[Day3-客户端/99-收尾.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day3-客户端/99-收尾.md)
+- Day 3 末尾审三审（B 方案 PASS）：[Day3-客户端/04-末尾审-三审.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day3-客户端/04-末尾审-三审.md)
 
-**下次 next**：Day 3 客户端（merged 响应 + 状态替换 + conflict_logs 写入），覆盖 5.4 N1-N10 + 5.5 E1-E7 + sheet 增删 + 端点校验 + nodes_meta 越权 25+ 单测。
+**下次 next**：Day 4 真冲突弹窗 UI（4B 流程：保存草稿 / 继续编辑）+ toast 自动合并报告 + E7 warning + Playwright e2e + codex 门禁审 + 部署 v1.x.0；同时兑现 #33/#34 测试债务。
 
 **codex 调用 Windows sandbox 1326 + ARG_MAX 32KB 双坑根治**：大 prompt 必须用 stdin 注入 + 前置代码内容（避开 PowerShell 子进程 1326 / Windows 命令行长度限制）。详见 [P5-合并算法/README.md § codex 协作模式](docs/规划/codex审查记录/阶段5/P5-合并算法/README.md)。
 

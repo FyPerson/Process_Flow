@@ -4,7 +4,7 @@
 |---|---|---|---|---|
 | Day 1 | 基建（类型 + computeDelta + schema parentId 真校验） | ✅ 完工 2026-05-06 | v1.12.0 | [Day1-基建/](Day1-基建/) |
 | Day 2 | 合并算法（detector + applyDelta + tryMerge + saveCanvas 接合并） | ✅ 完工 2026-05-07 | v1.13.0 | [Day2-合并算法/](Day2-合并算法/) |
-| Day 3 | 客户端（merged 响应 + 状态替换 + conflict_logs 写入） | ⏳ 待启动 | - | - |
+| Day 3 | 客户端（merged 响应 + 状态替换 + conflict_logs 写入） | ✅ 完工 2026-05-07 | v1.14.0 | [Day3-客户端/](Day3-客户端/) |
 | Day 4 | 真冲突 UI + Playwright + 部署 | ⏳ 待启动 | - | - |
 
 ## Day 2 子阶段进度
@@ -33,6 +33,11 @@
 - [B-4 tryMerge 代码审查（两轮 + 阶段 C 验收清单）](Day2-合并算法/09-阶段B-4-代码审查-tryMerge.md)
 - [阶段 C 取舍审 saveCanvas 接合并（11 项判断点 + 4 风险吸收）](Day2-合并算法/10-阶段C-取舍审-saveCanvas接合并.md)
 - [Day 2 99-收尾（v1.13.0）](Day2-合并算法/99-收尾.md)
+- [Day 3 取舍审 客户端接合并响应 + conflict_logs（10 项判断点 + 3 风险）](Day3-客户端/01-取舍审-客户端接合并响应+conflict_logs.md)
+- [Day 3 末尾审首轮（戳穿 2 high：契约测试无效 + merged=true 覆盖丢失）](Day3-客户端/02-末尾审-首轮.md)
+- [Day 3 末尾审复审（戳穿 A 方案破坏不变量）](Day3-客户端/03-末尾审-复审.md)
+- [Day 3 末尾审三审（B 方案 PASS / canEnterBump: true）](Day3-客户端/04-末尾审-三审.md)
+- [Day 3 99-收尾（v1.14.0）](Day3-客户端/99-收尾.md)
 
 ## codex 协作模式（Windows sandbox 1326 解决方案）
 
