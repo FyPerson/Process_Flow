@@ -81,16 +81,19 @@ powershell -File scripts/deploy.ps1        # 主 PowerShell 跑（不能在 hook
 
 ## 当前阶段
 
-阶段 5 合并算法 4 天 MVP — **Day 1 完工**（v1.12.0，2026-05-06）：类型/框架/saveCanvas 入口三分支改造 + schema parentId 真校验 + 旧数据审计脚本。Day 1 是基建层无功能落地（合并算法 stub 未真接入，Day 2 才接 detector/apply）。
-- `server/services/merge/`（新建 39KB）：types.ts（含 ConflictType 16 项 + DetectContext + StorageNodeContentFields/StorageConnectorContentFields + 4 个 AssertNever 真断言双向防漂移）/ computeDelta.ts（含 DataIntegrityError + assertProjectIntegrity 7 项硬约束 + computeDelta 主入口）/ computeDelta.test.ts 18 case
-- `server/schemas/canvas.ts`：parentId 真校验（line 247-294 两遍循环 + 自引用拒 + group 不能嵌套 + 必须指向 group）+ canvas.test.ts 新建 6 case
-- `server/services/canvases.ts`：saveCanvas 入口三分支（baseVersion <、=、> 三种语义）+ SaveCanvasResult 加 base_version_expired
-- `server/db/migrations/0005_conflict_logs_extend_resolution.sql`：扩 CHECK 加 base_version_expired
-- `scripts/audit-canvas-integrity.mjs`：旧数据审计脚本，生产 db 已跑过 0 违规
+阶段 5 合并算法 4 天 MVP —— **Day 1 完工 + Day 2 进行中**（截至 2026-05-07）：
+- **Day 1**（v1.12.0，2026-05-06）：类型/框架/saveCanvas 入口三分支改造 + schema parentId 真校验 + 旧数据审计脚本。codex 7 轮审 final 0 high + 0 medium，单测 282→293
+- **Day 2 阶段 A 已完工**（2026-05-07，未 bump）：saveCanvas 快速路径迁移到 Day 1 `Delta` 形态 + 提取 3 helper（`canvases-merge-helpers.ts` 491 行）+ DataIntegrityError 路由映射闭环
+  - 用户拍板 Day 2 11 项决策（7 判断点全 X + 4 新增风险）见 [Day2-合并算法/03-拍板记录.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day2-合并算法/03-拍板记录.md)
+  - 阶段 A codex 审查：1 真 high（routes catch）已修 / 1 伪 high（types.ts AssertNever 已防御）不采纳。归档 [Day2-合并算法/04-阶段A-代码审查-helper提取.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day2-合并算法/04-阶段A-代码审查-helper提取.md)
+  - saveCanvas 主体从 ~370 行缩到 ~120 行；行为完全保留；4 处 integrity 收紧（schema + 生产 db 审计已防误伤）
+- **Day 2 阶段 B/C/D 待启动**：B-1 detectNodeConflicts → B-2 detectEdgeConflicts → B-3 applyDelta（含 codex 风险 2 复跑 assertProjectIntegrity 兜底）→ B-4 tryMerge 编排 → C saveCanvas 接合并 → D 末尾 codex 审 + bump v1.13.0
 
-codex 7 轮审查链 final 0 high + 0 medium 全闭环 confidence=high；单测 282→293；tsc 三端 + lint:ids + build 全过。下次进 Day 2 detector/apply 主体（约 6h + 25+ 单测）。
+阶段 5 整体进度 **1/4 → 1.5/4**。单测仍 293/293（阶段 A 是行为不变的纯重构）。
+- 整阶段时间线：[阶段5/P5-合并算法/README.md](docs/规划/codex审查记录/阶段5/P5-合并算法/README.md)
+- Day 1 收尾：[Day1-基建/99-收尾.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day1-基建/99-收尾.md)
 
-详见 [docs/规划/codex审查记录/阶段5/P5-合并算法/Day1-基建/99-收尾.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day1-基建/99-收尾.md)。
+**codex 调用 Windows sandbox 1326 + ARG_MAX 32KB 双坑根治**：大 prompt 必须用 stdin 注入 + 前置代码内容（避开 PowerShell 子进程 1326 / Windows 命令行长度限制）。详见 [P5-合并算法/README.md § codex 协作模式](docs/规划/codex审查记录/阶段5/P5-合并算法/README.md)。
 
 ## 给未来 Claude 的话
 
