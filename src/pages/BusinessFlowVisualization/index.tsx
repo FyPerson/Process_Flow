@@ -29,6 +29,7 @@ import { canWriteCanvas } from '../../auth/canWriteCanvas';
 import { canEditNodeData } from '../../auth/canEditNode';
 import type { ApiError } from '../../api/canvases';
 import type { AnnotationsBundle, PendingPanelTabRequest } from '../../components/NodeDetailPanel';
+import { buildNodeStyleWithPersistedSize } from './buildNodeStyleWithPersistedSize';
 import './styles.css';
 
 /** 把导入接口的 ApiError 翻译成对用户可行动的中文文案 */
@@ -696,11 +697,14 @@ export function BusinessFlowVisualization() {
       }
 
       // 普通节点
+      // #35 修法（codex spec-critique 2026-05-08 推荐方案 B / confidence=high）：
+      // 把持久化 size 注入 style.width/height。详见 buildNodeStyleWithPersistedSize.ts 注释。
+      // 与 group 节点 L656-660 已有的 size 注入对称。
       return {
         id: node.id,
         type: 'custom',
         position: node.position,
-        style: node.style,
+        style: buildNodeStyleWithPersistedSize(node.style, node.size),
         hidden: (node as any).hidden,
         parentId: node.parentId,
         extent: node.parentId ? ('parent' as 'parent') : undefined,
