@@ -126,6 +126,7 @@ export function planSaveError(err: unknown): SaveErrorPlan {
   }
 
   // v1.16.2：403 forbidden_remove_node / forbidden_delete_public_canvas 友好处理
+  // v1.16.3：补 forbidden_modify_others_node（公共画布上 user01 加载触发 autosave 改 admin 节点 → 403）
   if (err.status === 403) {
     if (err.error === 'forbidden_remove_node') {
       return {
@@ -143,7 +144,20 @@ export function planSaveError(err: unknown): SaveErrorPlan {
         returnValue: { status: 'forbidden_remove', message: err.message ?? '' },
       };
     }
-    // 其他 403（如 forbidden_modify_others_node）→ rethrow（不在 dispatcher 范围；hook 兜底）
+    if (err.error === 'forbidden_modify_others_node') {
+      // v1.16.3：用户没主动改节点但 autosave 触发 PUT 被服务端拒
+      // 根因（挂账 #35）：useDraftAutosave 加载即推进 baseline，浏览器 React Flow 自动测量节点尺寸等
+      //   修改让 canonical diff 命中 → 自动 PUT 主版本 → 服务端按 creator_id 拒
+      // 短期对策：friendly 文案 + reload 撤销 baseline 推进 + 不 setServerError 避兜底页
+      // 长期对策：useDraftAutosave 加载完成后先建 snapshot 再启用 autosave（#35）
+      return {
+        action: 'forbidden_remove',
+        message: '当前画布上有别人创建的节点你不能修改。如果你只是打开画布并未做改动，可能是浏览器加载时的自动同步触发——已为你重新加载最新画布。',
+        shouldDeleteDraft: false,
+        returnValue: { status: 'forbidden_remove', message: err.message ?? '' },
+      };
+    }
+    // 其他 403（如 forbidden）→ rethrow（不在 dispatcher 范围；hook 兜底）
     return { action: 'rethrow', error: err };
   }
 

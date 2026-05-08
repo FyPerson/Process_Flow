@@ -17,6 +17,7 @@ import type { UserPublic } from '../auth/api';
 import { newEdgeId } from '../utils/ids';
 import {
     canApplyNodeUpdate,
+    canDeleteNodeData,
     filterNodeChangesByPermission,
 } from '../auth/canEditNode';
 
@@ -47,6 +48,10 @@ interface UseFlowHandlersProps {
     /** v1.16.2：当前画布可见性。给 filterNodeChangesByPermission remove 分支用——
      *  公共画布上普通用户不能物删已保存节点。默认 'private' 向后兼容（私有画布行为不变）。 */
     canvasVisibility?: 'public' | 'private';
+    /** v1.16.3：当节点删除被前端拦下时调用（用户点 Delete 但被 canDeleteNodeData 拒绝）。
+     *  caller 通常用此回调发 Toast 解释"为什么按键无效"。
+     *  也覆盖 edge 联动删被拦的场景（节点拦下 → 对应 edge remove 也拦下 → 调此回调）。 */
+    onForbiddenRemove?: () => void;
 }
 
 export function useFlowHandlers({
@@ -68,6 +73,7 @@ export function useFlowHandlers({
     readOnly = false,
     user,
     canvasVisibility = 'private',
+    onForbiddenRemove,
 }: UseFlowHandlersProps) {
     // P3D-2 step 3 中心 mutation gate：canvasWritable = !readOnly。
     // BFV 派生 readOnly = !canvasWritable（src/pages/BusinessFlowVisualization/index.tsx 算的单一口径）
@@ -87,6 +93,14 @@ export function useFlowHandlers({
                 canvasWritable,
                 canvasVisibility,
             );
+
+            // v1.16.3：检测是否有 remove change 被过滤掉 → 调 onForbiddenRemove 让 caller 弹 Toast
+            // （仅 remove 类型；replace/position/dimensions 被过滤是 fail-closed 不需提示）
+            const inputRemoveCount = changes.filter((c) => c.type === 'remove').length;
+            const outputRemoveCount = filteredChanges.filter((c) => c.type === 'remove').length;
+            if (inputRemoveCount > outputRemoveCount && onForbiddenRemove) {
+                onForbiddenRemove();
+            }
 
             // 先应用变化
             onNodesChange(filteredChanges);
@@ -158,20 +172,62 @@ export function useFlowHandlers({
                 triggerAutoSave();
             }, 0);
         },
-        [onNodesChange, setNodes, setEdges, saveHistory, triggerAutoSave, isUndoRedoRef, isDraggingRef, dragHistoryTimerRef, setSelectedElement, setShowPanel, nodes, user, canvasWritable, canvasVisibility],
+        [onNodesChange, setNodes, setEdges, saveHistory, triggerAutoSave, isUndoRedoRef, isDraggingRef, dragHistoryTimerRef, setSelectedElement, setShowPanel, nodes, user, canvasWritable, canvasVisibility, onForbiddenRemove],
     );
 
     // 包装 onEdgesChange 以检测删除操作
+    // v1.16.3：拦截"指向被前端拦下节点"的 edge remove change
+    // 场景：用户在公共画布选中已保存节点 + 按 Delete → React Flow 联动产生 EdgeChange remove + NodeChange remove
+    // wrappedOnNodesChange 拦下 NodeChange remove；这里同步拦下对应 EdgeChange remove，
+    // 避免"节点保留 + 连线消失"的"幽灵删除"
+    //
+    // 注意：用户**主动**删自己的连线（不联动 node remove）仍允许（A1 决策）
+    // 仅当 edge.source 或 edge.target 节点本身在本批次也被尝试 remove 但被拦时，对应 edge remove 被拦
     const wrappedOnEdgesChange = useCallback(
         (changes: EdgeChange[]) => {
-            onEdgesChange(changes);
+            // 找出本批次"被拦下"的节点 ID 集合（remove change 被 canDeleteNodeData 拒）
+            const nodeIdsBlockedFromRemoval = new Set<string>();
+            const isAdmin = !!user && user.role === 'admin';
+            if (canvasWritable && !isAdmin) {
+                // 与 wrappedOnNodesChange 同款判定逻辑（不复用 helper 因为这里只关心节点 ID）
+                // 注：这里只检 canvasVisibility=='public' 时的限制；私有画布逻辑沿用旧行为
+                if (canvasVisibility === 'public') {
+                    for (const node of nodes) {
+                        if (!canDeleteNodeData(node.data, user, canvasWritable, canvasVisibility)) {
+                            nodeIdsBlockedFromRemoval.add(node.id);
+                        }
+                    }
+                }
+            }
+
+            // 过滤 edge changes：source 或 target 在 blocked 集合 + change 是 remove → 拦
+            let edgeBlockedCount = 0;
+            const filteredChanges = changes.filter((change) => {
+                if (change.type !== 'remove') return true;
+                // edge remove change 含 id；找原 edge
+                const edge = edges.find((e) => e.id === change.id);
+                if (!edge) return true; // 找不到原 edge → 让 React Flow 内部处理（fail-open；理论上 edges state 应同步）
+                if (
+                    nodeIdsBlockedFromRemoval.has(edge.source)
+                    || nodeIdsBlockedFromRemoval.has(edge.target)
+                ) {
+                    edgeBlockedCount++;
+                    return false;
+                }
+                return true;
+            });
+
+            onEdgesChange(filteredChanges);
+
+            // 联动通知：edge remove 被拦说明节点 remove 也被拦了（wrappedOnNodesChange 已发 onForbiddenRemove）
+            // 这里**不重复**调 onForbiddenRemove —— 让节点路径作为唯一 toast 触发点，避免重复弹
 
             if (isUndoRedoRef.current) {
                 return;
             }
 
-            // 检测是否有删除操作
-            const hasRemove = changes.some((change) => change.type === 'remove');
+            // 检测是否有删除操作（用过滤后的）
+            const hasRemove = filteredChanges.some((change) => change.type === 'remove');
             if (hasRemove) {
                 // 关闭详情面板并清除选中元素
                 setSelectedElement(null);
@@ -192,9 +248,11 @@ export function useFlowHandlers({
             }
 
             // 触发自动保存（延迟保存）
+            // edge 全被拦时 edgeBlockedCount > 0 但 filteredChanges 仍可能含其他非 remove change，autosave 安全
+            void edgeBlockedCount;
             triggerAutoSave();
         },
-        [onEdgesChange, setNodes, setEdges, saveHistory, triggerAutoSave, isUndoRedoRef, setSelectedElement, setShowPanel],
+        [onEdgesChange, setNodes, setEdges, saveHistory, triggerAutoSave, isUndoRedoRef, setSelectedElement, setShowPanel, nodes, edges, user, canvasWritable, canvasVisibility],
     );
 
     // 节点点击处理

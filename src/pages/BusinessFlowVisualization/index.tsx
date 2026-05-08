@@ -402,6 +402,19 @@ export function BusinessFlowVisualization() {
     // 用户在顶栏点「冲突待处理」可重开弹窗
   }, []);
 
+  // v1.16.3：节点删除被前端拦下时弹 Toast 解释
+  // 触发：公共画布上普通用户尝试删已保存节点（自己加的也算）
+  // useFlowHandlers 检测到 wrappedOnNodesChange 过滤掉 remove change 时调此回调
+  const handleForbiddenRemove = useCallback(() => {
+    toast.show({
+      key: 'forbidden-remove-frontend',
+      severity: 'warning',
+      title: '无法删除',
+      detail: '公共画布上的节点只允许管理员物理删除。如不再需要，请在右侧详情面板使用"标记为已废弃"。',
+      durationMs: 6000,
+    });
+  }, [toast]);
+
   // 另存到服务器（首次创建）—— 成功后用返回的 id 显式写 URL（单向同步）
   const handleSaveAsNew = useCallback(async () => {
     const defaultName = project?.name || '未命名画布';
@@ -1065,6 +1078,7 @@ export function BusinessFlowVisualization() {
             canvasVisibility={
               canvasMetaState.kind === 'server' ? canvasMetaState.meta.visibility : 'private'
             }
+            onForbiddenRemove={handleForbiddenRemove}
             onImport={readOnly ? undefined : handleImport}
             // 多画布标签栏 —— readOnly 时所有 mutation 走 no-op，避免游客误以为能改
             sheets={project?.sheets || []}

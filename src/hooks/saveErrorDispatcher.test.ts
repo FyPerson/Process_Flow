@@ -266,13 +266,17 @@ describe('planSaveError — forbidden_remove 路径 (v1.16.2)', () => {
     assert.match(plan.message, /标废弃/);
   });
 
-  it('20. 403 + 其他 error code（如 forbidden_modify_others_node）→ rethrow（不在 dispatcher 范围）', () => {
+  it('20. v1.16.3：403 + forbidden_modify_others_node → forbidden_remove plan（autosave 加载即推进 baseline 触发的友好处理）', () => {
     const plan = planSaveError({
       status: 403,
       error: 'forbidden_modify_others_node',
       message: 'cannot modify node n1 created by user 5',
     });
-    assert.equal(plan.action, 'rethrow');
+    if (plan.action !== 'forbidden_remove') {
+      assert.fail(`expected forbidden_remove plan (v1.16.3 友好化), got ${plan.action}`);
+    }
+    assert.match(plan.message, /别人创建的节点/);
+    assert.equal(plan.shouldDeleteDraft, false);
   });
 
   it('21. 403 + forbidden（无具体 code）→ rethrow', () => {

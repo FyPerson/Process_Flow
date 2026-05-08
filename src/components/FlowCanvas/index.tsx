@@ -23,7 +23,7 @@ import '@xyflow/react/dist/style.css';
 
 import { FlowNodeData, NodeUpdateParams, EdgeUpdateParams, MultiCanvasProject, CanvasSheet } from '../../types/flow';
 import type { UserPublic } from '../../auth/api';
-import { canEditNodeData } from '../../auth/canEditNode';
+import { canEditNodeData, canDeleteNodeData } from '../../auth/canEditNode';
 import { CustomNode } from '../CustomNode';
 import { GroupNode } from '../GroupNode';
 import DraggableEdge from '../DraggableEdge';
@@ -81,6 +81,9 @@ interface FlowCanvasProps {
    *  默认 'private' 向后兼容（本地草稿 / 私有画布走原有删节点行为）。
    *  caller 应该按 canvasMetaState.kind === 'server' ? meta.visibility : 'private' 传。 */
   canvasVisibility?: 'public' | 'private';
+  /** v1.16.3：节点删除被前端拦下时调用，caller 通常用此发 Toast 解释"为什么按键无效"。
+   *  覆盖节点本身被拦 + 联动 edge remove 被拦两个场景（仅触发一次 toast 不重复）。 */
+  onForbiddenRemove?: () => void;
   /** P2I：从 JSON 文件导入为新画布。caller 实现文件选择 + apiImport + URL 跳新 canvasId */
   onImport?: () => void;
   /** P3E-3 批注 bundle（透传给 NodeDetailPanel） */
@@ -110,6 +113,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   readOnly = false,
   user,
   canvasVisibility = 'private',
+  onForbiddenRemove,
   onImport,
   annotationsBundle,
 }: {
@@ -131,6 +135,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   readOnly?: boolean;
   user: UserPublic | null;
   canvasVisibility?: 'public' | 'private';
+  onForbiddenRemove?: () => void;
   onImport?: () => void;
   /** P3E-3 批注 bundle（由 BFV 接 useAnnotations + 派生）；不传 = 不显示批注 tab/徽章 */
   annotationsBundle?: AnnotationsBundle | null;
@@ -599,6 +604,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
     readOnly,
     user,
     canvasVisibility,
+    onForbiddenRemove,
   });
 
   // 使用 useFlowOperations Hook
@@ -756,42 +762,61 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
 
     // P3D-2 step 3+7：节点级权限按"边/节点拆分"处理（06-范围审查必修 6）
     // - 边没有 creator 语义，按 canvasWritable 即可删（已通过 readOnly 早退）
-    // - 节点必须 canEditNodeData（admin / creator / __localNew），不可编辑节点要跳过而不是整体拒
+    // - 节点必须 canDeleteNodeData（v1.16.3：比 canEditNodeData 更严，公共画布上仅 admin 能删已保存节点）
     //
-    // 老版本（step 3）：all-or-nothing 整体拒，确认弹窗都不弹 → 用户体验"按 Backspace 没反应"
-    // 新版本（step 7）：拆分处理 —— 可编辑节点 + 所有边走删除流程；不可编辑节点跳过并提示
-    //                 边的"相连节点不存在"问题不用前端管（React Flow / 服务端 § 5.6 兜底）
-    const editableNodes = selectedNodes.filter((n) => canEditNodeData(n.data, user, !readOnly));
-    const uneditableNodes = selectedNodes.filter((n) => !canEditNodeData(n.data, user, !readOnly));
+    // v1.16.3 修正：原来用 canEditNodeData 让普通用户在公共画布能删自己加的已保存节点 → A 加 F1 + B 加 F2/F3 接 F1，
+    // A 删 F1 让 B 节点悬空。改成 canDeleteNodeData 严格化：公共画布上普通用户仅能删 __localNew（保存前）节点。
+    // 联动 edge：当节点不能删时，与该节点相连的 edge 也跟着不删（避免"节点保留 / 连线消失"）
+    const deletableNodes = selectedNodes.filter((n) =>
+      canDeleteNodeData(n.data, user, !readOnly, canvasVisibility),
+    );
+    const undeletableNodes = selectedNodes.filter((n) =>
+      !canDeleteNodeData(n.data, user, !readOnly, canvasVisibility),
+    );
 
-    // 全部不可编辑（且无边选中）→ 友好提示"用标废弃"
-    if (editableNodes.length === 0 && selectedEdges.length === 0 && uneditableNodes.length > 0) {
-      alert('选中的节点你不是创建者（仅作者或管理员可删除）。\n如需停用节点请使用详情面板的"标记废弃"按钮——废弃节点对所有用户可见但视觉上半透明。');
+    // 联动过滤 edges：与"不可删节点"相连的 edge 不删（A1 决策：节点保留则连线必保留）
+    const undeletableNodeIds = new Set(undeletableNodes.map((n) => n.id));
+    const deletableEdges = selectedEdges.filter(
+      (e) => !undeletableNodeIds.has(e.source) && !undeletableNodeIds.has(e.target),
+    );
+    const undeletableEdgesCount = selectedEdges.length - deletableEdges.length;
+
+    // 全部不可删（节点+联动 edge 全被拦）→ 友好提示"用标废弃"
+    if (deletableNodes.length === 0 && deletableEdges.length === 0 && undeletableNodes.length > 0) {
+      // 公共画布友好文案 vs 私有画布老文案区分
+      const msg = canvasVisibility === 'public'
+        ? '公共画布上的节点只允许管理员物理删除。如不再需要，请在右侧详情面板使用"标记为已废弃"。'
+        : '选中的节点你不是创建者（仅作者或管理员可删除）。\n如需停用节点请使用详情面板的"标记废弃"按钮——废弃节点对所有用户可见但视觉上半透明。';
+      alert(msg);
       return;
     }
 
-    // 部分不可编辑：只删可删的（编辑节点 + 边），跳过不可编辑节点
-    // 弹出确认框（含跳过提示）
+    // 部分不可删：只删可删的（节点 + 不联动到不可删节点的边），跳过不可删节点
     let confirmMessage: string;
-    if (editableNodes.length > 0 && selectedEdges.length > 0) {
-      confirmMessage = `确定要删除选中的 ${editableNodes.length} 个节点和 ${selectedEdges.length} 条连线吗？`;
-    } else if (editableNodes.length > 0) {
-      confirmMessage = `确定要删除选中的 ${editableNodes.length} 个节点吗？\n注意：删除节点也会删除相连的连线。`;
+    if (deletableNodes.length > 0 && deletableEdges.length > 0) {
+      confirmMessage = `确定要删除选中的 ${deletableNodes.length} 个节点和 ${deletableEdges.length} 条连线吗？`;
+    } else if (deletableNodes.length > 0) {
+      confirmMessage = `确定要删除选中的 ${deletableNodes.length} 个节点吗？\n注意：删除节点也会删除相连的连线。`;
     } else {
       // 仅边
-      confirmMessage = `确定要删除选中的 ${selectedEdges.length} 条连线吗？`;
+      confirmMessage = `确定要删除选中的 ${deletableEdges.length} 条连线吗？`;
     }
-    if (uneditableNodes.length > 0) {
-      // 一审 Low 2：明确说"边仍删" —— 用户可能以为跳过节点的相关连线也保留
-      confirmMessage += `\n\n${uneditableNodes.length} 个不可编辑节点将被跳过（非作者创建，请用"标废弃"代替）。\n注意：选中的连线仍会删除，即使连接到被跳过的节点。`;
+    if (undeletableNodes.length > 0) {
+      const reason = canvasVisibility === 'public'
+        ? '（公共画布上仅管理员能物删，请用"标废弃"代替）'
+        : '（非作者创建，请用"标废弃"代替）';
+      confirmMessage += `\n\n${undeletableNodes.length} 个不可删除节点将被跳过 ${reason}。`;
+      if (undeletableEdgesCount > 0) {
+        confirmMessage += `\n${undeletableEdgesCount} 条与这些节点相连的连线也将被保留。`;
+      }
     }
 
     if (window.confirm(confirmMessage)) {
-      deleteElements({ nodes: editableNodes, edges: selectedEdges });
+      deleteElements({ nodes: deletableNodes, edges: deletableEdges });
       setSelectedElement(null);
       setShowPanel(false);
     }
-  }, [getNodes, getEdges, deleteElements, setSelectedElement, setShowPanel, readOnly, user]);
+  }, [getNodes, getEdges, deleteElements, setSelectedElement, setShowPanel, readOnly, user, canvasVisibility]);
 
   // 键盘快捷键支持
   useEffect(() => {
@@ -1217,6 +1242,7 @@ export function FlowCanvas({
   readOnly = false,
   user,
   canvasVisibility,
+  onForbiddenRemove,
   onImport,
   annotationsBundle,
 }: FlowCanvasProps) {
@@ -1239,6 +1265,7 @@ export function FlowCanvas({
         readOnly={readOnly}
         user={user}
         canvasVisibility={canvasVisibility}
+        onForbiddenRemove={onForbiddenRemove}
         onImport={onImport}
         annotationsBundle={annotationsBundle}
       />
