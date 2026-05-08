@@ -462,6 +462,14 @@ canvasesRouter.delete(
       res.status(403).json({ error: 'forbidden' });
       return;
     }
+    // 公共画布软删仅 admin（与 publish/unpublish 同口径）—— 防止普通用户误删全员可见画布
+    if (row.visibility === 'public' && req.user!.role !== 'admin') {
+      res.status(403).json({
+        error: 'forbidden_delete_public_canvas',
+        message: '只有管理员可以归档公共画布；普通用户请用"标废弃"代替',
+      });
+      return;
+    }
 
     archiveCanvas(id, req.user!);
     res.json({ ok: true });
