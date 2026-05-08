@@ -377,11 +377,11 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
                     onClick={() => setPanelTab(tab)}
                     style={{
                       padding: '6px 12px',
-                      background: panelTab === tab ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                      background: panelTab === tab ? 'rgba(37, 99, 235, 0.10)' : 'transparent',
                       border: 'none',
                       borderBottom:
-                        panelTab === tab ? '2px solid #60a5fa' : '2px solid transparent',
-                      color: panelTab === tab ? '#e2e8f0' : '#94a3b8',
+                        panelTab === tab ? '2px solid #2563eb' : '2px solid transparent',
+                      color: panelTab === tab ? '#1d4ed8' : '#64748b',
                       fontSize: 13,
                       cursor: 'pointer',
                       fontWeight: panelTab === tab ? 600 : 400,

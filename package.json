@@ -1,6 +1,6 @@
 {
   "name": "business-flow-react",
-  "version": "1.15.0",
+  "version": "1.15.1",
   "description": "业务流程全景图 - React Flow 实现",
   "type": "module",
   "scripts": {
