@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>业务全景图 - 使用手册</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+    line-height: 1.7;
+    color: #1f2937;
+    background: #fafafa;
+  }
+  h1 { font-size: 28px; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; margin-top: 8px; }
+  h2 { font-size: 22px; margin-top: 32px; padding-top: 8px; border-top: 1px solid #e5e7eb; }
+  h3 { font-size: 18px; margin-top: 24px; color: #2563eb; }
+  h4 { font-size: 15px; margin-top: 16px; color: #374151; }
+  p { margin: 12px 0; }
+  ul, ol { padding-left: 24px; }
+  li { margin: 4px 0; }
+  blockquote {
+    border-left: 4px solid #2563eb;
+    background: #eff6ff;
+    margin: 16px 0;
+    padding: 12px 16px;
+    color: #1e40af;
+  }
+  blockquote p { margin: 4px 0; }
+  code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "Consolas", "Monaco", monospace;
+    font-size: 0.92em;
+    color: #be185d;
+  }
+  pre {
+    background: #1f2937;
+    color: #e5e7eb;
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+  }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  th, td {
+    border: 1px solid #e5e7eb;
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: #f9fafb; font-weight: 600; }
+  tr:nth-child(even) { background: #f9fafb; }
+  img {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin: 16px 0;
+    display: block;
+  }
+  hr { border: none; border-top: 1px solid #e5e7eb; margin: 24px 0; }
+  a { color: #2563eb; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  strong { color: #111827; }
+  .back-link {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    background: #2563eb;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+  }
+  .back-link:hover { background: #1d4ed8; text-decoration: none; }
+  @media (max-width: 600px) {
+    body { padding: 16px 12px 60px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 18px; }
+    h3 { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+<a href="/" class="back-link">← 返回应用</a>
+<h1>业务全景图 使用手册</h1>
+<blockquote>
+<p><strong>受众</strong>：业务部门关键角色 / 产品岗 / 普通用户
+<strong>版本</strong>：v1.15.0（2026-05-08）
+<strong>访问地址</strong>：<code>http://172.16.0.138:3001</code>（公司内网）</p>
+</blockquote>
+<hr>
+<h2>引言</h2>
+<p><strong>业务全景图</strong> 是一个团队内部使用的可视化业务流程协作工具，让产品和业务部门一起把&quot;我们公司怎么干活的&quot;画成一张可以多人协作、可以版本追溯、可以批注讨论的活文档。</p>
+<p><strong>这本手册写给谁</strong>：</p>
+<ul>
+<li>产品岗 / 业务部门关键角色（你要画流程或看团队的流程）</li>
+<li>普通用户（你拿到了账号，想知道怎么用）</li>
+</ul>
+<p><strong>这本手册不写</strong>：</p>
+<ul>
+<li>部署 / 运维 / 故障排查</li>
+<li>开发相关（API / 数据库 / 源码）</li>
+</ul>
+<p>如果你需要这部分内容，请联系项目管理员或开发同学。</p>
+<hr>
+<h2>〇、先理解三种画布（重要！先看这节）</h2>
+<p>如果你是第一次用这个工具，<strong>先花 3 分钟读完这节</strong>——后面所有功能、按钮、提示，都建立在&quot;三种画布&quot;的概念之上。</p>
+<h3>0.1 一张图看懂</h3>
+<pre><code>       你的浏览器                       服务器（内网 172.16.0.138）
+    ┌──────────────────┐            ┌──────────────────────────────────┐
+    │  本地草稿        │            │ 主版本画布                       │
+    │ （仅你能看到）   │            │  ├─ 私有画布（仅作者 + admin）   │
+    │                  │ ──保存──→  │  └─ 公共画布（所有登录用户都能看）│
+    │  服务端草稿      │            │                                  │
+    │ （仅你能看到，   │            │                                  │
+    │  每 30s 自动存） │            │                                  │
+    └──────────────────┘            └──────────────────────────────────┘
+</code></pre>
+<h3>0.2 三种画布的区别</h3>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>谁能看</th>
+<th>谁能改</th>
+<th>怎么产生</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>本地草稿</strong></td>
+<td>仅你自己</td>
+<td>仅你自己</td>
+<td>没登录或者刚登录看到的初始空画布</td>
+</tr>
+<tr>
+<td><strong>服务端草稿</strong></td>
+<td>仅你自己</td>
+<td>仅你自己</td>
+<td>你打开服务端画布开始改后，每 30s 自动存（不影响主版本）</td>
+</tr>
+<tr>
+<td><strong>私有画布</strong>（private）</td>
+<td>作者 + admin</td>
+<td>作者 + admin</td>
+<td>你点&quot;另存为新画布&quot;创建出来的</td>
+</tr>
+<tr>
+<td><strong>公共画布</strong>（public）</td>
+<td>所有登录用户</td>
+<td>作者 + admin</td>
+<td>admin 把私有画布&quot;发布&quot;成公共</td>
+</tr>
+</tbody>
+</table>
+<p><strong>一句话总结</strong>：</p>
+<ul>
+<li><strong>草稿</strong> = 你正在画，别人看不到</li>
+<li><strong>私有画布</strong> = 你画完正式存了，但只有你和 admin 能看</li>
+<li><strong>公共画布</strong> = admin 决定&quot;这个流程图给所有人看&quot;了</li>
+</ul>
+<h3>0.3 数据流程：从你画到别人看见</h3>
+<ol>
+<li>你画一笔 → 浏览器内存里改 → 顶栏显示 <strong>● 未保存</strong></li>
+<li>30 秒后，自动存为&quot;草稿&quot;（只有你看得到，别人看不到）→ 顶栏显示 <strong>草稿已保存 14:23</strong></li>
+<li>你点 <strong>保存</strong> 按钮 → 写入&quot;主版本&quot;→ 别人刷新就能看到（仅在他有权限的画布上）</li>
+<li>下次打开同一画布 → 如果还有未提交的草稿，弹出&quot;草稿恢复&quot;对话框（详见 §3.4）</li>
+</ol>
+<h3>0.4 常见困惑 FAQ</h3>
+<blockquote>
+<p><strong>Q：我画了好久没点保存，关了浏览器会丢吗？</strong></p>
+<p>A：<strong>不会</strong>。改完 30 秒会自动存为草稿。下次进来会问你&quot;要不要恢复草稿&quot;。</p>
+</blockquote>
+<blockquote>
+<p><strong>Q：我做的私有画布，别人能看到吗？</strong></p>
+<p>A：看不到。私有画布 = 仅你和 admin 能看。</p>
+</blockquote>
+<blockquote>
+<p><strong>Q：我看到的公共画布，我能改吗？</strong></p>
+<p>A：不能。公共画布只有 admin 和原作者能改，其他人是&quot;只读&quot;。
+想要在它的基础上画自己的版本，先点 <strong>另存为新画布</strong> 复制一份变成你的私有画布，再改。</p>
+</blockquote>
+<blockquote>
+<p><strong>Q：&quot;主版本&quot;是什么意思？跟草稿什么关系？</strong></p>
+<p>A：<strong>主版本</strong> = 正式存档，别人能看到的就是主版本。<strong>草稿</strong> = 你&quot;还没决定要不要正式存&quot;的临时存稿，只有你自己能看。</p>
+</blockquote>
+<blockquote>
+<p><strong>Q：私有画布怎么变成公共画布让团队都能看？</strong></p>
+<p>A：找 admin。admin 在后台点&quot;发布&quot;按钮就行。</p>
+</blockquote>
+<hr>
+<h2>一、基础入门</h2>
+<h3>1.1 什么是&quot;业务全景图&quot;</h3>
+<p><strong>一句话定义</strong>：把业务流程画成可协作的可视化流程图工具。</p>
+<p><strong>典型使用场景</strong>：</p>
+<ul>
+<li>业务调研：把现有业务流程画下来，跨部门对齐</li>
+<li>流程梳理：把&quot;应该怎么干&quot;画清楚，作为团队共识</li>
+<li>培训新人：用流程图替代大段文字，减少理解成本</li>
+</ul>
+<p><strong>它不是什么</strong>：</p>
+<ul>
+<li>不是 Visio / Lucidchart 的替代品</li>
+<li>定位是&quot;团队内部业务流程的活文档&quot;——画完就放着，可以随时回来改、随时讨论</li>
+</ul>
+<h3>1.2 登录</h3>
+<ol>
+<li>浏览器打开 <code>http://172.16.0.138:3001</code></li>
+<li>输入用户名 + 密码（账号找管理员开通）</li>
+<li>登录后看到的首屏：</li>
+</ol>
+<p><img src="manual-imgs/01-login.png" alt="登录页"></p>
+<p><strong>首次登录</strong>：你看到的可能是空白本地草稿 + 一个引导卡片&quot;在右上角’另存为新画布’把当前草稿保存到服务器&quot;——这是正常的，你还没有自己的画布。继续看 §1.4。</p>
+<h3>1.3 界面认识</h3>
+<p><img src="manual-imgs/02-interface-overview.png" alt="界面区域标注"></p>
+<p>界面分三个常驻区域 + 一个抽屉式面板：</p>
+<ul>
+<li><strong>① 顶栏</strong>：菜单导航（流程图 / 管理后台 / 系统示例页面）+ 当前画布切换器 + 节点/连接数指标 + 保存按钮 + 当前用户名</li>
+<li><strong>② 左侧功能面板</strong>：导入 / 撤销 重做 删除 / 节点工具箱（流程节点 / 判断节点 / 审批节点 / 起止节点）/ 创建分组</li>
+<li><strong>③ 中央画布</strong>：你画图的主区域</li>
+<li><strong>④ 右侧详情面板（抽屉式）</strong>：单击节点后从右侧滑入——显示节点的详情 / 批注；再次单击同一节点关闭</li>
+</ul>
+<blockquote>
+<p>此外，画布<strong>底部</strong>有 Sheet 标签栏（一个画布可有多个工作表，类似 Excel 的 sheet 切换）。</p>
+<p><strong>怎么打开右侧详情面板？</strong> 单击任何画布上的节点（流程节点 / 判断节点 / 审批节点 等），抽屉自动滑入。再次单击同一节点关闭。</p>
+</blockquote>
+<h3>1.4 第一次使用——按角色选路径</h3>
+<table>
+<thead>
+<tr>
+<th>你是谁</th>
+<th>推荐第一次的操作路径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>产品 / 业务部门，刚拿到账号</strong></td>
+<td>路径 A：先点顶栏画布切换器看看团队有哪些公共画布 → 看现成的流程熟悉工具</td>
+</tr>
+<tr>
+<td><strong>要画自己的流程图</strong></td>
+<td>路径 B：直接在空白草稿上画 → 画完点&quot;另存为新画布&quot;变成你的私有画布</td>
+</tr>
+<tr>
+<td><strong>Admin 想发布给团队看</strong></td>
+<td>先按路径 B 画，再去 admin 后台&quot;发布&quot;成公共画布</td>
+</tr>
+</tbody>
+</table>
+<h4>路径 A：浏览公共画布</h4>
+<ol>
+<li>顶栏点画布切换器（默认显示当前画布名）</li>
+<li>下拉里能看到分组：<strong>我的画布</strong>（私有）/ <strong>公共画布</strong></li>
+<li>点任意一个公共画布 → 进入只读模式（顶栏会有&quot;只读&quot;提示）</li>
+</ol>
+<p><img src="manual-imgs/14-canvas-switcher.png" alt="画布切换器"></p>
+<h4>路径 B：从空白开始画自己的</h4>
+<ol>
+<li>看到的就是空白本地草稿（顶栏画布名是&quot;本地草稿&quot;）</li>
+</ol>
+<p><img src="manual-imgs/03-empty-guide.png" alt="空状态引导"></p>
+<ol start="2">
+<li>直接拖个节点开始画（详见 §2）</li>
+<li>画到差不多了 → 点顶栏 <strong>另存为新画布</strong> → 输入名字 → 保存</li>
+<li>顶栏画布名变成你刚起的名字 → 这就是你的私有画布</li>
+</ol>
+<blockquote>
+<p><strong>画到一半要走？</strong> 不用担心。改了 30 秒就会自动存草稿。下次进来会问你恢复不恢复。</p>
+</blockquote>
+<hr>
+<h2>二、核心功能</h2>
+<h3>2.1 画节点</h3>
+<p><strong>添加节点</strong>：左侧功能面板&quot;节点&quot;分类下，把图标拖到画布上（流程节点 / 判断节点 / 审批节点 / 起止节点 四类）。</p>
+<p><strong>打开节点详情</strong>：<strong>单击节点</strong> → 右侧抽屉滑入（详情 / 批注两个 Tab）。</p>
+<p><img src="manual-imgs/04-add-node.png" alt="添加节点 + 详情面板"></p>
+<p><strong>改节点名（两种方式）</strong>：</p>
+<ul>
+<li><strong>快速改</strong>：<strong>双击</strong>节点 → 节点上直接进入文字编辑（按 Enter 或点别处确认）</li>
+<li><strong>改详细信息</strong>：<strong>单击</strong>节点 → 右侧抽屉打开 → 在&quot;详情&quot;Tab 改&quot;名称 / 描述 / 关联节点&quot;</li>
+</ul>
+<p><strong>移动节点</strong>：拖动即可。</p>
+<p><strong>复制 / 粘贴节点</strong>：<code>Ctrl+C</code> → <code>Ctrl+V</code>。注意：<strong>粘贴出来的节点是新 ID</strong>，跟原节点是不同的两个节点。</p>
+<p><strong>删除节点</strong>：选中 → 按 <code>Delete</code> 键。</p>
+<blockquote>
+<p><strong>注意</strong>：单击和双击是不同操作——单击开抽屉，双击进入节点名编辑。点错了按 Esc 取消。</p>
+</blockquote>
+<h3>2.2 连边</h3>
+<p><strong>连两个节点</strong>：</p>
+<ol>
+<li>鼠标移到节点边缘 → 出现小圆点（连接桩）</li>
+<li>从小圆点拖到目标节点 → 自动连一条边</li>
+</ol>
+<p><img src="manual-imgs/05-connect-edge.png" alt="连边操作"></p>
+<p><strong>改边的标签</strong>：双击边 → 输入文字（比如&quot;通过&quot;/“驳回”）。</p>
+<p><strong>删除边</strong>：选中边 → 按 <code>Delete</code> 键。</p>
+<h3>2.3 分组（Group）</h3>
+<p>分组用来把&quot;逻辑相关&quot;的节点框在一起，比如&quot;采购流程&quot;、“审批流程”。</p>
+<p><strong>新建分组</strong>：</p>
+<ol>
+<li>选中多个节点（按住 Shift 点 / 或框选）</li>
+<li>右键 → 打组</li>
+<li>给分组起个名字</li>
+</ol>
+<p><strong>进出分组</strong>：把节点拖进分组框 / 拖出分组框 → 自动加入 / 移出。</p>
+<p><strong>删除分组</strong>：</p>
+<ul>
+<li>删除分组<strong>保留节点</strong>：右键 → 解组（节点留下来，分组框去掉）</li>
+<li>删除分组<strong>连节点一起删</strong>：选中分组 → <code>Delete</code> 键</li>
+</ul>
+<h3>2.4 子流程</h3>
+<p>子流程节点是一个特殊节点——双击它，会&quot;钻进去&quot;看更细的流程。</p>
+<p><strong>用途</strong>：流程太复杂时，把一部分细节折叠成子流程节点，主图保持简洁。</p>
+<p><img src="manual-imgs/06-subflow.png" alt="子流程钻入"></p>
+<p><strong>钻入</strong>：双击子流程节点 → 进入子流程画布。</p>
+<p><strong>返回上层</strong>：左上角面包屑导航点回去。</p>
+<blockquote>
+<p><strong>注意</strong>：当前版本子流程为只读展示用途；详细使用方法可咨询管理员。</p>
+</blockquote>
+<h3>2.5 批注（Annotation）</h3>
+<p>批注用来在节点上加讨论 / 提问 / 标记，类似&quot;便签&quot;。</p>
+<p><strong>添加批注</strong>：</p>
+<ol>
+<li><strong>单击</strong>一个节点 → 右侧抽屉打开</li>
+<li>抽屉顶部 Tab 切到&quot;<strong>批注</strong>&quot;</li>
+<li>在输入框写内容（最多 2000 字）→ 点【发布批注】</li>
+</ol>
+<p><img src="manual-imgs/07-annotation.png" alt="批注 Tab + 数字角标"></p>
+<p><strong>节点上的批注角标</strong>：节点上有未解决批注时，会显示一个<strong>蓝色数字徽章</strong>（数字 = 未解决批注数）。</p>
+<p><strong>批注的状态</strong>：</p>
+<ul>
+<li><strong>未解决</strong>：抽屉里显示作者 / 时间 / 内容 + 右上角【解决】按钮</li>
+<li><strong>已解决</strong>：变灰显示&quot;已由 XXX 关闭于 yyyy-MM-dd HH:mm&quot;</li>
+</ul>
+<p><strong>谁能关闭批注</strong>：批注作者本人 / admin（即使该画布是别人创建的）。</p>
+<p><strong>批注是按节点绑定的</strong>——节点删了，批注一起删；节点 ID 变了（比如复制粘贴产生的新 ID），批注<strong>不会跟着</strong>。</p>
+<h3>2.6 保存</h3>
+<p>画布工具栏右上角的保存按钮，会根据状态自动变化：</p>
+<p><img src="manual-imgs/08-save-states.png" alt="画布工具栏（含保存按钮）"></p>
+<p>可能的状态文案（按情况显示其中一种）：</p>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>含义</th>
+<th>你要做什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>✓ 已保存（刚刚 / N 秒前）</strong></td>
+<td>已经存到主版本，别人能看到</td>
+<td>不用管</td>
+</tr>
+<tr>
+<td><strong>● 未保存</strong></td>
+<td>你改了但还没保存到主版本</td>
+<td>想让别人看到你的改动？点【保存】按钮</td>
+</tr>
+<tr>
+<td><strong>保存中…</strong></td>
+<td>服务器处理中</td>
+<td>等一下，别关浏览器</td>
+</tr>
+<tr>
+<td><strong>草稿已保存 14:23</strong></td>
+<td>改动已自动存为草稿（仅你能看）</td>
+<td>30 秒一次自动存，不用管</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>上图展示的是&quot;未保存&quot;态——能看到红点 + 文字&quot;未保存&quot; + 蓝色【保存】按钮。点保存后会变成&quot;已保存（刚刚）&quot;+ 绿色对勾。</p>
+</blockquote>
+<p><strong>几个重要说明</strong>：</p>
+<ul>
+<li>关闭浏览器前，<strong>强烈建议手动点一次保存</strong>，把&quot;主版本&quot;也更新到最新</li>
+<li>点保存 = 把你的改动写到&quot;主版本&quot;（别人能看到）</li>
+<li>不点保存 = 你的改动只在草稿里（别人看不到）</li>
+</ul>
+<h4>另存为新画布 vs 保存的区别</h4>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>保存</strong>（已挂接画布）</td>
+<td>把改动写入当前画布的主版本</td>
+</tr>
+<tr>
+<td><strong>另存为新画布</strong></td>
+<td>创建一个<strong>新的</strong>画布，当前内容作为新画布的初始版本（不影响原画布）</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>新用户第一次画完一定要点&quot;另存为新画布&quot;</strong>——否则你画的东西只在本地草稿里，换台电脑或清浏览器缓存就丢了。</p>
+</blockquote>
+<h3>2.7 导出 / 导入</h3>
+<p><strong>导出</strong>：</p>
+<ul>
+<li><strong>导出当前内存版本</strong>：把你现在屏幕上看到的画布（含未保存改动）下载为 JSON</li>
+<li><strong>导出服务端版本</strong>：从服务器拿主版本下载为 JSON（忽略你的未保存改动）</li>
+</ul>
+<p><strong>导入</strong>：从本地 JSON 文件还原成画布——常用于<strong>从备份恢复</strong>或<strong>跨环境迁移</strong>。</p>
+<blockquote>
+<p><strong>小贴士</strong>：真冲突无法解决时（详见 §3.5.3），可以先&quot;导出当前内存版本&quot;作为备份，再做后续操作。</p>
+</blockquote>
+<h3>2.8 废弃节点 vs 删除</h3>
+<p>某个流程或节点不再使用了，但又想保留历史痕迹？用&quot;标记废弃&quot;。</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>效果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>标记废弃</strong></td>
+<td>节点变半透明 + 角标&quot;已废弃&quot; + tooltip 说明，但<strong>不删除</strong>（追溯历史用）</td>
+</tr>
+<tr>
+<td><strong>删除</strong></td>
+<td>彻底从画布上移除，不可恢复（除非从历史版本恢复）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>怎么标记废弃</strong>：</p>
+<ol>
+<li>选中节点 → 右侧详情面板</li>
+<li>找到&quot;标记废弃&quot;开关 → 打开</li>
+<li>节点变半透明 + 角标显示</li>
+</ol>
+<hr>
+<h2>三、多人协作</h2>
+<blockquote>
+<p><strong>本节是 v1.15.0 重点功能</strong>——团队同时编辑同一画布时如何协作。</p>
+<p>本系统采用&quot;<strong>保留本地改动 + 服务端尽力合并 + 真冲突时友好提示</strong>&quot;的设计。<strong>几乎不会丢数据</strong>，但你要理解几个关键提示。</p>
+</blockquote>
+<h3>3.1 谁能编辑这个画布？</h3>
+<p>回顾一下 §0.2 的表：</p>
+<ul>
+<li><strong>私有画布</strong>：作者 + admin 能改</li>
+<li><strong>公共画布</strong>：作者 + admin 能改，其他人<strong>只读</strong></li>
+</ul>
+<p>普通用户打开公共画布看到的是只读模式：</p>
+<p><img src="manual-imgs/13-public-canvas-readonly.png" alt="公共画布只读"></p>
+<p>想要在公共画布的基础上改自己的版本——点&quot;另存为新画布&quot;复制一份变成你的私有画布。</p>
+<h3>3.2 在线状态：谁也在编辑</h3>
+<p>画布工具栏会显示一个 <strong>👥 X 人在编辑</strong> 角标，告诉你谁也打开了这个画布。</p>
+<p><img src="manual-imgs/09-other-editors.png" alt="画布工具栏（在线编辑者角标显示在工具栏区域）"></p>
+<ul>
+<li>0 人 → 不显示</li>
+<li>1-3 人 → 列出用户名</li>
+<li>&gt;3 人 → 前 3 个 + “+N”</li>
+<li>鼠标悬浮 → tooltip 显示完整列表 + 最近活跃时间（XX 秒前活跃）</li>
+</ul>
+<p><strong>重要</strong>：</p>
+<ul>
+<li>心跳每 30 秒上报一次，断网超过 60 秒会从列表里消失</li>
+<li>看到别人在线 ≠ 你不能保存——服务器会&quot;尽力合并&quot;（详见 §3.5）</li>
+</ul>
+<blockquote>
+<p><strong>注</strong>：上图中如果没看到&quot;👥 X 人在编辑&quot;，是因为截图时只有 1 个用户在编辑（角标 0 人不显示）。多人同时打开时会自动出现。</p>
+</blockquote>
+<h3>3.3 草稿自动保存</h3>
+<p>你改画布后，每 30 秒自动存草稿（不写主版本，只是你的临时存稿）。</p>
+<ul>
+<li>顶栏显示 <strong>草稿已保存 14:23</strong></li>
+<li>草稿独立于主版本——<strong>不会覆盖别人的改动</strong></li>
+<li>限制：单画布草稿不超过 2MB / 全局每个用户最多 200 个草稿</li>
+</ul>
+<blockquote>
+<p><strong>草稿保存失败时的提示</strong>：</p>
+<ul>
+<li>“<strong>草稿过大（超 2MB），请简化画布</strong>” → 删除一些不必要的节点 / 边 / 详情字段</li>
+<li>“<strong>草稿数已达上限（200），请清理</strong>” → 联系管理员或者主动保存几个画布的主版本</li>
+</ul>
+</blockquote>
+<h3>3.4 草稿恢复</h3>
+<p>重新打开有未提交草稿的画布，会弹出对话框：</p>
+<p><img src="manual-imgs/10-draft-recovery.png" alt="草稿恢复弹窗"></p>
+<p><strong>三个选项</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>按钮</th>
+<th>效果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>恢复草稿</strong></td>
+<td>用草稿替换当前画布——你之前没保存的改动回来了</td>
+</tr>
+<tr>
+<td><strong>稍后再说</strong></td>
+<td>关闭弹窗，但草稿还在——下次打开还会弹</td>
+</tr>
+<tr>
+<td><strong>放弃草稿</strong>（红色按钮）</td>
+<td>删除草稿，加载主版本——<strong>不可恢复</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>草稿基于过期版本时的⚠️警告</strong>：</p>
+<p>如果你的草稿基于版本 v3，但主版本已经被别人推到 v5，对话框会显示一条警告：</p>
+<blockquote>
+<p>此草稿基于版本 v3，但主版本已被他人更新到 v5。如果恢复后保存，服务端会拒绝（要求基于最新版本）。建议先导出草稿备份再决定。</p>
+</blockquote>
+<p><strong>应对</strong>：先点&quot;恢复草稿&quot;再立即&quot;导出当前内存版本&quot;备份成 JSON，然后决定是丢弃自己的草稿还是手工合并。</p>
+</blockquote>
+<h3>3.5 保存的三种结果</h3>
+<h4>3.5.1 直接成功（最常见）</h4>
+<p>你改 → 别人没改 → 保存成功 → 顶栏显示 <strong>✓ 已保存 N 秒前</strong>。</p>
+<h4>3.5.2 自动合并通过（友好场景）</h4>
+<p>你改了节点 A，别人改了节点 B → 服务端自动把两边的改动合在一起 → 你看到顶栏弹出 Toast 提示：</p>
+<blockquote>
+<p><strong>已为你合并对方的改动</strong></p>
+</blockquote>
+<p>不需要你做任何事，画布已经是合并后的状态。</p>
+<h4>3.5.3 真冲突弹窗（需要你决定）</h4>
+<p>你和别人改了<strong>同一个节点的同一个字段</strong>（比如都改了节点 A 的名字）→ 服务端无法判断要谁的 → 弹出对话框：</p>
+<p><img src="manual-imgs/11-conflict-dialog.png" alt="真冲突弹窗"></p>
+<p><strong>对话框显示</strong>：</p>
+<ul>
+<li>对方的版本号（<strong>v?</strong>）</li>
+<li>冲突明细列表：每条显示节点 ID / 字段名 / 说明</li>
+</ul>
+<p><strong>两个选项</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>按钮</th>
+<th>效果</th>
+<th>推荐场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>保存草稿并查看最新版本</strong>（蓝色主按钮）</td>
+<td>把你的改动存为草稿 + 重载对方最新版本 → 你可以看到对方改了什么，再决定如何手工合并</td>
+<td><strong>多数情况推荐用这个</strong>——零丢失</td>
+</tr>
+<tr>
+<td><strong>继续编辑草稿</strong></td>
+<td>保留你的改动，不重载——下次保存时服务端会再尝试合并（可能再次冲突）</td>
+<td>你确定要坚持自己的版本时用</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>绝对不要</strong>：</p>
+<ul>
+<li>看到冲突弹窗就 F5 / 关浏览器（草稿可能还没存，会丢改动）</li>
+<li>慌乱中乱点——先看清楚冲突的是哪个节点的哪个字段</li>
+</ul>
+</blockquote>
+<h3>3.6 基础版本过期</h3>
+<p>你打开了一个画布很久没动 → 别人改了<strong>很多次</strong> → 你点保存 → 可能弹出对话框&quot;<strong>画布历史版本已超出可合并范围</strong>&quot;。</p>
+<p><strong>意思</strong>：服务器为了节省空间，<strong>清理了你打开时的那个旧版本快照</strong>——服务端无法基于&quot;那个旧版本&quot;做合并了。</p>
+<p><strong>对话框上的两个按钮</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>按钮</th>
+<th>效果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>保存草稿后重载</strong>（蓝色主按钮）</td>
+<td>先把你的改动存为草稿 + 重载最新版本（推荐）</td>
+</tr>
+<tr>
+<td><strong>留在草稿</strong></td>
+<td>不重载，自动保存暂停——你需要手动刷新页面才能继续</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>怎么避免</strong>：长时间不动的画布，每隔半小时点一次保存（哪怕没改东西，刷新一下页面也行）。这个对话框在内网 5 人协作场景下很少出现，遇到时按上面操作即可。</p>
+</blockquote>
+<h3>3.7 协作的几条纪律</h3>
+<ul>
+<li>✅ 大改之前先在协作群里说一声：“我开始改 XX 画布的 XX 部分”</li>
+<li>✅ 看到 <strong>👥 X 人在编辑</strong> 时，避免大范围拖动 / 删除其他人正在动的区域</li>
+<li>✅ 真冲突弹窗出现时，先深呼吸——这不是 bug，是协作正常现象</li>
+<li>✅ 不确定时点 <strong>保存草稿并查看最新版本</strong>——零丢失，最安全</li>
+<li>❌ 不要在冲突弹窗弹出时 F5 / 关浏览器</li>
+<li>❌ 公共画布的发布请走 admin 流程，不要直接改</li>
+</ul>
+<hr>
+<h2>附录</h2>
+<h3>A. 常用快捷键</h3>
+<table>
+<thead>
+<tr>
+<th>快捷键</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Ctrl+S</code></td>
+<td>保存</td>
+</tr>
+<tr>
+<td><code>Ctrl+C</code> / <code>Ctrl+V</code></td>
+<td>复制 / 粘贴节点</td>
+</tr>
+<tr>
+<td><code>Ctrl+Z</code> / <code>Ctrl+Y</code></td>
+<td>撤销 / 重做</td>
+</tr>
+<tr>
+<td><code>Delete</code></td>
+<td>删除选中的节点 / 边</td>
+</tr>
+<tr>
+<td>鼠标滚轮</td>
+<td>缩放画布</td>
+</tr>
+<tr>
+<td>空格 + 拖动</td>
+<td>平移画布</td>
+</tr>
+<tr>
+<td>Shift + 单击</td>
+<td>多选节点</td>
+</tr>
+<tr>
+<td>框选（按住左键拖动空白处）</td>
+<td>框选多个节点</td>
+</tr>
+</tbody>
+</table>
+<h3>B. 名词速查</h3>
+<table>
+<thead>
+<tr>
+<th>术语</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>画布</strong>（Canvas）</td>
+<td>一个完整的业务流程图（可以包含多个工作表）</td>
+</tr>
+<tr>
+<td><strong>工作表</strong>（Sheet）</td>
+<td>画布里的一页（类似 Excel 的 sheet）</td>
+</tr>
+<tr>
+<td><strong>节点</strong>（Node）</td>
+<td>流程中的一个步骤 / 实体</td>
+</tr>
+<tr>
+<td><strong>边</strong>（Edge）</td>
+<td>节点之间的连线</td>
+</tr>
+<tr>
+<td><strong>分组</strong>（Group）</td>
+<td>把多个节点框在一起的逻辑分组</td>
+</tr>
+<tr>
+<td><strong>子流程</strong>（Subflow）</td>
+<td>可钻入查看详情的特殊节点</td>
+</tr>
+<tr>
+<td><strong>批注</strong>（Annotation）</td>
+<td>节点上的讨论 / 提问 / 标记</td>
+</tr>
+<tr>
+<td><strong>草稿</strong>（Draft）</td>
+<td>自动保存的临时存稿，仅你能看</td>
+</tr>
+<tr>
+<td><strong>主版本</strong></td>
+<td>服务器上正式存档的版本，别人能看到</td>
+</tr>
+<tr>
+<td><strong>基础版本</strong>（Base Version）</td>
+<td>你打开画布时的版本号——保存时服务端基于它判断有没有冲突</td>
+</tr>
+<tr>
+<td><strong>真冲突</strong>（Real Conflict）</td>
+<td>双方改了同一个节点的同一个字段，无法自动合并</td>
+</tr>
+<tr>
+<td><strong>自动合并</strong>（Auto Merge）</td>
+<td>双方改了不同节点 / 不同字段，服务端自动合并</td>
+</tr>
+</tbody>
+</table>
+<h3>C. 找谁帮忙</h3>
+<ul>
+<li><strong>账号开通 / 密码重置</strong>：项目管理员（admin）</li>
+<li><strong>画布权限 / 公共画布发布</strong>：项目 admin</li>
+<li><strong>系统故障 / 部署问题</strong>：运维 / 开发同学</li>
+</ul>
+<p>具体联系人请向你的项目负责人确认。</p>
+<hr>
+<blockquote>
+<p><strong>手册版本</strong>：v1.0（2026-05-08，对应应用版本 v1.15.0）</p>
+<p><strong>反馈</strong>：使用中遇到问题或文档错误，请联系项目管理员。</p>
+</blockquote>
+
+</body>
+</html>

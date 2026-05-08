@@ -63,6 +63,16 @@ export function Navigation() {
                     </Link>
                 )}
 
+                <a
+                    href="/manual.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="nav-link"
+                    title="新窗口打开使用手册"
+                >
+                    📖 使用手册
+                </a>
+
                 <div className="dropdown-container">
                     <div className={`nav-link dropdown-trigger ${isSystemPageActive() ? 'active' : ''}`}>
                         系统示例页面
