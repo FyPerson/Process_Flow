@@ -21,7 +21,12 @@ export function UsersTab() {
   const { user: currentUser } = useAuth();
   const { users, loading, error, createUser, patchUser, deleteUser, refetch } = useUsers();
 
-  const [createForm, setCreateForm] = useState({ username: '', password: '', role: 'user' as UserRole });
+  const [createForm, setCreateForm] = useState({
+    username: '',
+    password: '',
+    role: 'user' as UserRole,
+    nickname: '',  // 2026-05-08：可选；空字符串表示走默认（service 层用 username）
+  });
   const [createSubmitting, setCreateSubmitting] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
@@ -29,19 +34,31 @@ export function UsersTab() {
   const [pwSubmitting, setPwSubmitting] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
 
+  // 2026-05-08：admin 改任意用户昵称的弹窗
+  const [nickDialog, setNickDialog] = useState<{ user: AdminUser; nickname: string } | null>(null);
+  const [nickSubmitting, setNickSubmitting] = useState(false);
+  const [nickError, setNickError] = useState<string | null>(null);
+
   const [rowError, setRowError] = useState<{ id: number; message: string } | null>(null);
 
   const handleCreate = useCallback(
     async (e: FormEvent) => {
       e.preventDefault();
       if (createSubmitting) return;
-      const { username, password, role } = createForm;
+      const { username, password, role, nickname } = createForm;
       if (!username.trim() || !password) return;
       setCreateSubmitting(true);
       setCreateError(null);
       try {
-        await createUser({ username: username.trim(), password, role });
-        setCreateForm({ username: '', password: '', role: 'user' });
+        const trimmedNick = nickname.trim();
+        await createUser({
+          username: username.trim(),
+          password,
+          role,
+          // nickname 留空 → 不传 → service 层默认填 username
+          ...(trimmedNick.length > 0 ? { nickname: trimmedNick } : {}),
+        });
+        setCreateForm({ username: '', password: '', role: 'user', nickname: '' });
       } catch (err) {
         setCreateError(mapApiError(err as ApiError, 'create'));
       } finally {
@@ -50,6 +67,27 @@ export function UsersTab() {
     },
     [createForm, createSubmitting, createUser],
   );
+
+  // 2026-05-08：admin 改任意用户昵称
+  const handleSubmitNickname = useCallback(async () => {
+    if (!nickDialog) return;
+    if (nickSubmitting) return;
+    const trimmed = nickDialog.nickname.trim();
+    if (trimmed.length < 1 || trimmed.length > 30) {
+      setNickError('昵称需 1-30 字符（trim 后非空）');
+      return;
+    }
+    setNickSubmitting(true);
+    setNickError(null);
+    try {
+      await patchUser(nickDialog.user.id, { nickname: trimmed });
+      setNickDialog(null);
+    } catch (err) {
+      setNickError(mapApiError(err as ApiError, 'patch'));
+    } finally {
+      setNickSubmitting(false);
+    }
+  }, [nickDialog, nickSubmitting, patchUser]);
 
   const handleChangeRole = useCallback(
     async (target: AdminUser, nextRole: UserRole) => {
@@ -134,6 +172,15 @@ export function UsersTab() {
             <option value="user">user</option>
             <option value="admin">admin</option>
           </select>
+          <input
+            type="text"
+            placeholder="昵称（选填，1-30 字符；留空 = 用户名）"
+            value={createForm.nickname}
+            onChange={(e) => setCreateForm((f) => ({ ...f, nickname: e.target.value }))}
+            maxLength={30}
+            disabled={createSubmitting}
+            autoComplete="off"
+          />
           <button type="submit" disabled={createSubmitting}>
             {createSubmitting ? '创建中…' : '创建'}
           </button>
@@ -162,6 +209,7 @@ export function UsersTab() {
             <tr>
               <th>id</th>
               <th>用户名</th>
+              <th>昵称</th>
               <th>角色</th>
               <th>创建时间</th>
               <th>状态</th>
@@ -171,7 +219,7 @@ export function UsersTab() {
           <tbody>
             {users.length === 0 && !loading ? (
               <tr>
-                <td colSpan={6} className="users-table-empty">
+                <td colSpan={7} className="users-table-empty">
                   暂无用户
                 </td>
               </tr>
@@ -184,6 +232,7 @@ export function UsersTab() {
                   <tr key={u.id} className={isDeleted ? 'users-row-deleted' : ''}>
                     <td>{u.id}</td>
                     <td>{u.username}</td>
+                    <td>{u.nickname}</td>
                     <td>
                       {u.role}
                       {isSelf && <span className="users-self-tag">（你）</span>}
@@ -195,6 +244,13 @@ export function UsersTab() {
                         <span className="users-row-actions-disabled">—</span>
                       ) : (
                         <>
+                          <button
+                            type="button"
+                            onClick={() => setNickDialog({ user: u, nickname: u.nickname })}
+                            title="修改昵称"
+                          >
+                            改昵称
+                          </button>
                           <button
                             type="button"
                             onClick={() => setPwDialog({ user: u, password: '' })}
@@ -241,6 +297,43 @@ export function UsersTab() {
           </tbody>
         </table>
       </section>
+
+      {nickDialog && (
+        <div className="users-dialog-backdrop" onClick={() => !nickSubmitting && setNickDialog(null)}>
+          <div className="users-dialog" onClick={(e) => e.stopPropagation()}>
+            <h3>修改 {nickDialog.user.username} 的昵称</h3>
+            <input
+              type="text"
+              placeholder="昵称（1-30 字符，trim 后非空）"
+              value={nickDialog.nickname}
+              onChange={(e) =>
+                setNickDialog((d) => (d ? { ...d, nickname: e.target.value } : d))
+              }
+              maxLength={30}
+              autoFocus
+              disabled={nickSubmitting}
+              autoComplete="off"
+            />
+            {nickError && <div className="users-tab-error">{nickError}</div>}
+            <div className="users-dialog-actions">
+              <button
+                type="button"
+                onClick={() => setNickDialog(null)}
+                disabled={nickSubmitting}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleSubmitNickname()}
+                disabled={nickSubmitting || nickDialog.nickname.trim().length < 1}
+              >
+                {nickSubmitting ? '提交中…' : '确认修改'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {pwDialog && (
         <div className="users-dialog-backdrop" onClick={() => !pwSubmitting && setPwDialog(null)}>
