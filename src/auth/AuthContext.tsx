@@ -37,6 +37,8 @@ interface AuthContextValue {
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   continueAsGuest: () => void;
+  /** 把 PATCH /api/auth/me 返回的最新 user 同步到 Context（更新 nickname 后用） */
+  applyUserUpdate: (user: UserPublic) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -93,6 +95,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('guest');
   }, []);
 
+  /** 把后端返回的最新 user 同步到 Context（PATCH /api/auth/me 改昵称后调用） */
+  const applyUserUpdate = useCallback((next: UserPublic) => {
+    setUser(next);
+  }, []);
+
   const value: AuthContextValue = {
     status,
     user,
@@ -101,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     logout,
     continueAsGuest,
+    applyUserUpdate,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

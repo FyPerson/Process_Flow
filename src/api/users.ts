@@ -70,6 +70,7 @@ export type UserRole = 'user' | 'admin';
 export interface AdminUser {
   id: number;
   username: string;
+  nickname: string;  // 2026-05-08：空 nickname 已由服务端 fallback 到 username
   role: UserRole;
   created_at: number;
   updated_at: number;
@@ -89,6 +90,7 @@ export interface CreateUserInput {
   username: string;
   password: string;
   role: UserRole;
+  nickname?: string;
 }
 
 export async function createUser(input: CreateUserInput): Promise<AdminUser> {
@@ -102,6 +104,7 @@ export async function createUser(input: CreateUserInput): Promise<AdminUser> {
 export interface PatchUserInput {
   role?: UserRole;
   password?: string;
+  nickname?: string;
 }
 
 export async function patchUser(id: number, input: PatchUserInput): Promise<AdminUser> {

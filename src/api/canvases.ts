@@ -139,6 +139,11 @@ export interface CanvasListItem {
   published_note: string | null;
   unpublished_at: number | null;
   unpublished_by: number | null;
+  // 2026-05-08 用户需求：CanvasSwitcher 显示创建者昵称作 private 画布前缀
+  // - LEFT JOIN users 拿到的 creator 信息；空字符串 nickname 已在 service 层 fallback 到 username
+  // - 软删用户保留行；created_by 指向不存在用户时为 null（理论不会发生）
+  creator_username: string | null;
+  creator_nickname: string | null;
   // 阶段 4 P4C：列表页"X 人在编辑"角标；服务端按 90s 心跳过滤注入；游客时为 0；不计自己
   activeEditors?: number;
 }

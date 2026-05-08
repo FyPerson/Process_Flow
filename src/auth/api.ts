@@ -10,6 +10,7 @@ export type Role = 'user' | 'admin';
 export interface UserPublic {
   id: number;
   username: string;
+  nickname: string;  // 2026-05-08：服务端 fallback 空字符串到 username
   role: Role;
 }
 
@@ -97,4 +98,16 @@ export async function changePassword(
     method: 'POST',
     body: JSON.stringify({ oldPassword, newPassword }),
   });
+}
+
+/** 用户自助改 nickname（2026-05-08）
+ *  - 服务端校验 1-30 字符 trim 后非空
+ *  - 不能改 role/password，strict schema 拒绝多余字段
+ *  - 返回更新后的 user（含新 nickname） */
+export async function patchSelfNickname(nickname: string): Promise<UserPublic> {
+  const r = await apiFetch<{ user: UserPublic }>('/api/auth/me', {
+    method: 'PATCH',
+    body: JSON.stringify({ nickname }),
+  });
+  return r.user;
 }
