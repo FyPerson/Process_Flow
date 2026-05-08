@@ -16,10 +16,18 @@ import { useCallback, useState, type FormEvent } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { useUsers } from '../../hooks/useUsers';
 import type { AdminUser, ApiError, UserRole } from '../../api/users';
+import { useBackdropClickClose } from '../../components/useBackdropClickClose';
 
 export function UsersTab() {
   const { user: currentUser } = useAuth();
   const { users, loading, error, createUser, patchUser, deleteUser, refetch } = useUsers();
+
+  // 2026-05-08：backdrop drag-select close 修复
+  // 仅当 mousedown + mouseup 都在 backdrop 本身（target===currentTarget）才关；
+  // submitting 期间 input 已 disabled 用户没法划文字，按钮的 disabled 已防误关，
+  // 所以这里 onClose 不再判 submitting（避免 useCallback 闭包陈旧问题）
+  const nickBackdropHandlers = useBackdropClickClose(() => setNickDialog(null));
+  const pwBackdropHandlers = useBackdropClickClose(() => setPwDialog(null));
 
   const [createForm, setCreateForm] = useState({
     username: '',
@@ -47,16 +55,20 @@ export function UsersTab() {
       if (createSubmitting) return;
       const { username, password, role, nickname } = createForm;
       if (!username.trim() || !password) return;
+      // 2026-05-08：nickname 改必填
+      const trimmedNick = nickname.trim();
+      if (trimmedNick.length < 1) {
+        setCreateError('昵称必填（1-30 字符，trim 后非空）');
+        return;
+      }
       setCreateSubmitting(true);
       setCreateError(null);
       try {
-        const trimmedNick = nickname.trim();
         await createUser({
           username: username.trim(),
           password,
           role,
-          // nickname 留空 → 不传 → service 层默认填 username
-          ...(trimmedNick.length > 0 ? { nickname: trimmedNick } : {}),
+          nickname: trimmedNick,
         });
         setCreateForm({ username: '', password: '', role: 'user', nickname: '' });
       } catch (err) {
@@ -174,10 +186,11 @@ export function UsersTab() {
           </select>
           <input
             type="text"
-            placeholder="昵称（选填，1-30 字符；留空 = 用户名）"
+            placeholder="昵称（必填，1-30 字符；中文/字母/数字/下划线/中划线/空格）"
             value={createForm.nickname}
             onChange={(e) => setCreateForm((f) => ({ ...f, nickname: e.target.value }))}
             maxLength={30}
+            required
             disabled={createSubmitting}
             autoComplete="off"
           />
@@ -299,7 +312,11 @@ export function UsersTab() {
       </section>
 
       {nickDialog && (
-        <div className="users-dialog-backdrop" onClick={() => !nickSubmitting && setNickDialog(null)}>
+        <div
+          className="users-dialog-backdrop"
+          onMouseDown={nickBackdropHandlers.onMouseDown}
+          onMouseUp={nickBackdropHandlers.onMouseUp}
+        >
           <div className="users-dialog" onClick={(e) => e.stopPropagation()}>
             <h3>修改 {nickDialog.user.username} 的昵称</h3>
             <input
@@ -336,7 +353,11 @@ export function UsersTab() {
       )}
 
       {pwDialog && (
-        <div className="users-dialog-backdrop" onClick={() => !pwSubmitting && setPwDialog(null)}>
+        <div
+          className="users-dialog-backdrop"
+          onMouseDown={pwBackdropHandlers.onMouseDown}
+          onMouseUp={pwBackdropHandlers.onMouseUp}
+        >
           <div className="users-dialog" onClick={(e) => e.stopPropagation()}>
             <h3>重置 {pwDialog.user.username} 的密码</h3>
             <input

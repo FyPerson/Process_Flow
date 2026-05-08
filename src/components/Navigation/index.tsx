@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext.tsx';
 import { patchSelfNickname, type ApiError } from '../../auth/api.ts';
+import { useBackdropClickClose } from '../useBackdropClickClose';
 import './styles.css';
 
 interface PageLink {
@@ -33,6 +34,9 @@ export function Navigation() {
     const [nickDialog, setNickDialog] = useState<{ value: string } | null>(null);
     const [nickSubmitting, setNickSubmitting] = useState(false);
     const [nickError, setNickError] = useState<string | null>(null);
+
+    // 2026-05-08：backdrop drag-select close 修复
+    const nickBackdropHandlers = useBackdropClickClose(() => setNickDialog(null));
 
     // 点外面关账户菜单
     useEffect(() => {
@@ -220,7 +224,8 @@ export function Navigation() {
             {nickDialog && (
                 <div
                     className="account-nick-backdrop"
-                    onClick={() => !nickSubmitting && setNickDialog(null)}
+                    onMouseDown={nickBackdropHandlers.onMouseDown}
+                    onMouseUp={nickBackdropHandlers.onMouseUp}
                 >
                     <div className="account-nick-dialog" onClick={(e) => e.stopPropagation()}>
                         <h3>修改昵称</h3>
