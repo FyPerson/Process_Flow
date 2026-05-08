@@ -219,3 +219,172 @@
   color: #e2e8f0;
   border-color: #64748b;
 }
+
+/* 2026-05-08：账户菜单下拉（自助改昵称入口） */
+.account-menu-container {
+  position: relative;
+  display: inline-block;
+}
+
+.account-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  font-size: 13px;
+  color: #cbd5e1;
+  background: transparent;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.account-menu-trigger:hover {
+  background: #1e293b;
+  border-color: #475569;
+}
+
+.account-menu-arrow {
+  font-size: 9px;
+  color: #94a3b8;
+}
+
+.account-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 220px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  z-index: 200;
+  padding: 4px;
+}
+
+.account-menu-info {
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.account-menu-info-line {
+  padding: 2px 0;
+}
+
+.account-menu-info-value {
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.account-menu-info-sub {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.account-menu-divider {
+  height: 1px;
+  background: #334155;
+  margin: 4px 0;
+}
+
+.account-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: #e2e8f0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.account-menu-item:hover {
+  background: #334155;
+}
+
+.account-menu-item-danger {
+  color: #fca5a5;
+}
+
+.account-menu-item-danger:hover {
+  background: #450a0a;
+}
+
+/* 改昵称弹窗 */
+.account-nick-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.account-nick-dialog {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 20px;
+  min-width: 320px;
+  max-width: 480px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.account-nick-dialog h3 {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  color: #e2e8f0;
+}
+
+.account-nick-dialog input[type='text'] {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  color: #e2e8f0;
+  margin-bottom: 8px;
+  box-sizing: border-box;
+}
+
+.account-nick-error {
+  color: #fca5a5;
+  font-size: 12px;
+  padding: 6px 10px;
+  background: #450a0a;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.account-nick-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.account-nick-actions button {
+  padding: 6px 14px;
+  font-size: 13px;
+  background: transparent;
+  color: #cbd5e1;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.account-nick-actions button:hover:not(:disabled) {
+  background: #334155;
+}
+
+.account-nick-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
