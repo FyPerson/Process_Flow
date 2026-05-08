@@ -16,6 +16,8 @@ function toAdminResponse(row: UserRow): AdminUserResponse {
   return {
     id: row.id,
     username: row.username,
+    // nickname 空字符串 fallback 到 username（保护历史数据 + 用户主动清空时 UI 仍可读）
+    nickname: row.nickname.length > 0 ? row.nickname : row.username,
     role: row.role,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -23,7 +25,7 @@ function toAdminResponse(row: UserRow): AdminUserResponse {
   };
 }
 
-const SELECT_COLUMNS = 'id, username, password_hash, role, created_at, updated_at, deleted_at';
+const SELECT_COLUMNS = 'id, username, password_hash, role, nickname, created_at, updated_at, deleted_at';
 
 // =====================================================================
 // 查询
@@ -68,6 +70,7 @@ export interface CreateUserParams {
   username: string;
   password: string;
   role: 'user' | 'admin';
+  nickname?: string;  // 可选；缺省 = username（migration 0006）
 }
 
 /**
@@ -91,14 +94,16 @@ export async function createUser(
   }
   const hash = await hashPassword(params.password);
   const now = Date.now();
+  // nickname 缺省走 username（与 migration 0006 历史回填策略一致）
+  const nickname = params.nickname ?? params.username;
   let result: RunResult;
   try {
     result = getDb()
       .prepare(
-        `INSERT INTO users (username, password_hash, role, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO users (username, password_hash, role, nickname, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
       )
-      .run(params.username, hash, params.role, now, now);
+      .run(params.username, hash, params.role, nickname, now, now);
   } catch (err) {
     // better-sqlite3 UNIQUE 违反：code = 'SQLITE_CONSTRAINT_UNIQUE'
     // ⚠️ 此分支无运行时单测覆盖（ESM 只读绑定 + better-sqlite3 同步 API 双重原因）。
@@ -132,6 +137,7 @@ export interface PatchUserParams {
   actorId: number; // 当前 admin 自己的 id（self-demote 检测）
   role?: 'user' | 'admin';
   password?: string;
+  nickname?: string;
 }
 
 /**
@@ -166,6 +172,10 @@ export async function patchUser(
     const hash = await hashPassword(params.password);
     updates.push('password_hash = ?');
     values.push(hash);
+  }
+  if (params.nickname !== undefined) {
+    updates.push('nickname = ?');
+    values.push(params.nickname);
   }
   if (updates.length === 0) {
     // route 层 zod refine 已防住，此处兜底返回原 user 视为 noop

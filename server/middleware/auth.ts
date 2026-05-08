@@ -45,10 +45,13 @@ function tryDecode(authHeader: string | undefined): UserPublic | null {
   if (!m) return null;
   try {
     const decoded = jwt.verify(m[1], config.jwtSecret) as unknown as JwtPayload;
+    // JWT 不存 nickname（避免改昵称后旧 token 缓存陈旧）
+    // 这里 fallback 用 username 占位，路由如需真实 nickname 走 me/refresh 实时查库
     return {
       id: decoded.sub,
       username: decoded.username,
       role: decoded.role,
+      nickname: decoded.username,
     };
   } catch {
     return null;
@@ -107,7 +110,7 @@ export function requireFreshAdmin(req: Request, res: Response, next: NextFunctio
   // 回查 DB：要求用户存在 + 未软删 + 当前 role 仍是 admin
   const row = getDb()
     .prepare(
-      `SELECT id, username, password_hash, role, created_at, updated_at, deleted_at
+      `SELECT id, username, password_hash, role, nickname, created_at, updated_at, deleted_at
        FROM users WHERE id = ?`,
     )
     .get(decoded.id) as UserRow | undefined;
@@ -120,6 +123,11 @@ export function requireFreshAdmin(req: Request, res: Response, next: NextFunctio
     return;
   }
   // 用 DB 当前态填充 req.user（不信 token 内的快照）
-  req.user = { id: row.id, username: row.username, role: row.role };
+  req.user = {
+    id: row.id,
+    username: row.username,
+    role: row.role,
+    nickname: row.nickname.length > 0 ? row.nickname : row.username,
+  };
   next();
 }

@@ -1,4 +1,4 @@
-// P3D-2 第 1 步：§5.7 saveCanvas removed 权限矩阵 5 分支单测
+﻿// P3D-2 第 1 步：§5.7 saveCanvas removed 权限矩阵 5 分支单测
 //
 // 验证 §5.7 修订（commit d484501）后的 visibility 区分逻辑：
 //
@@ -62,9 +62,9 @@ afterEach(() => {
 // Fixture helpers
 // =====================================================================
 
-const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin' };
-const OWNER: UserPublic = { id: 2, username: 'owner', role: 'user' };
-const STRANGER: UserPublic = { id: 3, username: 'stranger', role: 'user' };
+const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin', nickname: 'fixture_nick' };
+const OWNER: UserPublic = { id: 2, username: 'owner', role: 'user', nickname: 'fixture_nick' };
+const STRANGER: UserPublic = { id: 3, username: 'stranger', role: 'user', nickname: 'fixture_nick' };
 
 /** 插入测试用户 */
 function seedUsers() {

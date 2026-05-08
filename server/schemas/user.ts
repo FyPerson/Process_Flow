@@ -28,28 +28,50 @@ export const PasswordSchema = z
 
 export const UserRoleSchema = z.enum(['user', 'admin']);
 
+// 昵称：1-30 字符，trim 后非空（防 "   " 空白昵称），允许中文/字母/数字/下划线/中划线/空格
+// migration 0006：新建用户由 service 自动 nickname=username；用户/admin 后续可改
+export const NicknameSchema = z
+  .string()
+  .trim()
+  .min(1, 'nickname must not be empty after trim')
+  .max(30, 'nickname must be 1-30 characters');
+
 // POST /api/users
+// nickname 不强制（service 层默认 = username）；如果传则走 NicknameSchema 校验
 export const CreateUserRequestSchema = z
   .object({
     username: UsernameSchema,
     password: PasswordSchema,
     role: UserRoleSchema,
+    nickname: NicknameSchema.optional(),
   })
   .strict();
 export type CreateUserRequest = z.infer<typeof CreateUserRequestSchema>;
 
-// PATCH /api/users/:id —— 改 role / 重置密码（互斥不强制；同请求里都可改）
-// 至少一个字段必须存在（否则 400）
+// PATCH /api/users/:id —— admin 改 role / 重置密码 / 改昵称（任一即可，至少 1 个字段）
 export const PatchUserRequestSchema = z
   .object({
     role: UserRoleSchema.optional(),
     password: PasswordSchema.optional(),
+    nickname: NicknameSchema.optional(),
   })
   .strict()
-  .refine((v) => v.role !== undefined || v.password !== undefined, {
-    message: 'at least one of role / password is required',
-  });
+  .refine(
+    (v) => v.role !== undefined || v.password !== undefined || v.nickname !== undefined,
+    { message: 'at least one of role / password / nickname is required' },
+  );
 export type PatchUserRequest = z.infer<typeof PatchUserRequestSchema>;
+
+// PATCH /api/auth/me —— 用户自助改自己的资料（目前只允许改 nickname）
+// 与 PatchUserRequestSchema 拆开是因为：
+// (1) 自助接口不允许改 role / password（密码走独立 change-password 流程）
+// (2) 自助接口不需要 admin 权限，权限边界更小
+export const PatchSelfRequestSchema = z
+  .object({
+    nickname: NicknameSchema,
+  })
+  .strict();
+export type PatchSelfRequest = z.infer<typeof PatchSelfRequestSchema>;
 
 // 整数 ID 路径参数（与 annotations.ts 一致）
 export const PositiveIntegerIdSchema = z.coerce.number().int().positive();
@@ -58,6 +80,7 @@ export const PositiveIntegerIdSchema = z.coerce.number().int().positive();
 export interface AdminUserResponse {
   id: number;
   username: string;
+  nickname: string;  // 空 nickname 由 toAdminResponse fallback 到 username
   role: 'user' | 'admin';
   created_at: number;
   updated_at: number;

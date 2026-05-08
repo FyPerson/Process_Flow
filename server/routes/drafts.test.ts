@@ -1,4 +1,4 @@
-// P4B 路由层集成测试：草稿 GET/PUT/DELETE + 配额 + 大小限制 + canRead 权限
+﻿// P4B 路由层集成测试：草稿 GET/PUT/DELETE + 配额 + 大小限制 + canRead 权限
 //
 // 测目标：判断点 7（配额 200 / 拒写 / 错误码）+ 隐含约束 A（2MB / 413）
 //
@@ -46,9 +46,9 @@ const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const MIGRATIONS_DIR = path.join(__dirname, '..', 'db', 'migrations');
 
-const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin' };
-const ALICE: UserPublic = { id: 2, username: 'alice', role: 'user' };
-const BOB: UserPublic = { id: 3, username: 'bob', role: 'user' };
+const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin', nickname: 'fixture_nick' };
+const ALICE: UserPublic = { id: 2, username: 'alice', role: 'user', nickname: 'fixture_nick' };
+const BOB: UserPublic = { id: 3, username: 'bob', role: 'user', nickname: 'fixture_nick' };
 
 let db: DatabaseType;
 let server: Server;

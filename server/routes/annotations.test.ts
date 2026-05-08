@@ -1,4 +1,4 @@
-// P3E-1 路由层集成测试（codex 02-审 medium 3）
+﻿// P3E-1 路由层集成测试（codex 02-审 medium 3）
 //
 // 测目标：锁定 GET/POST/PATCH 的鉴权 + 权限 + 错误码契约（service 单测覆盖不到）
 // 不引 supertest；用原生 http + fetch + Express app 在 ephemeral port 上启动
@@ -32,10 +32,10 @@ const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const MIGRATIONS_DIR = path.join(__dirname, '..', 'db', 'migrations');
 
-const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin' };
-const ALICE: UserPublic = { id: 2, username: 'alice', role: 'user' };
-const BOB: UserPublic = { id: 3, username: 'bob', role: 'user' };
-const CAROL: UserPublic = { id: 4, username: 'carol', role: 'user' };
+const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin', nickname: 'fixture_nick' };
+const ALICE: UserPublic = { id: 2, username: 'alice', role: 'user', nickname: 'fixture_nick' };
+const BOB: UserPublic = { id: 3, username: 'bob', role: 'user', nickname: 'fixture_nick' };
+const CAROL: UserPublic = { id: 4, username: 'carol', role: 'user', nickname: 'fixture_nick' };
 
 let db: DatabaseType;
 let server: Server;

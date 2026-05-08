@@ -1,4 +1,4 @@
-// P3E-1 服务端批注 service 单测
+﻿// P3E-1 服务端批注 service 单测
 //
 // 覆盖：
 // - listAnnotationsByCanvas：正序 / 跨 sheet 同 node_id 不串
@@ -43,10 +43,10 @@ const MIGRATIONS_DIR = path.join(__dirname, '..', 'db', 'migrations');
 
 let db: DatabaseType;
 
-const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin' };
-const ALICE: UserPublic = { id: 2, username: 'alice', role: 'user' };
-const BOB: UserPublic = { id: 3, username: 'bob', role: 'user' };
-const CAROL: UserPublic = { id: 4, username: 'carol', role: 'user' };
+const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin', nickname: 'fixture_nick' };
+const ALICE: UserPublic = { id: 2, username: 'alice', role: 'user', nickname: 'fixture_nick' };
+const BOB: UserPublic = { id: 3, username: 'bob', role: 'user', nickname: 'fixture_nick' };
+const CAROL: UserPublic = { id: 4, username: 'carol', role: 'user', nickname: 'fixture_nick' };
 
 beforeEach(() => {
   db = new Database(':memory:');

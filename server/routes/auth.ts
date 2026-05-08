@@ -12,6 +12,7 @@ import { loginRateLimitByIp, loginRateLimitByUsername } from '../middleware/rate
 import type { UserRow } from '../types/user.ts';
 import { toPublic } from '../types/user.ts';
 import { hashPassword, PASSWORD_MIN_LENGTH, verifyPassword } from '../utils/password.ts';
+import { PatchSelfRequestSchema } from '../schemas/user.ts';
 
 export const authRouter: Router = Router();
 
@@ -40,7 +41,7 @@ authRouter.post(
 
     const row = getDb()
       .prepare(
-        `SELECT id, username, password_hash, role, created_at, updated_at, deleted_at
+        `SELECT id, username, password_hash, role, nickname, created_at, updated_at, deleted_at
          FROM users WHERE username = ?`
       )
       .get(username) as UserRow | undefined;
@@ -63,16 +64,73 @@ authRouter.post(
   }
 );
 
-/** GET /api/auth/me */
+/** GET /api/auth/me —— 实时查库取 nickname（JWT 不存 nickname 避免改昵称后陈旧）
+ *  软删期间用旧 token 仍可调用 me，此时强制返 401 */
 authRouter.get('/api/auth/me', requireAuth, (req: Request, res: Response) => {
-  res.json({ user: req.user });
+  const row = getDb()
+    .prepare(
+      `SELECT id, username, password_hash, role, nickname, created_at, updated_at, deleted_at
+       FROM users WHERE id = ?`,
+    )
+    .get(req.user!.id) as UserRow | undefined;
+  if (!row || row.deleted_at !== null) {
+    res.status(401).json({ error: 'unauthorized', message: 'user not found or deleted' });
+    return;
+  }
+  res.json({ user: toPublic(row) });
 });
 
-/** POST /api/auth/refresh —— 用当前 token 换一个新 token（延长有效期） */
+/** POST /api/auth/refresh —— 用当前 token 换一个新 token（延长有效期）
+ *  同 me：实时查库取 nickname；软删期间走 401 */
 authRouter.post('/api/auth/refresh', requireAuth, (req: Request, res: Response) => {
-  // requireAuth 已验证旧 token；用 req.user 直接重签
-  const token = signToken(req.user!);
-  res.json({ token, user: req.user });
+  const row = getDb()
+    .prepare(
+      `SELECT id, username, password_hash, role, nickname, created_at, updated_at, deleted_at
+       FROM users WHERE id = ?`,
+    )
+    .get(req.user!.id) as UserRow | undefined;
+  if (!row || row.deleted_at !== null) {
+    res.status(401).json({ error: 'unauthorized', message: 'user not found or deleted' });
+    return;
+  }
+  const user = toPublic(row);
+  const token = signToken(user);
+  res.json({ token, user });
+});
+
+/** PATCH /api/auth/me —— 用户自助改自己的资料（目前只允许改 nickname）
+ *  - 仅登录用户（不限角色，admin/user 都可）
+ *  - 不允许改 role / password（密码走独立 change-password 流程）
+ *  - 软删用户用旧 token 调用走 401 */
+authRouter.patch('/api/auth/me', requireAuth, (req: Request, res: Response) => {
+  const parsed = PatchSelfRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({
+      error: 'invalid_input',
+      message: 'nickname must be 1-30 characters (after trim)',
+    });
+    return;
+  }
+  const row = getDb()
+    .prepare(
+      `SELECT id, username, password_hash, role, nickname, created_at, updated_at, deleted_at
+       FROM users WHERE id = ?`,
+    )
+    .get(req.user!.id) as UserRow | undefined;
+  if (!row || row.deleted_at !== null) {
+    res.status(401).json({ error: 'unauthorized', message: 'user not found or deleted' });
+    return;
+  }
+  getDb()
+    .prepare('UPDATE users SET nickname = ?, updated_at = ? WHERE id = ?')
+    .run(parsed.data.nickname, Date.now(), row.id);
+  const updated = getDb()
+    .prepare(
+      `SELECT id, username, password_hash, role, nickname, created_at, updated_at, deleted_at
+       FROM users WHERE id = ?`,
+    )
+    .get(row.id) as UserRow;
+  res.json({ user: toPublic(updated) });
 });
 
 /** POST /api/auth/change-password */
@@ -92,7 +150,7 @@ authRouter.post(
 
     const row = getDb()
       .prepare(
-        `SELECT id, username, password_hash, role, created_at, updated_at, deleted_at
+        `SELECT id, username, password_hash, role, nickname, created_at, updated_at, deleted_at
          FROM users WHERE id = ?`
       )
       .get(req.user!.id) as UserRow | undefined;

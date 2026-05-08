@@ -1,4 +1,4 @@
-// P3G 路由层集成测试：publish/unpublish 端点 + POST visibility 强制 private
+﻿// P3G 路由层集成测试：publish/unpublish 端点 + POST visibility 强制 private
 //
 // 测目标：锁定 5 条产品规则的服务端契约（详见
 // [01-取舍审查-P3G](../../docs/规划/codex审查记录/阶段3/P3G/01-取舍审查-P3G-公共画布发布治理.md)）
@@ -40,9 +40,9 @@ const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const MIGRATIONS_DIR = path.join(__dirname, '..', 'db', 'migrations');
 
-const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin' };
-const ADMIN2: UserPublic = { id: 2, username: 'admin2', role: 'admin' };
-const ALICE: UserPublic = { id: 3, username: 'alice', role: 'user' };
+const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin', nickname: 'fixture_nick' };
+const ADMIN2: UserPublic = { id: 2, username: 'admin2', role: 'admin', nickname: 'fixture_nick' };
+const ALICE: UserPublic = { id: 3, username: 'alice', role: 'user', nickname: 'fixture_nick' };
 
 let db: DatabaseType;
 let server: Server;

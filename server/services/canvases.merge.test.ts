@@ -1,4 +1,4 @@
-// 阶段 5 Day 2 阶段 C：saveCanvas 接合并算法端到端验收测试
+﻿// 阶段 5 Day 2 阶段 C：saveCanvas 接合并算法端到端验收测试
 //
 // 验收清单（codex 阶段 C 取舍审 10-阶段C-取舍审-saveCanvas接合并.md "阶段 C 验收清单" 段）：
 // 1. DataIntegrityError 端到端映射验证（route 层 500 + 'data_integrity_error' 不退化为 save_failed）
@@ -52,9 +52,9 @@ afterEach(() => {
 // Fixtures
 // =====================================================================
 
-const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin' };
-const ALICE: UserPublic = { id: 2, username: 'alice', role: 'user' };
-const BOB: UserPublic = { id: 3, username: 'bob', role: 'user' };
+const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin', nickname: 'fixture_nick' };
+const ALICE: UserPublic = { id: 2, username: 'alice', role: 'user', nickname: 'fixture_nick' };
+const BOB: UserPublic = { id: 3, username: 'bob', role: 'user', nickname: 'fixture_nick' };
 
 function seedUsers() {
   const now = Date.now();

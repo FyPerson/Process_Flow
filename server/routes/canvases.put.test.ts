@@ -1,4 +1,4 @@
-// Day 4 F-15：PUT /api/canvases/:id 路由层 supertest 复测（#33 偿还）
+﻿// Day 4 F-15：PUT /api/canvases/:id 路由层 supertest 复测（#33 偿还）
 //
 // 偿还范围（详见 docs/规划/技术债务登记.md #33）：
 // 1. DataIntegrityError → 500 + `data_integrity_error` JSON 序列化（catch 块第 312-314 行）
@@ -33,9 +33,9 @@ const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const MIGRATIONS_DIR = path.join(__dirname, '..', 'db', 'migrations');
 
-const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin' };
-const ALICE: UserPublic = { id: 2, username: 'alice', role: 'user' };
-const BOB: UserPublic = { id: 3, username: 'bob', role: 'user' };
+const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin', nickname: 'fixture_nick' };
+const ALICE: UserPublic = { id: 2, username: 'alice', role: 'user', nickname: 'fixture_nick' };
+const BOB: UserPublic = { id: 3, username: 'bob', role: 'user', nickname: 'fixture_nick' };
 
 let db: DatabaseType;
 let server: Server;

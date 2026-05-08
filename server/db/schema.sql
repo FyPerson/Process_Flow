@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
   username TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('user', 'admin')),
+  nickname TEXT NOT NULL DEFAULT '',  -- 昵称（migration 0006）；service 层 createUser 同步为 username
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   deleted_at INTEGER  -- 软删时间戳，NULL = 在岗（v3 §3.1 / §9.3）

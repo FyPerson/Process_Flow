@@ -1,4 +1,4 @@
-// DELETE /api/canvases/:id 路由层契约测试
+﻿// DELETE /api/canvases/:id 路由层契约测试
 //
 // 锁定权限规则：
 // - admin 软删 public 画布 → 200（同 v1.16.0 + 之前行为）
@@ -28,9 +28,9 @@ const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const MIGRATIONS_DIR = path.join(__dirname, '..', 'db', 'migrations');
 
-const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin' };
-const ALICE: UserPublic = { id: 2, username: 'alice', role: 'user' };
-const BOB: UserPublic = { id: 3, username: 'bob', role: 'user' };
+const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin', nickname: 'fixture_nick' };
+const ALICE: UserPublic = { id: 2, username: 'alice', role: 'user', nickname: 'fixture_nick' };
+const BOB: UserPublic = { id: 3, username: 'bob', role: 'user', nickname: 'fixture_nick' };
 
 let db: DatabaseType;
 let server: Server;

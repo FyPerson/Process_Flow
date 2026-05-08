@@ -1,4 +1,4 @@
-// P4A 路由层集成测试：心跳 API + 过期清理 + 活跃编辑者列表
+﻿// P4A 路由层集成测试：心跳 API + 过期清理 + 活跃编辑者列表
 //
 // 测目标：锁定方案 §4.5 + 阶段 4 判断点 6 决策
 // - 30s 上报 / 90s 过期 / 服务端单一时钟源 / 软删用户过滤 / canRead 权限 / 多 tab 去重
@@ -42,10 +42,10 @@ const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const MIGRATIONS_DIR = path.join(__dirname, '..', 'db', 'migrations');
 
-const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin' };
-const ALICE: UserPublic = { id: 2, username: 'alice', role: 'user' };
-const BOB: UserPublic = { id: 3, username: 'bob', role: 'user' };
-const CAROL: UserPublic = { id: 4, username: 'carol', role: 'user' };
+const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin', nickname: 'fixture_nick' };
+const ALICE: UserPublic = { id: 2, username: 'alice', role: 'user', nickname: 'fixture_nick' };
+const BOB: UserPublic = { id: 3, username: 'bob', role: 'user', nickname: 'fixture_nick' };
+const CAROL: UserPublic = { id: 4, username: 'carol', role: 'user', nickname: 'fixture_nick' };
 
 let db: DatabaseType;
 let server: Server;

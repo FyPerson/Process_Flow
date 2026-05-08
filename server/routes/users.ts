@@ -51,7 +51,12 @@ usersRouter.post(
       });
       return;
     }
-    const result = await createUser(parsed.data);
+    const result = await createUser({
+      username: parsed.data.username,
+      password: parsed.data.password,
+      role: parsed.data.role,
+      nickname: parsed.data.nickname,
+    });
     if (!result.ok) {
       // 两类 conflict 都映射 409；message 区分以便 admin UI 给提示
       const message =
@@ -89,6 +94,7 @@ usersRouter.patch(
       actorId: req.user!.id,
       role: parsed.data.role,
       password: parsed.data.password,
+      nickname: parsed.data.nickname,
     });
     if (!result.ok) {
       switch (result.error.type) {

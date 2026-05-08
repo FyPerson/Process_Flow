@@ -1,4 +1,4 @@
-// P3F-1 路由层集成测试
+﻿// P3F-1 路由层集成测试
 //
 // 测目标：锁定 GET/POST/PATCH/DELETE 的鉴权 + 4 条产品规则的契约
 // 不引 supertest；用原生 http + fetch + Express app 在 ephemeral port 上启动
@@ -47,9 +47,9 @@ const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const MIGRATIONS_DIR = path.join(__dirname, '..', 'db', 'migrations');
 
-const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin' };
-const ADMIN2: UserPublic = { id: 2, username: 'admin2', role: 'admin' };
-const ALICE: UserPublic = { id: 3, username: 'alice', role: 'user' };
+const ADMIN: UserPublic = { id: 1, username: 'admin', role: 'admin', nickname: 'fixture_nick' };
+const ADMIN2: UserPublic = { id: 2, username: 'admin2', role: 'admin', nickname: 'fixture_nick' };
+const ALICE: UserPublic = { id: 3, username: 'alice', role: 'user', nickname: 'fixture_nick' };
 
 let db: DatabaseType;
 let server: Server;
@@ -437,4 +437,121 @@ describe('P3F-1 用户管理路由契约', () => {
   // 修法的正确性靠 code review：services/users.ts:90-112 显式 catch SQLITE_CONSTRAINT_UNIQUE
   // 后回查 findUserByUsername 区分软删状态返 409。本路径在内部 5 人项目场景下几乎无触发概率，
   // 留此注释以记录"为什么这条 medium 修了但没单测"。
+
+  // ==========================================================================
+  // 昵称（nickname）相关测试 — 2026-05-08 用户需求
+  // ==========================================================================
+
+  // -------- 23. POST 创建用户不传 nickname → 默认 = username --------
+  it('23. POST 创建用户不传 nickname → service 默认填 username', async () => {
+    const res = await fetch(`${baseUrl}/api/users`, {
+      method: 'POST',
+      headers: jsonHeader(ADMIN),
+      body: JSON.stringify({ username: 'noname_user', password: 'pwd_at_least_8', role: 'user' }),
+    });
+    assert.equal(res.status, 201);
+    const body = await res.json() as { user: { username: string; nickname: string } };
+    assert.equal(body.user.nickname, 'noname_user', 'nickname should fallback to username');
+  });
+
+  // -------- 24. POST 创建用户传 nickname → 落库 + 返回 --------
+  it('24. POST 创建用户传 nickname → 写入 nickname', async () => {
+    const res = await fetch(`${baseUrl}/api/users`, {
+      method: 'POST',
+      headers: jsonHeader(ADMIN),
+      body: JSON.stringify({
+        username: 'with_nick', password: 'pwd_at_least_8', role: 'user', nickname: '老王',
+      }),
+    });
+    assert.equal(res.status, 201);
+    const body = await res.json() as { user: { username: string; nickname: string } };
+    assert.equal(body.user.nickname, '老王');
+  });
+
+  // -------- 25. POST nickname 全空格 → 400 --------
+  it('25. POST nickname 全空格 → 400 (trim 后 min(1) 拒绝)', async () => {
+    const res = await fetch(`${baseUrl}/api/users`, {
+      method: 'POST',
+      headers: jsonHeader(ADMIN),
+      body: JSON.stringify({
+        username: 'whitespace_nick', password: 'pwd_at_least_8', role: 'user', nickname: '   ',
+      }),
+    });
+    assert.equal(res.status, 400);
+  });
+
+  // -------- 26. POST nickname 超 30 字符 → 400 --------
+  it('26. POST nickname > 30 字符 → 400', async () => {
+    const longNick = '昵'.repeat(31);
+    const res = await fetch(`${baseUrl}/api/users`, {
+      method: 'POST',
+      headers: jsonHeader(ADMIN),
+      body: JSON.stringify({
+        username: 'longnick', password: 'pwd_at_least_8', role: 'user', nickname: longNick,
+      }),
+    });
+    assert.equal(res.status, 400);
+  });
+
+  // -------- 27. PATCH admin 改任意用户 nickname --------
+  it('27. PATCH admin 改任意用户 nickname → 200', async () => {
+    const res = await fetch(`${baseUrl}/api/users/${ALICE.id}`, {
+      method: 'PATCH',
+      headers: jsonHeader(ADMIN),
+      body: JSON.stringify({ nickname: '艾莉丝' }),
+    });
+    assert.equal(res.status, 200);
+    const body = await res.json() as { user: { id: number; nickname: string } };
+    assert.equal(body.user.nickname, '艾莉丝');
+    // DB 校验
+    const row = db.prepare('SELECT nickname FROM users WHERE id = ?').get(ALICE.id) as { nickname: string };
+    assert.equal(row.nickname, '艾莉丝');
+  });
+
+  // -------- 28. PATCH 同时改 role + nickname → 200 --------
+  it('28. PATCH 同时改 role + nickname → 都生效', async () => {
+    const res = await fetch(`${baseUrl}/api/users/${ALICE.id}`, {
+      method: 'PATCH',
+      headers: jsonHeader(ADMIN),
+      body: JSON.stringify({ role: 'admin', nickname: '艾莉丝' }),
+    });
+    assert.equal(res.status, 200);
+    const body = await res.json() as { user: { role: string; nickname: string } };
+    assert.equal(body.user.role, 'admin');
+    assert.equal(body.user.nickname, '艾莉丝');
+  });
+
+  // -------- 29. PATCH nickname 不带任何字段 → 400（refine 已防）--------
+  it('29. PATCH 空 body 仍 400（含 nickname 后的 refine 仍拒空 body）', async () => {
+    const res = await fetch(`${baseUrl}/api/users/${ALICE.id}`, {
+      method: 'PATCH',
+      headers: jsonHeader(ADMIN),
+      body: JSON.stringify({}),
+    });
+    assert.equal(res.status, 400);
+  });
+
+  // -------- 30. PATCH nickname 字段为空字符串 / trim 后空 → 400 --------
+  it('30. PATCH nickname trim 后空字符串 → 400', async () => {
+    const res = await fetch(`${baseUrl}/api/users/${ALICE.id}`, {
+      method: 'PATCH',
+      headers: jsonHeader(ADMIN),
+      body: JSON.stringify({ nickname: '   ' }),
+    });
+    assert.equal(res.status, 400);
+  });
+
+  // -------- 31. GET 列表返回每个用户的 nickname --------
+  it('31. GET /api/users 返回 nickname 字段', async () => {
+    // 先给 ALICE 设个 nickname
+    db.prepare('UPDATE users SET nickname = ? WHERE id = ?').run('艾莉丝', ALICE.id);
+    const res = await fetch(`${baseUrl}/api/users`, { headers: authHeader(ADMIN) });
+    assert.equal(res.status, 200);
+    const body = await res.json() as { users: Array<{ id: number; username: string; nickname: string }> };
+    const alice = body.users.find((u) => u.id === ALICE.id)!;
+    assert.equal(alice.nickname, '艾莉丝');
+    // 没设 nickname（''） 的用户 fallback 到 username
+    const admin = body.users.find((u) => u.id === ADMIN.id)!;
+    assert.equal(admin.nickname, 'admin', 'empty nickname should fallback to username');
+  });
 });
