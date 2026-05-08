@@ -65,12 +65,36 @@ export interface CanvasListItem {
   published_note: string | null;
   unpublished_at: number | null;
   unpublished_by: number | null;
+  // 2026-05-08 用户需求：CanvasSwitcher 显示创建者昵称作前缀
+  // - LEFT JOIN users 取 creator 昵称；users 软删时 row 仍存在（fallback 到 username）
+  // - 数据完整性兜底：created_by 指向不存在的 user 时（理论上不应发生）这两字段为 null
+  creator_username: string | null;
+  creator_nickname: string | null;
   // 阶段 4 P4C：列表页"X 人在编辑"角标；route 层注入（route 拿不到 user 时为 0）
   // 该字段不在 toListItem service 里产生，由 GET /api/canvases route 批量注入
   activeEditors?: number;
 }
 
-function toListItem(row: CanvasRow): CanvasListItem {
+/** SELECT 查询用的扩展行类型：base CanvasRow + JOIN 来的 creator 昵称字段 */
+interface CanvasRowWithCreator extends CanvasRow {
+  creator_username: string | null;
+  creator_nickname: string | null;
+}
+
+/** SELECT 列表的标准列（base + LEFT JOIN creator）。所有 listCanvases* 复用 */
+const LIST_SELECT = `
+  c.*,
+  u.username AS creator_username,
+  u.nickname AS creator_nickname
+`;
+const LIST_FROM = `FROM canvases c LEFT JOIN users u ON u.id = c.created_by`;
+
+function toListItem(row: CanvasRowWithCreator): CanvasListItem {
+  // creator 昵称空字符串 fallback 到 username（与 toAdminResponse / toPublic 同口径）
+  const creatorNickname =
+    row.creator_nickname !== null && row.creator_nickname.length > 0
+      ? row.creator_nickname
+      : row.creator_username;
   return {
     id: row.id,
     name: row.name,
@@ -89,6 +113,8 @@ function toListItem(row: CanvasRow): CanvasListItem {
     published_note: row.published_note,
     unpublished_at: row.unpublished_at,
     unpublished_by: row.unpublished_by,
+    creator_username: row.creator_username,
+    creator_nickname: creatorNickname,
   };
 }
 
@@ -100,11 +126,11 @@ function toListItem(row: CanvasRow): CanvasListItem {
 export function listCanvasesForGuest(): CanvasListItem[] {
   const rows = getDb()
     .prepare(
-      `SELECT * FROM canvases
-       WHERE visibility = 'public' AND is_public_to_guest = 1 AND archived = 0
-       ORDER BY updated_at DESC`
+      `SELECT ${LIST_SELECT} ${LIST_FROM}
+       WHERE c.visibility = 'public' AND c.is_public_to_guest = 1 AND c.archived = 0
+       ORDER BY c.updated_at DESC`
     )
-    .all() as CanvasRow[];
+    .all() as CanvasRowWithCreator[];
   return rows.map(toListItem);
 }
 
@@ -112,20 +138,24 @@ export function listCanvasesForGuest(): CanvasListItem[] {
 export function listCanvasesForUser(userId: number): CanvasListItem[] {
   const rows = getDb()
     .prepare(
-      `SELECT * FROM canvases
-       WHERE archived = 0
-         AND (visibility = 'public' OR (visibility = 'private' AND owner_id = ?))
-       ORDER BY updated_at DESC`
+      `SELECT ${LIST_SELECT} ${LIST_FROM}
+       WHERE c.archived = 0
+         AND (c.visibility = 'public' OR (c.visibility = 'private' AND c.owner_id = ?))
+       ORDER BY c.updated_at DESC`
     )
-    .all(userId) as CanvasRow[];
+    .all(userId) as CanvasRowWithCreator[];
   return rows.map(toListItem);
 }
 
 /** admin：能看所有非归档 */
 export function listCanvasesForAdmin(): CanvasListItem[] {
   const rows = getDb()
-    .prepare(`SELECT * FROM canvases WHERE archived = 0 ORDER BY updated_at DESC`)
-    .all() as CanvasRow[];
+    .prepare(
+      `SELECT ${LIST_SELECT} ${LIST_FROM}
+       WHERE c.archived = 0
+       ORDER BY c.updated_at DESC`
+    )
+    .all() as CanvasRowWithCreator[];
   return rows.map(toListItem);
 }
 
