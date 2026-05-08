@@ -493,6 +493,43 @@ describe('P3F-1 用户管理路由契约', () => {
     assert.equal(res.status, 400);
   });
 
+  // -------- 26b. POST nickname 含非法字符 → 400（codex M3 regex）--------
+  it('26b. POST nickname 含 emoji / 换行 / 括号 → 400', async () => {
+    const cases = ['emoji😀', 'line\nbreak', 'has[bracket]', 'a(b)c', 'tab\there'];
+    for (const nick of cases) {
+      const res = await fetch(`${baseUrl}/api/users`, {
+        method: 'POST',
+        headers: jsonHeader(ADMIN),
+        body: JSON.stringify({
+          username: `bad_${nick.length}`,
+          password: 'pwd_at_least_8',
+          role: 'user',
+          nickname: nick,
+        }),
+      });
+      assert.equal(res.status, 400, `nickname='${nick}' should be rejected`);
+    }
+  });
+
+  // -------- 26c. POST nickname 合法字符（中文/字母/数字/下划线/中划线/空格）→ 201 --------
+  it('26c. POST nickname 合法字符集 → 201', async () => {
+    const cases = ['老王', 'Alice', 'user_123', 'foo-bar', '老 王 张'];
+    for (let i = 0; i < cases.length; i++) {
+      const nick = cases[i];
+      const res = await fetch(`${baseUrl}/api/users`, {
+        method: 'POST',
+        headers: jsonHeader(ADMIN),
+        body: JSON.stringify({
+          username: `goodnick${i}`,
+          password: 'pwd_at_least_8',
+          role: 'user',
+          nickname: nick,
+        }),
+      });
+      assert.equal(res.status, 201, `nickname='${nick}' should be accepted`);
+    }
+  });
+
   // -------- 27. PATCH admin 改任意用户 nickname --------
   it('27. PATCH admin 改任意用户 nickname → 200', async () => {
     const res = await fetch(`${baseUrl}/api/users/${ALICE.id}`, {

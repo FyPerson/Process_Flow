@@ -9,6 +9,7 @@
 import type { RunResult } from 'better-sqlite3';
 import { getDb } from '../db/index.ts';
 import type { UserRow } from '../types/user.ts';
+import { displayNickname } from '../types/user.ts';
 import type { AdminUserResponse } from '../schemas/user.ts';
 import { hashPassword } from '../utils/password.ts';
 
@@ -16,8 +17,8 @@ function toAdminResponse(row: UserRow): AdminUserResponse {
   return {
     id: row.id,
     username: row.username,
-    // nickname 空字符串 fallback 到 username（保护历史数据 + 用户主动清空时 UI 仍可读）
-    nickname: row.nickname.length > 0 ? row.nickname : row.username,
+    // codex L1：trim 判空（非空字符串但全空白也 fallback 到 username）
+    nickname: displayNickname(row.nickname, row.username),
     role: row.role,
     created_at: row.created_at,
     updated_at: row.updated_at,

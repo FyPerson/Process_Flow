@@ -28,13 +28,21 @@ export const PasswordSchema = z
 
 export const UserRoleSchema = z.enum(['user', 'admin']);
 
-// 昵称：1-30 字符，trim 后非空（防 "   " 空白昵称），允许中文/字母/数字/下划线/中划线/空格
+// 昵称：1-30 字符，trim 后非空（防 "   " 空白昵称）
+// 字符集：中文/字母/数字/下划线/中划线/空格（codex v1.17.0 末尾审 M3 加固）
+// 拒绝换行 / 控制字符 / RTL 控制符 / emoji / 括号 — 防止伪装成 [公共画布] 等系统前缀
+// 5 人内网下用 regex 比展示层兜底更稳；与 username 严格风格一致
+// \p{L} 字母 \p{N} 数字 \p{Mark} 给中文组合字符（如 ǎ ā）留空间；空格 + - + _ 只允许 ASCII 形式
 // migration 0006：新建用户由 service 自动 nickname=username；用户/admin 后续可改
 export const NicknameSchema = z
   .string()
   .trim()
   .min(1, 'nickname must not be empty after trim')
-  .max(30, 'nickname must be 1-30 characters');
+  .max(30, 'nickname must be 1-30 characters')
+  .regex(
+    /^[\p{L}\p{N}\p{Mark}_ -]+$/u,
+    'nickname only allows letters, digits, underscore, hyphen, space',
+  );
 
 // POST /api/users
 // nickname 不强制（service 层默认 = username）；如果传则走 NicknameSchema 校验

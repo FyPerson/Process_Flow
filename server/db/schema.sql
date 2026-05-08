@@ -38,6 +38,12 @@ CREATE TABLE IF NOT EXISTS canvases (
   updated_by INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   archived INTEGER NOT NULL DEFAULT 0,             -- 0/1，归档软删
+  -- P3G 公共画布发布有摩擦治理（migration 0003）— v1.17.0 codex H1 顺手补全 schema 一致性
+  published_at INTEGER,
+  published_by INTEGER REFERENCES users(id),
+  published_note TEXT,
+  unpublished_at INTEGER,
+  unpublished_by INTEGER REFERENCES users(id),
   FOREIGN KEY (owner_id) REFERENCES users(id),
   FOREIGN KEY (created_by) REFERENCES users(id),
   FOREIGN KEY (updated_by) REFERENCES users(id)

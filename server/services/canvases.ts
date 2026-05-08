@@ -90,11 +90,15 @@ const LIST_SELECT = `
 const LIST_FROM = `FROM canvases c LEFT JOIN users u ON u.id = c.created_by`;
 
 function toListItem(row: CanvasRowWithCreator): CanvasListItem {
-  // creator 昵称空字符串 fallback 到 username（与 toAdminResponse / toPublic 同口径）
-  const creatorNickname =
-    row.creator_nickname !== null && row.creator_nickname.length > 0
-      ? row.creator_nickname
-      : row.creator_username;
+  // codex L1：trim 判空（与 toPublic / toAdminResponse 同口径）
+  // 注意 LEFT JOIN 时 creator_username 也可能为 null（防御 created_by 指向不存在用户），
+  // 所以无 displayNickname helper 直接用，手动 trim 判空：
+  let creatorNickname: string | null;
+  if (row.creator_nickname !== null && row.creator_nickname.trim().length > 0) {
+    creatorNickname = row.creator_nickname;
+  } else {
+    creatorNickname = row.creator_username; // 可能 null
+  }
   return {
     id: row.id,
     name: row.name,

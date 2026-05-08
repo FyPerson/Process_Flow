@@ -21,13 +21,23 @@ export interface UserPublic {
   nickname: string;  // 显示用昵称（空字符串场景由 toPublic 已 fallback 为 username）
 }
 
+/** 计算"展示用昵称"：nickname trim 后非空 → 用 nickname；否则 fallback 到 username
+ *  统一 trim 口径 — 避免 DB 出现 "   " 空白 nickname 时 UI 显示 "[   的]"（codex v1.17.0 末尾审 L1）
+ *  caller: toPublic / toAdminResponse / canvases.toListItem / requireFreshAdmin 共用 */
+export function displayNickname(nickname: string | null, username: string): string {
+  if (nickname !== null && nickname.trim().length > 0) {
+    return nickname;
+  }
+  return username;
+}
+
 /** 把 row 转 public；nickname 空字符串 fallback 到 username 保护历史数据 */
 export function toPublic(row: UserRow): UserPublic {
   return {
     id: row.id,
     username: row.username,
     role: row.role,
-    nickname: row.nickname.length > 0 ? row.nickname : row.username,
+    nickname: displayNickname(row.nickname, row.username),
   };
 }
 

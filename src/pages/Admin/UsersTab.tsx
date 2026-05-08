@@ -406,8 +406,8 @@ function mapApiError(err: ApiError, action: 'create' | 'patch' | 'delete'): stri
     return m || '冲突';
   }
   if (e === 'invalid_input') {
-    if (action === 'create') return '输入有误：用户名 1-20 字符（字母/数字/下划线/中文）/ 密码 ≥ 8 位 / 角色 user 或 admin';
-    if (action === 'patch') return '输入有误：role 或 password 至少传一个';
+    if (action === 'create') return '输入有误：用户名 1-20 字符（字母/数字/下划线/中文）/ 密码 ≥ 8 位 / 角色 user 或 admin / 昵称 1-30 字符（中文/字母/数字/下划线/中划线/空格）';
+    if (action === 'patch') return '输入有误：role / password / nickname 至少传一个；昵称需 1-30 字符（中文/字母/数字/下划线/中划线/空格）';
   }
   return m || `操作失败（${e || err.status}）`;
 }

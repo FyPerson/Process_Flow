@@ -15,6 +15,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config.ts';
 import { getDb } from '../db/index.ts';
 import type { JwtPayload, UserPublic, UserRow } from '../types/user.ts';
+import { displayNickname } from '../types/user.ts';
 
 declare module 'express-serve-static-core' {
   // 给 req 加一个 user 字段；中间件解析 JWT 后塞进去
@@ -127,7 +128,7 @@ export function requireFreshAdmin(req: Request, res: Response, next: NextFunctio
     id: row.id,
     username: row.username,
     role: row.role,
-    nickname: row.nickname.length > 0 ? row.nickname : row.username,
+    nickname: displayNickname(row.nickname, row.username),  // codex L1 trim 判空
   };
   next();
 }
