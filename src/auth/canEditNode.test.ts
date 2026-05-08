@@ -15,6 +15,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   canEditNodeData,
+  canDeleteNodeData,
   isPublicDeprecateUpdate,
   canApplyNodeUpdate,
   filterNodeChangesByPermission,
@@ -1601,3 +1602,114 @@ describe('mergeEdgesForMergedNodes', () => {
 //    - 断言：onNodeChange 被实际调用（不被 safeOnDeprecateChange 吞），dataUpdates 含 is_deprecated=true
 //    - 配合 isPublicDeprecateUpdate 在 canApplyNodeUpdate 层放行
 //    - 这是 P3C 公开权限 + step 4 横幅"如需标记废弃请使用下方按钮"指引的端到端验证
+
+
+// ============================================================
+// v1.16.2: canDeleteNodeData + filterNodeChangesByPermission remove 分支收紧
+// ============================================================
+
+describe('canDeleteNodeData (v1.16.2)', () => {
+  it('1. 游客 → false', () => {
+    assert.equal(canDeleteNodeData({ creator_id: 2 }, null, true, 'public'), false);
+    assert.equal(canDeleteNodeData({ creator_id: 2 }, null, true, 'private'), false);
+  });
+
+  it('2. 画布只读 → false（无论用户角色）', () => {
+    assert.equal(canDeleteNodeData({ creator_id: 2 }, normalUser, false, 'public'), false);
+    assert.equal(canDeleteNodeData({ creator_id: 2 }, adminUser, false, 'public'), false);
+  });
+
+  it('3. admin → 总能删（公共/私有都行）', () => {
+    assert.equal(canDeleteNodeData({ creator_id: 999 }, adminUser, true, 'public'), true);
+    assert.equal(canDeleteNodeData({ creator_id: 999 }, adminUser, true, 'private'), true);
+    assert.equal(canDeleteNodeData({ __localNew: true }, adminUser, true, 'public'), true);
+  });
+
+  it('4. 公共画布 + 普通用户 + 已保存节点（含自己 creator_id 匹配）→ false（产品决策：协作历史不可破坏）', () => {
+    // 关键 case：自己加的节点保存后也不能删（A 加 F1 + B 加 F2/F3 接 F1，A 删 F1 让 B 悬空）
+    assert.equal(canDeleteNodeData({ creator_id: normalUser.id }, normalUser, true, 'public'), false);
+  });
+
+  it('5. 公共画布 + 普通用户 + 别人的节点 → false', () => {
+    assert.equal(canDeleteNodeData({ creator_id: otherUser.id }, normalUser, true, 'public'), false);
+  });
+
+  it('6. 公共画布 + 普通用户 + __localNew=true（保存前）→ true（撤销刚拖出来的节点合理）', () => {
+    assert.equal(canDeleteNodeData({ __localNew: true }, normalUser, true, 'public'), true);
+  });
+
+  it('7. 私有画布 + 普通用户 + creator_id 匹配 → true（owner 能删自己加的）', () => {
+    assert.equal(canDeleteNodeData({ creator_id: normalUser.id }, normalUser, true, 'private'), true);
+  });
+
+  it('8. 私有画布 + 普通用户 + 别人节点 → false（理论不会到——私有画布权限层已拦）', () => {
+    assert.equal(canDeleteNodeData({ creator_id: otherUser.id }, normalUser, true, 'private'), false);
+  });
+
+  it('9. 私有画布 + 普通用户 + __localNew → true', () => {
+    assert.equal(canDeleteNodeData({ __localNew: true }, normalUser, true, 'private'), true);
+  });
+
+  it('10. canvasVisibility 默认 private（向后兼容旧测试 / 旧调用方）', () => {
+    // 不传 visibility 时应等价于私有画布行为（沿用 canEditNodeData 语义）
+    assert.equal(canDeleteNodeData({ creator_id: normalUser.id }, normalUser, true), true);
+    assert.equal(canDeleteNodeData({ __localNew: true }, normalUser, true), true);
+  });
+});
+
+describe('filterNodeChangesByPermission — 公共画布 remove 收紧 (v1.16.2)', () => {
+  const myNodePub: Node<FlowNodeData> = {
+    id: 'mine_saved',
+    type: 'custom',
+    position: { x: 0, y: 0 },
+    data: { id: 'mine_saved', name: 'mine_saved', type: 'process', expandable: true, creator_id: normalUser.id },
+  };
+  const localNodePub: Node<FlowNodeData> = {
+    id: 'local_new',
+    type: 'custom',
+    position: { x: 0, y: 0 },
+    data: { id: 'local_new', name: 'local_new', type: 'process', expandable: true, __localNew: true },
+  };
+  const nodes = [myNodePub, localNodePub];
+
+  it('1. 公共画布 + 普通用户 + remove 自己加的已保存节点 → 被过滤（拒）', () => {
+    const removeMine: NodeChange<Node<FlowNodeData>> = { id: 'mine_saved', type: 'remove' };
+    const filtered = filterNodeChangesByPermission([removeMine], nodes, normalUser, true, 'public');
+    assert.equal(filtered.length, 0);
+  });
+
+  it('2. 公共画布 + 普通用户 + remove __localNew → 放行', () => {
+    const removeLocal: NodeChange<Node<FlowNodeData>> = { id: 'local_new', type: 'remove' };
+    const filtered = filterNodeChangesByPermission([removeLocal], nodes, normalUser, true, 'public');
+    assert.equal(filtered.length, 1);
+  });
+
+  it('3. 公共画布 + admin + remove 任意节点 → 放行', () => {
+    const removeMine: NodeChange<Node<FlowNodeData>> = { id: 'mine_saved', type: 'remove' };
+    const filtered = filterNodeChangesByPermission([removeMine], nodes, adminUser, true, 'public');
+    assert.equal(filtered.length, 1);
+  });
+
+  it('4. 私有画布 + 普通用户（owner）+ remove 自己加的节点 → 放行', () => {
+    const removeMine: NodeChange<Node<FlowNodeData>> = { id: 'mine_saved', type: 'remove' };
+    const filtered = filterNodeChangesByPermission([removeMine], nodes, normalUser, true, 'private');
+    assert.equal(filtered.length, 1);
+  });
+
+  it('5. 公共画布 + 普通用户 + remove + position 同批（对自己节点）→ position 放行 / remove 拒', () => {
+    // 关键: position/dimensions 仍走 canEditNodeData (能改自己的节点位置)，只有 remove 走更严的 canDeleteNodeData
+    const changes: NodeChange<Node<FlowNodeData>>[] = [
+      { id: 'mine_saved', type: 'position', position: { x: 100, y: 100 } },
+      { id: 'mine_saved', type: 'remove' },
+    ];
+    const filtered = filterNodeChangesByPermission(changes, nodes, normalUser, true, 'public');
+    assert.equal(filtered.length, 1);
+    assert.equal(filtered[0].type, 'position');
+  });
+
+  it('6. 默认 visibility=private（不传第 5 参数）→ remove 自己节点放行（向后兼容旧调用方）', () => {
+    const removeMine: NodeChange<Node<FlowNodeData>> = { id: 'mine_saved', type: 'remove' };
+    const filtered = filterNodeChangesByPermission([removeMine], nodes, normalUser, true);
+    assert.equal(filtered.length, 1);
+  });
+});

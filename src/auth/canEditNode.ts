@@ -55,6 +55,37 @@ export function canEditNodeData(
   return false;
 }
 
+/**
+ * 当前用户是否能"物理删除"此节点（不同于 canEditNodeData——删除规则更严）
+ *
+ * 设计语义（v1.16.2 新增）：
+ * - 公共画布（visibility=public）：**只 admin 能删已保存节点**；本地新增（__localNew=true）任意登录用户能删
+ *   理由：节点保存后即"协作历史"，A 加 F1 + B 加 F2/F3 接在 F1 后；A 删 F1 让 B 的 F2/F3 悬空，破坏团队协作
+ * - 私有画布（visibility=private）：可写画布上能编辑此节点 = 能删此节点（沿用 canEditNodeData 语义）
+ *   理由：私有画布只有 owner 一个人，没有"协作历史"问题
+ *
+ * @param nodeData 节点 data
+ * @param user 当前登录用户
+ * @param canvasWritable 当前画布是否可写
+ * @param canvasVisibility 画布可见性（'public' | 'private'）；默认 'private' 向后兼容（旧测试）
+ */
+export function canDeleteNodeData(
+  nodeData: CanEditNodeData,
+  user: UserPublic | null,
+  canvasWritable: boolean,
+  canvasVisibility: 'public' | 'private' = 'private',
+): boolean {
+  if (!user) return false;
+  if (!canvasWritable) return false;
+  if (user.role === 'admin') return true;
+  // 公共画布：只 admin 能删已保存节点；本地新增可删
+  if (canvasVisibility === 'public') {
+    return nodeData.__localNew === true;
+  }
+  // 私有画布：沿用 canEditNodeData 语义（owner 自己加的 + 本地新增能删）
+  return canEditNodeData(nodeData, user, canvasWritable);
+}
+
 // ============================================================
 // P3D-2 step 3 中心 mutation gate helper（codex 二审建议项）
 // ============================================================
@@ -218,6 +249,7 @@ export function filterNodeChangesByPermission(
   nodes: Node<FlowNodeData>[],
   user: UserPublic | null,
   canvasWritable: boolean,
+  canvasVisibility: 'public' | 'private' = 'private',
 ): NodeChange<Node<FlowNodeData>>[] {
   // P3D-2 step 3 codex 六审 medium 2：未知 NodeChange 类型 fail-closed
   // React Flow 12 当前主流：select/position/dimensions/remove/add/replace
@@ -348,6 +380,10 @@ export function filterNodeChangesByPermission(
     const id = (change as { id: string }).id;
     const target = nodes.find((n) => n.id === id);
     if (!target) return false; // existingNodeIds 已校验，理论上不会到这；fail-closed 兜底
+    // remove 单独走 canDeleteNodeData：公共画布上只 admin 能物删（v1.16.2）
+    if (change.type === 'remove') {
+      return canDeleteNodeData(target.data, user, canvasWritable, canvasVisibility);
+    }
     return canEditNodeData(target.data, user, canvasWritable);
   });
 }

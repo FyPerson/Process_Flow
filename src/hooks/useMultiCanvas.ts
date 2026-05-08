@@ -85,6 +85,10 @@ export type SaveResult =
   | { status: 'conflict'; currentVersion: number; conflicts?: Conflict[] }
   // Day 3 D-4：base_version_expired，客户端已被 server 提示重载
   | { status: 'base_version_expired'; currentVersion: number }
+  // v1.16.2：403 forbidden_remove_node / forbidden_delete_public_canvas
+  // 服务端拒绝删动作（公共画布上普通用户的物理删 / 普通用户软删整画布）
+  // hook catch 块走 saveErrorDispatcher.forbidden_remove 路径：弹 Toast + 重载主版本撤销前端"幽灵删除"
+  | { status: 'forbidden_remove'; message: string }
   | { status: 'skipped' }
   | { status: 'discarded' };
 
@@ -1104,6 +1108,16 @@ export function useMultiCanvas(
             conflicts: errorPlan.conflicts,
           });
           return errorPlan.returnValue;
+        case 'forbidden_remove': {
+          // v1.16.2：服务端拒删（公共画布 + 普通用户物删 / 普通用户软删整画布）
+          // 不 setServerError（避免 BFV [887] 兜底页吞掉提示）
+          // 重载主版本撤销前端"幽灵删除"——浏览器 React Flow state 把节点拿回来
+          // hook 不直接调 reload；BFV 监听到 status='forbidden_remove' 走 discardAndReload + Toast
+          // 本地 dirty 改动会丢；这是合理代价（用户的删除动作本来就被拒了，其他改动也基于"已删节点"）
+          // 重启 autosave，让用户后续编辑能继续保存
+          setAutoSaveDisabled(false);
+          return errorPlan.returnValue;
+        }
         case 'rethrow': {
           // 真致命错误（非 409 / 数据形状非法）才 setServerError，让 BFV 错误兜底页 / SaveStatus--error 渲染
           // F-17 M1：errorPlan.error 在非 ApiError 路径下是占位（status=0），仍是 ApiError shape；

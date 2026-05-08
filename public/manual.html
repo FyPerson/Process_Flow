@@ -198,8 +198,8 @@
 <td>✅</td>
 </tr>
 <tr>
-<td>物理删节点（彻底移除）</td>
-<td>❌ 服务端会拒绝</td>
+<td><strong>物理删节点</strong>（彻底移除——含自己刚加的已保存节点）</td>
+<td>❌ 仅 admin（详见下方说明）</td>
 <td>✅</td>
 </tr>
 <tr>
@@ -232,6 +232,16 @@
 <blockquote>
 <p><strong>设计原则</strong>：协作友好 + 历史可追溯 + 不可破坏。
 你能加 / 改自己 / 标废弃，但不能动别人的、不能彻底抹掉痕迹——保护团队的协作历史。</p>
+</blockquote>
+<blockquote>
+<p><strong>关于&quot;物理删自己加的节点&quot;的特殊说明</strong>：</p>
+<ul>
+<li>节点<strong>保存到主版本之前</strong>（你刚拖出来还没自动保存）→ ✅ 可以删（用 Delete 键 / 撤销，合理的&quot;刚拖错了&quot;场景）</li>
+<li>节点<strong>保存到主版本之后</strong> → ❌ 即使是你自己加的也不能再删</li>
+</ul>
+<p><strong>为什么自己加的也不能删</strong>？
+假设你（A）加了节点【F1】，同事（B）顺着【F1】又添加了【F2】【F3】（连线接在 F1 后）。如果你后悔删掉【F1】，B 加的【F2】【F3】就会悬空——破坏团队协作。
+<strong>替代方案</strong>：用【标废弃】（半透明保留 + 角标&quot;已废弃&quot;），后续业务流程不再走它，但历史不丢；或者请 admin 协助物理删除。</p>
 </blockquote>
 <h3>0.4 数据流程：从你画到别人看见</h3>
 <ol>
@@ -808,11 +818,16 @@
 <h4>场景 D：我和别人同时改公共画布（A 加 X 节点，B 加 Y 节点）</h4>
 <p>详见 §3.5.2 的具体例子。简单说：<strong>只要你和别人加的节点不重叠</strong>（节点 ID 不冲突，没改同一个字段），系统会<strong>自动合并</strong>——你保存时顶栏弹&quot;已为你合并对方的改动&quot;Toast，画布上会<strong>自动出现别人加的节点</strong>。</p>
 <h4>场景 E：我想&quot;撤销&quot;一个节点（不删，但不让它生效）</h4>
-<p>公共画布上<strong>不能物理删节点</strong>（保留协作历史）。两种替代方式：</p>
+<p>公共画布上<strong>已保存的节点不能物理删</strong>——即使是你自己加的（保留协作历史，避免别人接在你节点上画的内容悬空）。三种替代方式：</p>
 <ul>
-<li><strong>标废弃</strong>：选中节点 → 详情面板&quot;标记为已废弃&quot; → 节点变半透明，后续业务不走它，但历史记录在</li>
-<li><strong>加批注说明</strong>：在节点上加批注&quot;此节点已弃用，参见新节点 X&quot;</li>
+<li><strong>标废弃</strong>（推荐）：选中节点 → 右侧抽屉【标记为已废弃】 → 节点变半透明 + 角标，后续业务不走它，但历史记录保留</li>
+<li><strong>加批注说明</strong>：节点上加批注&quot;此节点已弃用，请改用 XXX&quot;</li>
+<li><strong>请 admin 物理删</strong>：admin 在公共画布上有完整删除权限，但 admin 删之前会权衡&quot;是否会让别人加的节点悬空&quot;</li>
 </ul>
+<blockquote>
+<p><strong>特例</strong>：节点刚拖出来<strong>还没自动保存</strong>（30 秒内）的话可以用 Delete 直接删——这种情况是&quot;刚拖错了/刚画错了&quot;，不会破坏协作历史。</p>
+<p><strong>如果你点了删除却看到错误提示</strong>：“无法删除——公共画布上的节点只允许管理员物理删除”，是正常的；系统会自动撤销前端的删除操作（节点在 1-2 秒内会重新出现），数据安全无影响。</p>
+</blockquote>
 <h4>场景 F：admin 想发布私有画布为公共</h4>
 <ol>
 <li>admin 进入 admin 后台 → 共有画布管理 tab</li>

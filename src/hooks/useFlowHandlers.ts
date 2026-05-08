@@ -44,6 +44,9 @@ interface UseFlowHandlersProps {
      *  与 FlowCanvas user 必传同款约定，避免中间层重新 optional 化导致静默退化。
      *  调用方（FlowCanvas）必须显式传，游客场景显式传 null。 */
     user: UserPublic | null;
+    /** v1.16.2：当前画布可见性。给 filterNodeChangesByPermission remove 分支用——
+     *  公共画布上普通用户不能物删已保存节点。默认 'private' 向后兼容（私有画布行为不变）。 */
+    canvasVisibility?: 'public' | 'private';
 }
 
 export function useFlowHandlers({
@@ -64,6 +67,7 @@ export function useFlowHandlers({
     dragHistoryTimerRef,
     readOnly = false,
     user,
+    canvasVisibility = 'private',
 }: UseFlowHandlersProps) {
     // P3D-2 step 3 中心 mutation gate：canvasWritable = !readOnly。
     // BFV 派生 readOnly = !canvasWritable（src/pages/BusinessFlowVisualization/index.tsx 算的单一口径）
@@ -81,6 +85,7 @@ export function useFlowHandlers({
                 nodes,
                 user,
                 canvasWritable,
+                canvasVisibility,
             );
 
             // 先应用变化
@@ -153,7 +158,7 @@ export function useFlowHandlers({
                 triggerAutoSave();
             }, 0);
         },
-        [onNodesChange, setNodes, setEdges, saveHistory, triggerAutoSave, isUndoRedoRef, isDraggingRef, dragHistoryTimerRef, setSelectedElement, setShowPanel, nodes, user, canvasWritable],
+        [onNodesChange, setNodes, setEdges, saveHistory, triggerAutoSave, isUndoRedoRef, isDraggingRef, dragHistoryTimerRef, setSelectedElement, setShowPanel, nodes, user, canvasWritable, canvasVisibility],
     );
 
     // 包装 onEdgesChange 以检测删除操作

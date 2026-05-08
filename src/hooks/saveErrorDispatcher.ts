@@ -48,6 +48,26 @@ export interface SaveErrorConflictPlan {
   returnValue: Extract<SaveResult, { status: 'conflict' }>;
 }
 
+/** 403 forbidden_remove_node / forbidden_delete_public_canvas：服务端拒删动作（v1.16.2 新增）。
+ *
+ * 触发条件（不应在前端层冒到这里——前端 canDeleteNodeData 已拦下；服务端是 fail-closed 兜底）：
+ *   - 公共画布上普通用户删了已保存节点（节点入了 nodes_meta）
+ *   - 普通用户软删整个公共画布（v1.16.1 server 收紧）
+ *
+ * 处理策略：弹 Toast 提示用户"无法删除——XX"，**不 setServerError**（避免触发 BFV [887] 兜底页），
+ * 同时返回一个特殊 status 让 hook 触发 reload 撤销前端的"幽灵删除"。
+ *
+ * 不删草稿（与 base_version_expired / conflict 同款防御）：草稿包含用户其他改动。
+ */
+export interface SaveErrorForbiddenRemovePlan {
+  action: 'forbidden_remove';
+  /** 给用户看的中文文案；优先用 server message，没有则按 error code 兜底 */
+  message: string;
+  /** 类型层硬约束：forbidden_remove 不删草稿（与 base_version_expired 同策略）*/
+  shouldDeleteDraft: false;
+  returnValue: Extract<SaveResult, { status: 'forbidden_remove' }>;
+}
+
 /** 兜底：非 409 / 非 base_version_expired 的其他错误 → 让上游 throw 不归一为 SaveResult */
 export interface SaveErrorRethrowPlan {
   action: 'rethrow';
@@ -58,6 +78,7 @@ export interface SaveErrorRethrowPlan {
 export type SaveErrorPlan =
   | SaveErrorBaseVersionExpiredPlan
   | SaveErrorConflictPlan
+  | SaveErrorForbiddenRemovePlan
   | SaveErrorRethrowPlan;
 
 // ============================================================
@@ -102,6 +123,28 @@ export function planSaveError(err: unknown): SaveErrorPlan {
       action: 'rethrow',
       error: { status: 0, error: 'non_api_error_shape' },
     };
+  }
+
+  // v1.16.2：403 forbidden_remove_node / forbidden_delete_public_canvas 友好处理
+  if (err.status === 403) {
+    if (err.error === 'forbidden_remove_node') {
+      return {
+        action: 'forbidden_remove',
+        message: err.message ?? '公共画布上的节点只允许管理员物理删除。如不再需要，请使用"标废弃"代替。',
+        shouldDeleteDraft: false,
+        returnValue: { status: 'forbidden_remove', message: err.message ?? '' },
+      };
+    }
+    if (err.error === 'forbidden_delete_public_canvas') {
+      return {
+        action: 'forbidden_remove',
+        message: err.message ?? '只有管理员可以归档公共画布。',
+        shouldDeleteDraft: false,
+        returnValue: { status: 'forbidden_remove', message: err.message ?? '' },
+      };
+    }
+    // 其他 403（如 forbidden_modify_others_node）→ rethrow（不在 dispatcher 范围；hook 兜底）
+    return { action: 'rethrow', error: err };
   }
 
   if (err.status !== 409) {

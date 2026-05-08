@@ -227,6 +227,76 @@ describe('planSaveError — rethrow 兜底', () => {
 });
 
 // ============================================================
+// v1.16.2：403 forbidden_remove 路径
+// ============================================================
+
+describe('planSaveError — forbidden_remove 路径 (v1.16.2)', () => {
+  it('17. 403 + forbidden_remove_node → forbidden_remove plan + message', () => {
+    const plan = planSaveError({
+      status: 403,
+      error: 'forbidden_remove_node',
+      message: 'cannot remove 1 node(s) on public canvas; only admin can physically delete',
+    });
+    if (plan.action !== 'forbidden_remove') {
+      assert.fail(`expected forbidden_remove plan, got ${plan.action}`);
+    }
+    assert.match(plan.message, /admin/);
+    assert.equal(plan.shouldDeleteDraft, false);
+    assert.equal(plan.returnValue.status, 'forbidden_remove');
+  });
+
+  it('18. 403 + forbidden_delete_public_canvas → forbidden_remove plan + 中文 message', () => {
+    const plan = planSaveError({
+      status: 403,
+      error: 'forbidden_delete_public_canvas',
+      message: '只有管理员可以归档公共画布；普通用户请用"标废弃"代替',
+    });
+    if (plan.action !== 'forbidden_remove') {
+      assert.fail(`expected forbidden_remove plan, got ${plan.action}`);
+    }
+    assert.match(plan.message, /管理员/);
+    assert.equal(plan.shouldDeleteDraft, false);
+  });
+
+  it('19. 403 + forbidden_remove_node 但 message 缺失 → 用兜底文案', () => {
+    const plan = planSaveError({ status: 403, error: 'forbidden_remove_node' });
+    if (plan.action !== 'forbidden_remove') {
+      assert.fail('expected forbidden_remove plan');
+    }
+    assert.match(plan.message, /标废弃/);
+  });
+
+  it('20. 403 + 其他 error code（如 forbidden_modify_others_node）→ rethrow（不在 dispatcher 范围）', () => {
+    const plan = planSaveError({
+      status: 403,
+      error: 'forbidden_modify_others_node',
+      message: 'cannot modify node n1 created by user 5',
+    });
+    assert.equal(plan.action, 'rethrow');
+  });
+
+  it('21. 403 + forbidden（无具体 code）→ rethrow', () => {
+    const plan = planSaveError({ status: 403, error: 'forbidden' });
+    assert.equal(plan.action, 'rethrow');
+  });
+
+  it('22. (h) 类型层守门：forbidden_remove plan 的 shouldDeleteDraft 是字面 false', () => {
+    const plan = planSaveError({
+      status: 403,
+      error: 'forbidden_remove_node',
+      message: 'x',
+    });
+    if (plan.action !== 'forbidden_remove') {
+      assert.fail('expected forbidden_remove plan');
+    }
+    // 编译期：shouldDeleteDraft 类型是 false 字面常量；运行期 sanity
+    const _typeCheck: false = plan.shouldDeleteDraft;
+    void _typeCheck;
+    assert.equal(plan.shouldDeleteDraft, false);
+  });
+});
+
+// ============================================================
 // (h) 类型层守门 sanity：检查 plan key 集合，防编译期 bypass
 // ============================================================
 

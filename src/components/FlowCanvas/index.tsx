@@ -77,6 +77,10 @@ interface FlowCanvasProps {
    *  调用方必须显式传 user，避免登录用户被静默当游客而无法编辑自己的节点。
    *  游客场景显式传 null。 */
   user: UserPublic | null;
+  /** v1.16.2：当前画布可见性。给 canDeleteNodeData 用——公共画布上普通用户不能删已保存节点。
+   *  默认 'private' 向后兼容（本地草稿 / 私有画布走原有删节点行为）。
+   *  caller 应该按 canvasMetaState.kind === 'server' ? meta.visibility : 'private' 传。 */
+  canvasVisibility?: 'public' | 'private';
   /** P2I：从 JSON 文件导入为新画布。caller 实现文件选择 + apiImport + URL 跳新 canvasId */
   onImport?: () => void;
   /** P3E-3 批注 bundle（透传给 NodeDetailPanel） */
@@ -105,6 +109,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   onDuplicateSheet,
   readOnly = false,
   user,
+  canvasVisibility = 'private',
   onImport,
   annotationsBundle,
 }: {
@@ -125,6 +130,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   onDuplicateSheet?: (sheetId: string) => void;
   readOnly?: boolean;
   user: UserPublic | null;
+  canvasVisibility?: 'public' | 'private';
   onImport?: () => void;
   /** P3E-3 批注 bundle（由 BFV 接 useAnnotations + 派生）；不传 = 不显示批注 tab/徽章 */
   annotationsBundle?: AnnotationsBundle | null;
@@ -592,6 +598,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
     dragHistoryTimerRef,
     readOnly,
     user,
+    canvasVisibility,
   });
 
   // 使用 useFlowOperations Hook
@@ -1209,6 +1216,7 @@ export function FlowCanvas({
   onDuplicateSheet,
   readOnly = false,
   user,
+  canvasVisibility,
   onImport,
   annotationsBundle,
 }: FlowCanvasProps) {
@@ -1230,6 +1238,7 @@ export function FlowCanvas({
         onDuplicateSheet={onDuplicateSheet}
         readOnly={readOnly}
         user={user}
+        canvasVisibility={canvasVisibility}
         onImport={onImport}
         annotationsBundle={annotationsBundle}
       />

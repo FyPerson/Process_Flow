@@ -326,6 +326,20 @@ export function BusinessFlowVisualization() {
           setConflictDialogOpen(true);
           break;
         }
+        case 'forbidden_remove': {
+          // v1.16.2：服务端拒删（公共画布上普通用户的物理删 / 普通用户软删整画布）
+          // 弹 Toast 提示 + 重新加载主版本撤销前端"幽灵删除"
+          toast.show({
+            key: 'forbidden-remove',
+            severity: 'warning',
+            title: '无法删除',
+            detail: result.message,
+            durationMs: 8000,
+          });
+          // 重载主版本，让被"幽灵删除"的节点在前端显示出来
+          await discardAndReload();
+          break;
+        }
         case 'skipped':
           // 已有保存在飞行中（自动保存 timer 撞手动点击）；顶栏正在显示"保存中…"
           break;
@@ -347,7 +361,7 @@ export function BusinessFlowVisualization() {
         durationMs: 8000,
       });
     }
-  }, [save, toast, buildMergeToastDetail]);
+  }, [save, toast, buildMergeToastDetail, discardAndReload]);
 
   // Day 4 F-11 + D-1 + H1：「保存草稿并查看最新版本」按钮
   // 主动 PUT draft 成功后再 discardAndReload；PUT 失败不 reload，保留弹窗 + dirty
@@ -1048,6 +1062,9 @@ export function BusinessFlowVisualization() {
             getProjectData={getProjectData}
             readOnly={readOnly}
             user={user}
+            canvasVisibility={
+              canvasMetaState.kind === 'server' ? canvasMetaState.meta.visibility : 'private'
+            }
             onImport={readOnly ? undefined : handleImport}
             // 多画布标签栏 —— readOnly 时所有 mutation 走 no-op，避免游客误以为能改
             sheets={project?.sheets || []}
