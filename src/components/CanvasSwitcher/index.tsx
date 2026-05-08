@@ -12,6 +12,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { type ApiError, type CanvasListItem, listCanvases } from '../../api/canvases';
+import { useAuth } from '../../auth/AuthContext';
+import { formatCanvasLabel } from './formatCanvasLabel';
 import './styles.css';
 
 interface Props {
@@ -25,6 +27,8 @@ interface Props {
 
 export function CanvasSwitcher({ currentCanvasId, dirty = false, saving = false }: Props) {
   const [, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
+  const currentUserId = user?.id ?? null;
   const [open, setOpen] = useState(false);
   const [canvases, setCanvases] = useState<CanvasListItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -98,10 +102,22 @@ export function CanvasSwitcher({ currentCanvasId, dirty = false, saving = false 
     [setSearchParams, currentCanvasId, dirty, saving],
   );
 
-  const currentLabel =
-    currentCanvasId === null
-      ? '本地草稿'
-      : canvases.find((c) => c.id === currentCanvasId)?.name ?? `画布 #${currentCanvasId}`;
+  // Trigger 标签：本地草稿走 📁 本地草稿；服务端画布按 formatCanvasLabel 规则拼前缀 + name
+  const currentCanvas =
+    currentCanvasId !== null
+      ? canvases.find((c) => c.id === currentCanvasId) ?? null
+      : null;
+  const triggerLabel: { icon: string; text: string } = (() => {
+    if (currentCanvasId === null) {
+      return { icon: '📁', text: '本地草稿' };
+    }
+    if (!currentCanvas) {
+      // 列表加载中或当前画布刚切换过来还没拉到列表
+      return { icon: '📁', text: `画布 #${currentCanvasId}` };
+    }
+    const label = formatCanvasLabel({ canvas: currentCanvas, currentUserId });
+    return { icon: label.icon, text: `${label.prefix}${label.name}` };
+  })();
 
   return (
     <div className="canvas-switcher" ref={containerRef}>
@@ -111,7 +127,9 @@ export function CanvasSwitcher({ currentCanvasId, dirty = false, saving = false 
         onClick={() => setOpen((v) => !v)}
         title="切换画布"
       >
-        <span className="canvas-switcher-trigger-label">📁 {currentLabel}</span>
+        <span className="canvas-switcher-trigger-label">
+          {triggerLabel.icon} {triggerLabel.text}
+        </span>
         <span className="canvas-switcher-trigger-arrow">▼</span>
       </button>
       {open && (
@@ -141,6 +159,7 @@ export function CanvasSwitcher({ currentCanvasId, dirty = false, saving = false 
             !error &&
             canvases.map((c) => {
               const active = c.id === currentCanvasId;
+              const label = formatCanvasLabel({ canvas: c, currentUserId });
               return (
                 <button
                   key={c.id}
@@ -150,10 +169,9 @@ export function CanvasSwitcher({ currentCanvasId, dirty = false, saving = false 
                   }`}
                   onClick={() => handlePick(c.id)}
                 >
-                  <span className="canvas-switcher-item-icon">
-                    {c.visibility === 'public' ? '🌐' : '🔒'}
-                  </span>
-                  <span className="canvas-switcher-item-name">{c.name}</span>
+                  <span className="canvas-switcher-item-icon">{label.icon}</span>
+                  <span className="canvas-switcher-item-prefix">{label.prefix}</span>
+                  <span className="canvas-switcher-item-name">{label.name}</span>
                   {(c.activeEditors ?? 0) > 0 && (
                     <span
                       className="canvas-switcher-item-editors"

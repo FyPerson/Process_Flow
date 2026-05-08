@@ -87,6 +87,13 @@
   flex-shrink: 0;
 }
 
+/* 2026-05-08：[公共画布] / [个人] / [老张的] 等前缀；与 name 用颜色区分让用户更容易扫 */
+.canvas-switcher-item-prefix {
+  color: #94a3b8;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
 .canvas-switcher-item-name {
   flex: 1;
   white-space: nowrap;

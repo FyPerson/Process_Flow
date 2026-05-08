@@ -1,4 +1,4 @@
-// P3D-2 第 1 步：canEditNode 6 分支单测
+﻿// P3D-2 第 1 步：canEditNode 6 分支单测
 //
 // 矩阵（与 canEditNode.ts 文件头注释对应）：
 //
@@ -26,9 +26,9 @@ import type { UserPublic } from './api.ts';
 import type { Node, NodeChange, Edge } from '@xyflow/react';
 import type { FlowNodeData } from '../types/flow.ts';
 
-const adminUser: UserPublic = { id: 1, username: 'admin', role: 'admin' };
-const normalUser: UserPublic = { id: 2, username: 'alice', role: 'user' };
-const otherUser: UserPublic = { id: 3, username: 'bob', role: 'user' };
+const adminUser: UserPublic = { id: 1, username: 'admin', role: 'admin', nickname: 'fixture_nick' };
+const normalUser: UserPublic = { id: 2, username: 'alice', role: 'user', nickname: 'fixture_nick' };
+const otherUser: UserPublic = { id: 3, username: 'bob', role: 'user', nickname: 'fixture_nick' };
 
 describe('canEditNodeData', () => {
   it('1. 游客（user=null）→ false（无论其他参数）', () => {

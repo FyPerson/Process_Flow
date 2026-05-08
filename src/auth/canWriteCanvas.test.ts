@@ -1,4 +1,4 @@
-// P3D-2 step 2：canWriteCanvas 单测（codex 二审后改用三态）
+﻿// P3D-2 step 2：canWriteCanvas 单测（codex 二审后改用三态）
 // 与服务端 canWrite() 行为一致 + 加载/本地状态显式拆分（src/auth/canWriteCanvas.ts 矩阵）
 
 import { describe, it } from 'node:test';
@@ -7,9 +7,9 @@ import { canWriteCanvas } from './canWriteCanvas.ts';
 import type { UserPublic } from './api.ts';
 import type { CanvasMetaState } from '../hooks/useMultiCanvas.ts';
 
-const adminUser: UserPublic = { id: 1, username: 'admin', role: 'admin' };
-const ownerUser: UserPublic = { id: 2, username: 'alice', role: 'user' };
-const otherUser: UserPublic = { id: 3, username: 'bob', role: 'user' };
+const adminUser: UserPublic = { id: 1, username: 'admin', role: 'admin', nickname: 'fixture_nick' };
+const ownerUser: UserPublic = { id: 2, username: 'alice', role: 'user', nickname: 'fixture_nick' };
+const otherUser: UserPublic = { id: 3, username: 'bob', role: 'user', nickname: 'fixture_nick' };
 
 const localState: CanvasMetaState = { kind: 'local' };
 const loadingState: CanvasMetaState = { kind: 'loading' };
