@@ -97,7 +97,7 @@
 <h1>业务全景图 使用手册</h1>
 <blockquote>
 <p><strong>受众</strong>：业务部门关键角色 / 产品岗 / 普通用户
-<strong>版本</strong>：v1.15.0（2026-05-08）
+<strong>版本</strong>：v1.18.1（2026-05-09）
 <strong>访问地址</strong>：<code>http://172.16.0.138:3001</code>（公司内网）</p>
 </blockquote>
 <hr>
@@ -236,21 +236,14 @@
 <blockquote>
 <p><strong>关于&quot;物理删自己加的节点&quot;的特殊说明</strong>：</p>
 <ul>
-<li>节点<strong>保存到主版本之前</strong>（你刚拖出来还没自动保存）→ ✅ 可以删（用 Delete 键 / 撤销，合理的&quot;刚拖错了&quot;场景）</li>
+<li>节点<strong>保存到主版本之前</strong>（你刚拖出来还没自动保存）→ ✅ 可以删（按 <code>Backspace</code> / 撤销，合理的&quot;刚拖错了&quot;场景）</li>
 <li>节点<strong>保存到主版本之后</strong> → ❌ 即使是你自己加的也不能再删</li>
 </ul>
 <p><strong>为什么自己加的也不能删</strong>？
 假设你（A）加了节点【F1】，同事（B）顺着【F1】又添加了【F2】【F3】（连线接在 F1 后）。如果你后悔删掉【F1】，B 加的【F2】【F3】就会悬空——破坏团队协作。
 <strong>替代方案</strong>：用【标废弃】（半透明保留 + 角标&quot;已废弃&quot;），后续业务流程不再走它，但历史不丢；或者请 admin 协助物理删除。</p>
 </blockquote>
-<h3>0.4 数据流程：从你画到别人看见</h3>
-<ol>
-<li>你画一笔 → 浏览器内存里改 → 顶栏显示 <strong>● 未保存</strong></li>
-<li>30 秒后，自动存为&quot;草稿&quot;（只有你看得到，别人看不到）→ 顶栏显示 <strong>草稿已保存 14:23</strong></li>
-<li>你点 <strong>保存</strong> 按钮 → 写入&quot;主版本&quot;→ 别人刷新就能看到（仅在他有权限的画布上）</li>
-<li>下次打开同一画布 → 如果还有未提交的草稿，弹出&quot;草稿恢复&quot;对话框（详见 §3.4）</li>
-</ol>
-<h3>0.5 常见困惑 FAQ</h3>
+<h3>0.4 三条最常见困惑</h3>
 <blockquote>
 <p><strong>Q：我画了好久没点保存，关了浏览器会丢吗？</strong></p>
 <p>A：<strong>不会</strong>。改完 30 秒会自动存为草稿。下次进来会问你&quot;要不要恢复草稿&quot;。</p>
@@ -260,20 +253,8 @@
 <p>A：看不到。私有画布 = 仅你和 admin 能看。</p>
 </blockquote>
 <blockquote>
-<p><strong>Q：公共画布我能加节点 / 改东西吗？</strong></p>
-<p>A：<strong>能加节点、改你自己加的节点、加批注</strong>。但<strong>不能改别人加的节点、不能物理删节点</strong>——服务端会拒绝。想&quot;删&quot;别人加的节点？用【标废弃】（半透明保留，不真删）。详见 §0.3 权限矩阵。</p>
-</blockquote>
-<blockquote>
-<p><strong>Q：&quot;主版本&quot;是什么意思？跟草稿什么关系？</strong></p>
-<p>A：<strong>主版本</strong> = 正式存档，别人能看到的就是主版本。<strong>草稿</strong> = 你&quot;还没决定要不要正式存&quot;的临时存稿，只有你自己能看。</p>
-</blockquote>
-<blockquote>
-<p><strong>Q：私有画布怎么变成公共画布让团队都能看？</strong></p>
-<p>A：找 admin。admin 在后台点&quot;发布&quot;按钮就行。</p>
-</blockquote>
-<blockquote>
-<p><strong>Q：我能不能把整个公共画布删掉？</strong></p>
-<p>A：<strong>不能</strong>。普通用户对公共画布的&quot;归档（软删）&quot;权限是关闭的——只有 admin 能归档公共画布。这是为了防止误操作让团队画布从所有人列表里消失。</p>
+<p><strong>Q：公共画布我能改吗？</strong></p>
+<p>A：能加节点 / 改自己的 / 加批注；不能改别人的、不能物理删节点。详细矩阵见 §0.3。</p>
 </blockquote>
 <hr>
 <h2>一、基础入门</h2>
@@ -308,7 +289,7 @@
 <li><strong>④ 右侧详情面板（抽屉式）</strong>：单击节点后从右侧滑入——显示节点的详情 / 批注；再次单击同一节点关闭</li>
 </ul>
 <blockquote>
-<p>此外，画布<strong>底部</strong>有 Sheet 标签栏（一个画布可有多个工作表，类似 Excel 的 sheet 切换）。<strong>在公共画布底部加新 sheet 分页 = 加在同一个公共画布里 = 对所有人可见</strong>（不是新建私有画布，详见 §3.7 场景 G）。</p>
+<p>此外，画布<strong>底部</strong>有 Sheet 标签栏（一个画布可有多个工作表，类似 Excel 的 sheet 切换）。<strong>在公共画布底部加新 sheet 分页 = 加在同一个公共画布里 = 对所有人可见</strong>（不是新建私有画布，详见 §3.6 场景 G）。</p>
 <p><strong>怎么打开右侧详情面板？</strong> 单击任何画布上的节点（流程节点 / 判断节点 / 审批节点 等），抽屉自动滑入。再次单击同一节点关闭。</p>
 </blockquote>
 <h3>1.4 第一次使用——按角色选路径</h3>
@@ -335,7 +316,7 @@
 </tbody>
 </table>
 <blockquote>
-<p><strong>重点</strong>：公共画布是<strong>多人协作画布</strong>——任何登录用户都能参与编辑（加节点、加批注、标废弃），不只是浏览。详见 §0.3 + §3.7。</p>
+<p>公共画布是<strong>多人协作画布</strong>，任何登录用户都能参与编辑（细则见 §0.3 / 协作场景见 §3.6）。</p>
 </blockquote>
 <h4>路径 A：浏览（或参与编辑）公共画布</h4>
 <ol>
@@ -361,7 +342,7 @@
 <hr>
 <h2>二、核心功能</h2>
 <h3>2.1 画节点</h3>
-<p><strong>添加节点</strong>：左侧功能面板&quot;节点&quot;分类下，把图标拖到画布上（流程节点 / 判断节点 / 审批节点 / 起止节点 四类）。</p>
+<p><strong>添加节点</strong>：左侧功能面板&quot;节点&quot;分类下，<strong>点击</strong>对应按钮（流程节点 / 判断节点 / 审批节点 / 起止节点 四类）→ 节点出现在画布中央，再拖到目标位置即可。</p>
 <p><strong>打开节点详情</strong>：<strong>单击节点</strong> → 右侧抽屉滑入（详情 / 批注两个 Tab）。</p>
 <p><img src="manual-imgs/04-add-node.png" alt="添加节点 + 详情面板"></p>
 <p><strong>改节点名（两种方式）</strong>：</p>
@@ -371,7 +352,7 @@
 </ul>
 <p><strong>移动节点</strong>：拖动即可。</p>
 <p><strong>复制 / 粘贴节点</strong>：<code>Ctrl+C</code> → <code>Ctrl+V</code>。注意：<strong>粘贴出来的节点是新 ID</strong>，跟原节点是不同的两个节点。</p>
-<p><strong>删除节点</strong>：选中 → 按 <code>Delete</code> 键。</p>
+<p><strong>删除节点</strong>：选中 → 按 <code>Backspace</code> 键。</p>
 <blockquote>
 <p><strong>注意</strong>：单击和双击是不同操作——单击开抽屉，双击进入节点名编辑。点错了按 Esc 取消。</p>
 </blockquote>
@@ -383,31 +364,26 @@
 </ol>
 <p><img src="manual-imgs/05-connect-edge.png" alt="连边操作"></p>
 <p><strong>改边的标签</strong>：双击边 → 输入文字（比如&quot;通过&quot;/“驳回”）。</p>
-<p><strong>删除边</strong>：选中边 → 按 <code>Delete</code> 键。</p>
+<p><strong>删除边</strong>：选中边 → 按 <code>Backspace</code> 键。</p>
 <h3>2.3 分组（Group）</h3>
 <p>分组用来把&quot;逻辑相关&quot;的节点框在一起，比如&quot;采购流程&quot;、“审批流程”。</p>
 <p><strong>新建分组</strong>：</p>
 <ol>
 <li>选中多个节点（按住 Shift 点 / 或框选）</li>
-<li>右键 → 打组</li>
+<li>按 <code>Ctrl+G</code>（或左侧面板【创建分组】按钮）</li>
 <li>给分组起个名字</li>
 </ol>
-<p><strong>进出分组</strong>：把节点拖进分组框 / 拖出分组框 → 自动加入 / 移出。</p>
+<blockquote>
+<p>注意：选中的节点必须都是<strong>你自己创建的</strong>才能成组（公共画布上不能把别人的节点圈进自己的新分组）。</p>
+</blockquote>
+<p><strong>进出分组</strong>：把节点拖进分组框 / 拖出分组框 → 自动加入 / 移出。
+也可以单击节点 → 右侧抽屉 →【移出分组】按钮（适合用键盘 / 鼠标拖不准的场景）。</p>
 <p><strong>删除分组</strong>：</p>
 <ul>
-<li>删除分组<strong>保留节点</strong>：右键 → 解组（节点留下来，分组框去掉）</li>
-<li>删除分组<strong>连节点一起删</strong>：选中分组 → <code>Delete</code> 键</li>
+<li><strong>解散分组保留子节点</strong>：仅 admin 可操作（按 <code>Ctrl+Shift+G</code>）。普通用户想&quot;拆开&quot;分组：单击需要拆的节点 → 右侧抽屉 →【移出分组】，逐个移出</li>
+<li><strong>删除分组连子节点一起删</strong>：选中分组 → <code>Backspace</code> 键（同样要满足&quot;分组及子节点都是你创建的&quot;权限）</li>
 </ul>
-<h3>2.4 子流程</h3>
-<p>子流程节点是一个特殊节点——双击它，会&quot;钻进去&quot;看更细的流程。</p>
-<p><strong>用途</strong>：流程太复杂时，把一部分细节折叠成子流程节点，主图保持简洁。</p>
-<p><img src="manual-imgs/06-subflow.png" alt="子流程钻入"></p>
-<p><strong>钻入</strong>：双击子流程节点 → 进入子流程画布。</p>
-<p><strong>返回上层</strong>：左上角面包屑导航点回去。</p>
-<blockquote>
-<p><strong>注意</strong>：当前版本子流程为只读展示用途；详细使用方法可咨询管理员。</p>
-</blockquote>
-<h3>2.5 批注（Annotation）</h3>
+<h3>2.4 批注（Annotation）</h3>
 <p>批注用来在节点上加讨论 / 提问 / 标记，类似&quot;便签&quot;。</p>
 <p><strong>添加批注</strong>：</p>
 <ol>
@@ -424,7 +400,14 @@
 </ul>
 <p><strong>谁能关闭批注</strong>：批注作者本人 / admin（即使该画布是别人创建的）。</p>
 <p><strong>批注是按节点绑定的</strong>——节点删了，批注一起删；节点 ID 变了（比如复制粘贴产生的新 ID），批注<strong>不会跟着</strong>。</p>
-<h3>2.6 保存</h3>
+<h3>2.5 保存</h3>
+<p><strong>数据流转</strong>（从你画到别人看见）：</p>
+<ol>
+<li>你画一笔 → 浏览器内存里改 → 顶栏显示 <strong>● 未保存</strong></li>
+<li>30 秒后，自动存为&quot;草稿&quot;（仅你能看，不写主版本）→ 顶栏显示 <strong>草稿已保存 14:23</strong></li>
+<li>你点 <strong>保存</strong> 按钮 → 写入&quot;主版本&quot;→ 别人刷新就能看到（仅他有权限的画布上）</li>
+<li>下次打开同一画布 → 如果还有未提交的草稿，弹出&quot;草稿恢复&quot;对话框（详见 §3.4）</li>
+</ol>
 <p>画布工具栏右上角的保存按钮，会根据状态自动变化：</p>
 <p><img src="manual-imgs/08-save-states.png" alt="画布工具栏（含保存按钮）"></p>
 <p>可能的状态文案（按情况显示其中一种）：</p>
@@ -490,7 +473,7 @@
 <blockquote>
 <p><strong>新用户第一次画完一定要点&quot;另存为新画布&quot;</strong>——否则你画的东西只在本地草稿里，换台电脑或清浏览器缓存就丢了。</p>
 </blockquote>
-<h3>2.7 导出 / 导入</h3>
+<h3>2.6 导出 / 导入</h3>
 <p><strong>导出</strong>：</p>
 <ul>
 <li><strong>导出当前内存版本</strong>：把你现在屏幕上看到的画布（含未保存改动）下载为 JSON</li>
@@ -500,7 +483,7 @@
 <blockquote>
 <p><strong>小贴士</strong>：真冲突无法解决时（详见 §3.5.3），可以先&quot;导出当前内存版本&quot;作为备份，再做后续操作。</p>
 </blockquote>
-<h3>2.8 废弃节点 vs 删除</h3>
+<h3>2.7 废弃节点 vs 删除</h3>
 <p>某个流程或节点不再使用了，但又想保留历史痕迹？用&quot;标记废弃&quot;。</p>
 <table>
 <thead>
@@ -543,7 +526,7 @@
 <blockquote>
 <p><strong>注</strong>：上图截图取自单浏览器视角；不同用户登录后看到的实际&quot;哪些节点能改 / 哪些不能改&quot;是按 creator_id 区分的。</p>
 </blockquote>
-<p><strong>想画基于公共画布的私人版本？</strong> 进入公共画布会弹警告，点【📋 复制为我的私人画布】或顶栏【📋 复制为私人】按钮即可，详见 §3.7 场景 B。</p>
+<p><strong>想画基于公共画布的私人版本？</strong> 进入公共画布会弹警告，点【📋 复制为我的私人画布】或顶栏【📋 复制为私人】按钮即可，详见 §3.6 场景 B。</p>
 <h3>3.2 在线状态：谁也在编辑</h3>
 <p>画布工具栏会显示一个 <strong>👥 X 人在编辑</strong> 角标，告诉你谁也打开了这个画布。</p>
 <p><img src="manual-imgs/09-other-editors.png" alt="画布工具栏（在线编辑者角标显示在工具栏区域）"></p>
@@ -744,32 +727,11 @@
 <li>慌乱中乱点——先看清楚冲突的是哪个节点的哪个字段</li>
 </ul>
 </blockquote>
-<h3>3.6 基础版本过期</h3>
-<p>你打开了一个画布很久没动 → 别人改了<strong>很多次</strong> → 你点保存 → 可能弹出对话框&quot;<strong>画布历史版本已超出可合并范围</strong>&quot;。</p>
-<p><strong>意思</strong>：服务器为了节省空间，<strong>清理了你打开时的那个旧版本快照</strong>——服务端无法基于&quot;那个旧版本&quot;做合并了。</p>
-<p><strong>对话框上的两个按钮</strong>：</p>
-<table>
-<thead>
-<tr>
-<th>按钮</th>
-<th>效果</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>保存草稿后重载</strong>（蓝色主按钮）</td>
-<td>先把你的改动存为草稿 + 重载最新版本（推荐）</td>
-</tr>
-<tr>
-<td><strong>留在草稿</strong></td>
-<td>不重载，自动保存暂停——你需要手动刷新页面才能继续</td>
-</tr>
-</tbody>
-</table>
 <blockquote>
-<p><strong>怎么避免</strong>：长时间不动的画布，每隔半小时点一次保存（哪怕没改东西，刷新一下页面也行）。这个对话框在内网 5 人协作场景下很少出现，遇到时按上面操作即可。</p>
+<p><strong>罕见场景：基础版本过期</strong></p>
+<p>如果你打开画布很久没动 + 别人改了很多次 → 点保存可能弹&quot;<strong>画布历史版本已超出可合并范围</strong>&quot;——服务器清理了你打开时的旧版本快照，无法做合并了。<strong>两个按钮</strong>：「<strong>保存草稿后重载</strong>」（推荐）会先存草稿再重载最新版本；「<strong>留在草稿</strong>」不重载，自动保存暂停。<strong>怎么避免</strong>：长时间不动的画布，每隔半小时点一次保存或刷新页面。这个对话框在 5 人内网协作场景下很少出现。</p>
 </blockquote>
-<h3>3.7 协作工作流（按场景速查）</h3>
+<h3>3.6 协作工作流（按场景速查）</h3>
 <p>不同场景下的操作路径——找到你的场景，照着做。</p>
 <h4>场景 A：我想直接参与编辑团队的公共画布</h4>
 <ol>
@@ -788,9 +750,9 @@
 </li>
 <li>选「继续编辑公共画布」后：直接加节点 / 加批注 / 改你自己加的节点 → 点【保存】（同会话内同一画布只弹一次警告）</li>
 </ol>
-<p><strong>注意</strong>：你<strong>不能改别人加的节点</strong>，也<strong>不能物理删节点</strong>。如果你想&quot;删&quot;别人加的，请用【标废弃】（半透明保留历史，不真删）。</p>
 <blockquote>
-<p>为什么有警告弹窗？公共画布上的修改<strong>自动保存且对所有人可见</strong>，且节点一旦加上<strong>普通用户不能删</strong>。所以系统建议你&quot;先复制到私人副本上排练&quot;再决定要不要直接编辑（场景 B）。</p>
+<p>你能做什么 / 不能做什么见 §0.3 权限矩阵。<strong>核心红线</strong>：不能改别人加的节点、不能物理删节点（想&quot;撤销&quot;用【标废弃】，见场景 E）。</p>
+<p>为什么进画布要弹警告？公共画布上的修改<strong>自动保存且对所有人可见</strong>，节点加上后<strong>普通用户不能再删</strong>。系统建议你先复制到私人副本上排练（场景 B）。</p>
 </blockquote>
 <h4>场景 B：我想基于公共画布画自己的版本（不影响公共版）</h4>
 <p><strong>两种入口都可以：</strong></p>
@@ -805,32 +767,28 @@
 <blockquote>
 <p>适合场景：调研后想画&quot;现状 vs 目标&quot;两版对比；探索一个改进方案但不想干扰团队主流程；或者只是想在私有空间试探性地改一改。</p>
 </blockquote>
-<h4>场景 C：我私有画布改完了，想让团队都能看（“提交合并”）</h4>
-<p><strong>当前应用没有&quot;自动合并到公共画布&quot;按钮</strong>。三条路：</p>
+<h4>场景 C：我私有副本改完了，想让团队都能看（“提交合并”）</h4>
+<p><strong>当前应用没有&quot;自动合并到公共画布&quot;按钮</strong>。两条路：</p>
 <table>
 <thead>
 <tr>
 <th>方式</th>
-<th>操作</th>
+<th>适合什么时候用</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>C1（推荐）找 admin 帮忙</strong></td>
-<td>把你私有画布的链接发给 admin。admin 决定：(a) 直接修改原公共画布（手工对比改）/ (b) 把你的私有画布发布为新公共画布（独立的）</td>
+<td><strong>C1 直接在公共画布上加你的节点</strong>（推荐）</td>
+<td>多数情况下走这条。公共画布本来就是多人协作的，你新加的节点对所有人可见，且自动绑定 creator_id 保护你不被覆盖</td>
 </tr>
 <tr>
-<td><strong>C2 自己成为公共画布的作者</strong></td>
-<td>admin 把公共画布的 owner 改成你（一次性授权），你成为该画布的作者，后续可以直接编辑（含改&quot;原本不是你加的节点&quot;——前提是把你设为 owner 时画布会重新认定权限）</td>
-</tr>
-<tr>
-<td><strong>C3 协作直接编辑</strong></td>
-<td>既然公共画布允许多人编辑，<strong>直接打开原公共画布加节点</strong>就好——没必要先做副本再合并</td>
+<td><strong>C2 找 admin 帮忙发布</strong></td>
+<td>你画的是&quot;另一个流程图&quot;（不是补充已有的，而是独立的新一份）→ 把你私有画布发给 admin，由 admin 在后台【发布】成新的公共画布</td>
 </tr>
 </tbody>
 </table>
 <blockquote>
-<p><strong>多数情况推荐 C3</strong>：公共画布本来就是多人协作的，直接在上面加你的节点即可。<strong>C1/C2 只在你需要&quot;先单独尝试再决定要不要发&quot;时用</strong>。</p>
+<p>简单说：<strong>改公共画布上的某个流程</strong>直接在公共画布上加节点（场景 A 路径）；<strong>画一个全新的流程</strong>画完后请 admin 发布（场景 F 路径）。私有副本主要用于&quot;试探性探索 / 个人草稿&quot;（场景 B），改完不一定都要发布。</p>
 </blockquote>
 <h4>场景 D：我和别人同时改公共画布（A 加 X 节点，B 加 Y 节点）</h4>
 <p>详见 §3.5.2 的具体例子。简单说：<strong>只要你和别人加的节点不重叠</strong>（节点 ID 不冲突，没改同一个字段），系统会<strong>自动合并</strong>——你保存时顶栏弹&quot;已为你合并对方的改动&quot;Toast，画布上会<strong>自动出现别人加的节点</strong>。</p>
@@ -842,7 +800,7 @@
 <li><strong>请 admin 物理删</strong>：admin 在公共画布上有完整删除权限，但 admin 删之前会权衡&quot;是否会让别人加的节点悬空&quot;</li>
 </ul>
 <blockquote>
-<p><strong>特例</strong>：节点刚拖出来<strong>还没自动保存</strong>（30 秒内）的话可以用 Delete 直接删——这种情况是&quot;刚拖错了/刚画错了&quot;，不会破坏协作历史。</p>
+<p><strong>特例</strong>：节点刚加出来<strong>还没自动保存</strong>（30 秒内）的话可以按 <code>Backspace</code> 直接删——这种情况是&quot;刚加错了/刚画错了&quot;，不会破坏协作历史。</p>
 <p><strong>如果你点了删除却看到错误提示</strong>：“无法删除——公共画布上的节点只允许管理员物理删除”，是正常的；系统会自动撤销前端的删除操作（节点在 1-2 秒内会重新出现），数据安全无影响。</p>
 </blockquote>
 <h4>场景 F：admin 想发布私有画布为公共</h4>
@@ -866,7 +824,7 @@
 <p>想删自己加错的 sheet？右键该 sheet tab → 删除（仅 sheet 上无节点、或你是该 canvas 的 owner / admin 时可用）。</p>
 </blockquote>
 <hr>
-<h3>3.8 协作的几条纪律</h3>
+<h3>3.7 协作的几条纪律</h3>
 <ul>
 <li>✅ 大改之前先在协作群里说一声：“我开始改 XX 画布的 XX 部分”</li>
 <li>✅ 看到 <strong>👥 X 人在编辑</strong> 时，避免大范围拖动 / 删除其他人正在动的区域</li>
@@ -899,7 +857,11 @@
 <td>撤销 / 重做</td>
 </tr>
 <tr>
-<td><code>Delete</code></td>
+<td><code>Ctrl+G</code></td>
+<td>创建分组（先选中多个你创建的节点）</td>
+</tr>
+<tr>
+<td><code>Backspace</code></td>
 <td>删除选中的节点 / 边</td>
 </tr>
 <tr>
@@ -950,10 +912,6 @@
 <td>把多个节点框在一起的逻辑分组</td>
 </tr>
 <tr>
-<td><strong>子流程</strong>（Subflow）</td>
-<td>可钻入查看详情的特殊节点</td>
-</tr>
-<tr>
 <td><strong>批注</strong>（Annotation）</td>
 <td>节点上的讨论 / 提问 / 标记</td>
 </tr>
@@ -988,7 +946,7 @@
 <p>具体联系人请向你的项目负责人确认。</p>
 <hr>
 <blockquote>
-<p><strong>手册版本</strong>：v1.0（2026-05-08，对应应用版本 v1.15.0）</p>
+<p><strong>手册版本</strong>：v1.1（2026-05-09，对应应用版本 v1.18.1）</p>
 <p><strong>反馈</strong>：使用中遇到问题或文档错误，请联系项目管理员。</p>
 </blockquote>
 
