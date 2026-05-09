@@ -2,8 +2,9 @@
 
 基于 React Flow 的业务流程可视化协作工具。集团内部 5 人并发使用，支持多人节点级权限、批注、admin 管理后台。
 
-- **当前版本**：v1.15.0（阶段 5 Day 4 完工 / 合并算法 4 天 MVP 全闭环，2026-05-08）
+- **当前版本**：v1.18.0（阶段 5 4/4 全闭环 + 业务用户使用手册 v1.0 + 昵称功能 + 公共画布编辑警告 + 复制为我的私人画布，2026-05-09）
 - **生产**：http://172.16.0.138:3001/
+- **使用手册**：http://172.16.0.138:3001/manual.html（业务用户向 / 顶栏📖入口直达）
 - **技术栈**：React 19 + TypeScript + Vite + React Flow / Express + better-sqlite3 + PM2
 
 ## 快速开始
@@ -22,7 +23,7 @@ npm run dev
 ## 验证 + 部署
 
 ```bash
-# 一键验证（lint:ids → check:invariants → check:conflict-guards → typecheck:test → 单测 447 项）
+# 一键验证（lint:ids → check:invariants → check:conflict-guards → typecheck:test → 单测 535 项）
 npm test
 
 # 端到端（dev server 起后另开终端）
@@ -39,6 +40,7 @@ powershell -File scripts/deploy.ps1
 
 | 类别 | 入口 |
 |---|---|
+| **业务用户向操作手册** | [docs/使用手册.md](docs/使用手册.md)（v1.0 / 580 行 / 13 配图 / 顶栏📖入口直达） |
 | 架构与约定 | [CLAUDE.md](CLAUDE.md)（项目语境 + 红线 + 命令速查，给 Claude/Codex 看） |
 | 主方案 | [docs/规划/多人协作-方案.md](docs/规划/多人协作-方案.md)（阶段 0-6 实施计划） |
 | 技术债 | [docs/规划/技术债务登记.md](docs/规划/技术债务登记.md) |

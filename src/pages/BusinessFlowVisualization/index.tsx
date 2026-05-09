@@ -6,6 +6,7 @@ import { OtherEditorsBadge } from '../../components/OtherEditorsBadge';
 import { SaveStatus } from '../../components/SaveStatus';
 import { ConflictResolutionDialog } from '../../components/ConflictResolutionDialog';
 import { BaseVersionExpiredDialog } from '../../components/BaseVersionExpiredDialog';
+import { PublicEditWarningDialog } from '../../components/PublicEditWarningDialog';
 import { useToast } from '../../components/Toast';
 import { downloadCanvasFromServer, downloadProjectAsLocal } from '../../utils/canvas-export';
 import { importCanvas, putDraft as apiPutDraft } from '../../api/canvases';
@@ -19,6 +20,7 @@ import {
   createEmptyProject,
 } from '../../types/flow';
 import { useMultiCanvas } from '../../hooks/useMultiCanvas';
+import { usePublicEditAck } from '../../hooks/usePublicEditAck';
 import { useHeartbeat } from '../../hooks/useHeartbeat';
 import { useDraftAutosave } from '../../hooks/useDraftAutosave';
 import { useDraftRecovery } from '../../hooks/useDraftRecovery';
@@ -73,6 +75,13 @@ export function BusinessFlowVisualization() {
 
   const { user } = useAuth();
 
+  // 公共画布编辑警告 ack 状态 ↔ useMultiCanvas autosave 锁的循环耦合：
+  // - useMultiCanvas 需要 autosaveLocked 入参（codex 取舍审 H1：未 ack 公共画布禁 autosave）
+  // - usePublicEditAck 需要 useMultiCanvas 返回的 canvasMetaState/project/isProjectLoading
+  // 用一个 BFV 局部 state 反向回灌：usePublicEditAck → useEffect → setPublicEditAutosaveLocked
+  //   → useMultiCanvas 下一次渲染读到新值 → autosave effect 重跑（锁/解锁生效）
+  const [publicEditAutosaveLocked, setPublicEditAutosaveLocked] = useState(false);
+
   // 使用多画布 Hook
   const {
     project,
@@ -101,7 +110,11 @@ export function BusinessFlowVisualization() {
     createOnServer,
     discardAndReload,
     clearConflictAndResumeAutosave,
-  } = useMultiCanvas({ canvasId: canvasIdFromUrl, storageKey: 'saved-flow-data' });
+  } = useMultiCanvas({
+    canvasId: canvasIdFromUrl,
+    storageKey: 'saved-flow-data',
+    autosaveLocked: publicEditAutosaveLocked,
+  });
 
   const toast = useToast();
 
@@ -162,10 +175,34 @@ export function BusinessFlowVisualization() {
   // - 普通用户 + 公共未归档 → 可写
   // - 普通用户 + 私有未归档 + 是 owner → 可写
   // - 普通用户 + 私有未归档 + 非 owner → 不可写（route canRead 已兜底，前端 fail-closed）
-  const canvasWritable = useMemo(
+  const baseCanvasWritable = useMemo(
     () => canWriteCanvas(canvasMetaState, user),
     [canvasMetaState, user],
   );
+
+  // 公共画布编辑警告 ack 决议（仅普通用户 + 公共画布触发）
+  // codex 取舍审 H1/H2/M1/M3/M5：详见 src/hooks/usePublicEditAck.ts 注释
+  const {
+    shouldShowDialog: showPublicEditWarning,
+    isPublicAndUnacked,
+    ackAndContinueEdit,
+    setViewOnly: setPublicViewOnly,
+    ackedKey: publicEditAckedKey,
+  } = usePublicEditAck({
+    user,
+    canvasMetaState,
+    canvasId,
+    project,
+    isProjectLoading,
+  });
+
+  // 把 isPublicAndUnacked 反向回灌到 useMultiCanvas（autosave 锁，H1）
+  useEffect(() => {
+    setPublicEditAutosaveLocked(isPublicAndUnacked);
+  }, [isPublicAndUnacked]);
+
+  // 真正喂给下游的"可写"派生：未 ack 公共画布 → 强制 false，覆盖 canWriteCanvas 结果
+  const canvasWritable = baseCanvasWritable && !isPublicAndUnacked;
   // readOnly 保留作为派生量供下游使用，与 P3D-2 之前的 prop 形态兼容
   const readOnly = !canvasWritable;
 
@@ -464,6 +501,58 @@ export function BusinessFlowVisualization() {
       );
     }
   }, [project?.name, createOnServer, setSearchParams, user]);
+
+  // 复制为我的私人画布（公共画布逃生口）—— 与 handleSaveAsNew 的差别：
+  // - 当前已挂接服务端公共画布（canvasId != null）
+  // - prompt 默认名 = `${当前画布名} - 副本`
+  // - codex 取舍审 M4：文案明确告知"未保存改动会一起复制，公共画布不会因此保存"
+  // - codex 取舍审 H1：依赖外层 publicEditAutosaveLocked / saveInFlightRef 防 autosave 竞态
+  //   （未 ack 公共画布时 autosave 已被锁；已 ack 但用户主动点复制时，createOnServer
+  //   的 saveInFlightRef 同步拦截会防止双发）
+  const handleSaveAsCopy = useCallback(async () => {
+    if (!user) {
+      window.alert('请先登录后再复制画布');
+      return;
+    }
+    const defaultName = `${project?.name || '未命名画布'} - 副本`;
+    const promptMessage = dirty
+      ? '复制为我的私人画布（当前未保存改动会一起复制到副本，公共画布不会因此保存）：'
+      : '复制为我的私人画布：';
+    const name = window.prompt(promptMessage, defaultName);
+    if (!name || !name.trim()) return;
+    try {
+      const result = await createOnServer({
+        name: name.trim(),
+        visibility: 'private',
+        currentUserId: user.id,
+      });
+      if (result.discarded) {
+        console.warn(`[saveAsCopy] created canvas ${result.id} but user has navigated away; skip URL update`);
+        return;
+      }
+      // 跳到新画布；canvasIdProp 切换会让 useMultiCanvas 重置 dirty/conflict 等旧画布状态
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('canvasId', String(result.id));
+          return next;
+        },
+        { replace: false },
+      );
+      toast.show({
+        key: 'public-edit-copied',
+        severity: 'success',
+        title: '已复制为私人画布',
+        detail: `「${name.trim()}」是你的私人副本，可以放心修改`,
+        durationMs: 4000,
+      });
+    } catch (err) {
+      const apiErr = err as ApiError;
+      window.alert(
+        `复制失败：${apiErr?.error || apiErr?.message || '未知错误'}`
+      );
+    }
+  }, [project?.name, dirty, createOnServer, setSearchParams, user, toast]);
 
   const handleDiscardAndReload = useCallback(async () => {
     try {
@@ -967,6 +1056,15 @@ export function BusinessFlowVisualization() {
           onKeep={handleKeep}
         />
       )}
+      {/* 公共画布编辑警告（普通用户载入未 ack 公共画布时） */}
+      {showPublicEditWarning && (
+        <PublicEditWarningDialog
+          canvasName={project?.name || '未命名公共画布'}
+          onCopyToPrivate={handleSaveAsCopy}
+          onAckAndContinueEdit={ackAndContinueEdit}
+          onViewOnly={setPublicViewOnly}
+        />
+      )}
       {/* Day 4 F-11：真冲突弹窗（4B 流程） / base_version_expired 独立弹窗
           用 conflict.reason 区分两种语义：'conflict' / 'base_version_expired' */}
       {conflictDialogOpen && conflict !== null && (
@@ -1031,6 +1129,22 @@ export function BusinessFlowVisualization() {
             onDiscardAndReload={handleDiscardAndReload}
             onExportServer={handleExportServer}
             onExportLocal={handleExportLocal}
+            // 主动复制入口（codex 取舍审 L2 候选 A'）：仅普通用户 + 公共画布 + 已挂接服务端时显示
+            // 末尾审 L1：archived public 画布也允许复制——归档画布是只读历史，
+            // 复制为私人副本作为参考资料是合理逃生口（不补 !archived 条件）
+            canSaveAsPrivateCopy={
+              user !== null &&
+              user.role !== 'admin' &&
+              canvasMetaState.kind === 'server' &&
+              canvasMetaState.meta.visibility === 'public' &&
+              canvasId !== null
+            }
+            onSaveAsPrivateCopy={handleSaveAsCopy}
+            // codex 取舍审 H1 + 末尾审 M2：未 ack 公共画布期间手动 save 按钮也要 disable，
+            // 防 autosave 已锁但用户手动点 save 仍写公共画布
+            // 末尾审 M2：直接用 isPublicAndUnacked（hook 派生的同步值），不用 useMultiCanvas 返回的
+            // autosaveLocked 回显——后者经 BFV state 反向回灌有一帧滞后，可能被极快手动点击命中
+            saveDisabled={isPublicAndUnacked}
           />
           {/* Day 4 D-14 + X2 + H3：用户取消冲突弹窗后，顶栏显示重开入口 */}
           {conflict !== null && !conflictDialogOpen && (
@@ -1069,7 +1183,9 @@ export function BusinessFlowVisualization() {
           <FlowCanvas
             // 关键：切换画布或 hook 整体替换 project（fetch / discardAndReload / loadProject）
             // 时强制重新挂载，避免 React Flow 内部 useNodesState 缓存旧节点
-            key={`${canvasId ?? 'local'}:${activeSheetId}:${loadRevision}`}
+            // codex 取舍审 M5：拼上 publicEditAckedKey，让 ack 决议变化时 remount FlowCanvas，
+            // 避免 useNodesState 内部锁住旧 readOnly 值（acked false→true 后节点仍只读）
+            key={`${canvasId ?? 'local'}:${activeSheetId}:${loadRevision}:${publicEditAckedKey}`}
             sheetId={activeSheetId}
             nodes={processedNodes}
             edges={processedEdges}

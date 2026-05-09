@@ -34,7 +34,7 @@
 npm run dev              # api + vite 双进程并发，端口 5173
 
 # 验证（npm test 已串好 lint:ids → typecheck:test → 单测）
-npm test                 # 447 测试 + lint:ids + check:invariants + check:conflict-guards + 测试 type-check
+npm test                 # 478 测试 + lint:ids + check:invariants + check:conflict-guards + 测试 type-check
 npx tsc --noEmit -p tsconfig.client.json   # 前端类型检查（必须显式 -p）
 npx tsc --noEmit -p tsconfig.server.json   # 服务端类型检查
 npx tsc --noEmit -p tsconfig.test.json     # 测试类型检查
@@ -116,6 +116,17 @@ powershell -File scripts/deploy.ps1        # 主 PowerShell 跑（不能在 hook
 - Day 3 收尾：[Day3-客户端/99-收尾.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day3-客户端/99-收尾.md)
 - **Day 4 收尾**：[Day4-真冲突UI/99-收尾.md](docs/规划/codex审查记录/阶段5/P5-合并算法/Day4-真冲突UI/99-收尾.md)
 
+**阶段 5 后 fix 链**（v1.15.1 → v1.18.0，2026-05-08 → 2026-05-09）：阶段 5 完工后产品交付期连续 fix 部署，**不属于阶段编号**：
+- **v1.15.1**：业务用户使用手册 v1.0（580 行 / 13 配图）+ NodeDetailPanel PanelTab 颜色优化 + 技术债登记同步（5 项偿还 + #9 重归类）
+- **v1.16.0**：顶栏「📖 使用手册」入口 + Markdown 编译为 HTML（scripts/build-manual.mjs + vite dev middleware）
+- **v1.16.1**：DELETE /api/canvases 公共画布 admin-only 收紧（写手册时暴露的安全漏洞，+9 supertest）
+- **v1.16.2**：handleDelete 改 canEditNodeData（实际未修真路径——被用户实测发现，触发 v1.16.3）
+- **v1.16.3**：handleDelete 真路径用 canDeleteNodeData（含联动 edge 拦截）+ saveErrorDispatcher 加 forbidden_modify_others_node 友好化（autosave 加载即推 baseline 短期对策；#35 仍挂账）
+- **v1.17.0**（2026-05-08）：昵称功能 + CanvasSwitcher 公共/个人/创建者前缀
+- **v1.18.0**（2026-05-09）：**公共画布编辑警告 + 复制为我的私人画布**——普通用户载入公共画布时弹拦截窗（3 选项：复制副本 / 只查看 / 继续编辑+确认勾选）；顶栏挂主动复制按钮；autosave 锁防试探编辑被 PUT 公共画布。codex 取舍审 9 条 + 末尾审 5 条全采纳（H1+H2+M1-M5+L1-L3）。新增 `usePublicEditAck` hook + `PublicEditWarningDialog` 组件。**Playwright e2e 8/8 全过**（含 H1 autosave 锁验证：复制后 8 秒公共画布 nodes 数未变）
+- 单测 447 → **535**（+88）；canDeleteNodeData 16 + dispatcher 6 + canvases.delete 9 + isPublicCanvasReady 10 + ackKey 3 + ...
+- **关键经验沉淀**：feedback_real_path_before_done.md 升级 MEMORY.md（同日 4 次反复触发——动手前 reality check 反幻觉原则）
+
 **下次 next**（阶段 5 完工后下个阶段方向待用户拍板）：
 - 选项 A：阶段 6 多人协作 v2 / 演示 / 培训
 - 选项 B：代码质量子阶段（清 lint 74 项 + 偿还 #22-#27 安全债 + 偿还 #35/#36 Day 4 挂账）
@@ -135,3 +146,4 @@ powershell -File scripts/deploy.ps1        # 主 PowerShell 跑（不能在 hook
 - 改 `useFlowClipboard.ts` 或 `useMultiCanvas.ts` 复制粘贴路径必读 `src/hooks/useFlowClipboard.test.ts` 单测
 - codex 报告里若给"加 rate limit/CDN/SLO 监控"这类建议，先用项目语境过滤
 - 修法描述 ≠ 修法实现：codex 揪出"我以为修了实际没改对"已 ≥4 次（P3D-2 step 3 helper 写没用 / P3B 二/三审复制粘贴 idMap 死代码 / P4 useDraftAutosave interval 被 effect deps 重置 / P5 Day 1 五审 M5 元组假断言 TS 不拒编译）。**Read 完整文件不够**——必须用反向测试证明断言/防漏机制生效（如临时删字段跑 tsc 验证报错）
+- **动手前 reality check 反幻觉原则**（2026-05-08 v1.16.2→v1.16.3 同日 4 次反复触发升级到 MEMORY.md）：写文档/改 bug/写脚本前必须先核对真实路径——不要凭训练数据 / 直觉 / "我以为"动手；**npm test 全过 ≠ 修对真路径**（v1.16.2 改了 6 文件全是错路径上的，单测 478/478 全过但用户实测 bug 没修）。详见 auto memory `feedback_real_path_before_done.md`（4 落地步骤 + 反幻觉 checklist）

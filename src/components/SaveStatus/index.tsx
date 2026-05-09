@@ -40,6 +40,15 @@ export interface SaveStatusProps {
   draftStatus?: DraftStatus;
   /** 草稿上次成功时间戳（用于"草稿已保存 14:23"展示）*/
   draftSavedAt?: number | null;
+  // === 公共画布"复制为私人副本" ===
+  // codex 取舍审 M2：独立 prop，不绑定 canvasWritable / readOnly；
+  // 即使 readOnly 分支也要显示，否则被动弹窗关闭后用户没有逃生口
+  /** 是否显示「复制为我的私人画布」按钮（普通用户 + 公共画布 + 已挂接服务端） */
+  canSaveAsPrivateCopy?: boolean;
+  /** 「复制为我的私人画布」按钮回调 */
+  onSaveAsPrivateCopy?: () => void;
+  /** 外部 disable 主版本「保存」按钮（codex 取舍审 H1：未 ack 公共画布期间也禁手动 save） */
+  saveDisabled?: boolean;
 }
 
 function formatRelative(ts: number, now: number): string {
@@ -115,6 +124,9 @@ export function SaveStatus(props: SaveStatusProps) {
     onExportLocal,
     draftStatus,
     draftSavedAt,
+    canSaveAsPrivateCopy,
+    onSaveAsPrivateCopy,
+    saveDisabled,
   } = props;
 
   // 草稿状态文案（判断点 4：与主版本 dirty 拆开）
@@ -149,6 +161,21 @@ export function SaveStatus(props: SaveStatusProps) {
     </button>
   ) : null;
 
+  // 主动复制入口（codex 取舍审 M2 + L2）：独立于 readOnly/saved/dirty 状态。
+  // 在 readOnly、conflict、saved、dirty 任意态都需要可见 —— 因此抽成共享片段。
+  // saving 中不显示（避免点击触发并发 createOnServer 与正在跑的 save 竞态）
+  const saveAsPrivateCopyButton =
+    canSaveAsPrivateCopy && onSaveAsPrivateCopy && !saving ? (
+      <button
+        type="button"
+        className="save-status__btn"
+        onClick={onSaveAsPrivateCopy}
+        title="把当前画布复制到你的私人空间（不影响公共画布）"
+      >
+        📋 复制为私人
+      </button>
+    ) : null;
+
   // 让"X 秒前"自己刷新；只在 lastSavedAt 存在时跑定时器
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -160,10 +187,12 @@ export function SaveStatus(props: SaveStatusProps) {
   if (readOnly) {
     // 当前画布只读：保留导出能力（导出仅需 canRead 权限，不需要写权限）
     // P3D-2 step 2 codex 二审建议：原文案"游客只读模式"已不准确——
-    // 只读现在可能源自 游客 / 归档画布 / 私有画布非 owner / 加载中 等多种原因
+    // 只读现在可能源自 游客 / 归档画布 / 私有画布非 owner / 加载中 / 未 ack 公共画布 等多种原因
+    // codex 取舍审 M2：未 ack 公共画布触发 readOnly，主动复制入口必须出现在这里
     return (
       <div className="save-status save-status--readonly" title="当前画布只读">
         <span>只读</span>
+        {saveAsPrivateCopyButton}
         {exportServerButton}
       </div>
     );
@@ -206,6 +235,7 @@ export function SaveStatus(props: SaveStatusProps) {
             导出本地副本
           </button>
         )}
+        {saveAsPrivateCopyButton}
         {exportServerButton}
         <button
           type="button"
@@ -234,9 +264,12 @@ export function SaveStatus(props: SaveStatusProps) {
           type="button"
           className="save-status__btn save-status__btn--primary"
           onClick={onSave}
+          disabled={saveDisabled}
+          title={saveDisabled ? '当前不允许写入此画布' : undefined}
         >
           重试
         </button>
+        {saveAsPrivateCopyButton}
         {exportServerButton}
       </div>
     );
@@ -281,9 +314,12 @@ export function SaveStatus(props: SaveStatusProps) {
           type="button"
           className="save-status__btn save-status__btn--primary"
           onClick={onSave}
+          disabled={saveDisabled}
+          title={saveDisabled ? '当前不允许写入此画布；可点「复制为私人」转到自己的副本' : undefined}
         >
           保存
         </button>
+        {saveAsPrivateCopyButton}
         {exportServerButton}
       </div>
     );
@@ -297,6 +333,7 @@ export function SaveStatus(props: SaveStatusProps) {
         已保存{lastSavedAt ? `（${formatRelative(lastSavedAt, now)}）` : ''}
       </span>
       {draftStatusElement}
+      {saveAsPrivateCopyButton}
       {exportServerButton}
     </div>
   );

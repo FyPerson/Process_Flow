@@ -1,0 +1,144 @@
+/* PublicEditWarningDialog 样式（沿用 BVE / CRD 同风格） */
+
+.pew-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4000;
+}
+
+.pew-dialog {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 24px 28px;
+  max-width: 540px;
+  width: 90%;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.3);
+  font-family: inherit;
+}
+
+.pew-dialog-title {
+  margin: 0 0 16px 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+.pew-dialog-body {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.pew-dialog-body p {
+  margin: 0 0 12px 0;
+}
+
+.pew-dialog-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.pew-dialog-actions--primary {
+  justify-content: flex-start;
+}
+
+.pew-dialog-divider {
+  margin: 18px 0 12px 0;
+  text-align: center;
+  font-size: 12px;
+  color: #9ca3af;
+  position: relative;
+}
+
+.pew-dialog-divider::before,
+.pew-dialog-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: calc(50% - 32px);
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.pew-dialog-divider::before {
+  left: 0;
+}
+
+.pew-dialog-divider::after {
+  right: 0;
+}
+
+.pew-dialog-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.pew-dialog-confirm-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.pew-dialog-confirm-label input[type='checkbox'] {
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+.pew-dialog-confirm-label strong {
+  color: #b91c1c;
+}
+
+.pew-dialog-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  font-family: inherit;
+}
+
+.pew-dialog-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.pew-dialog-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pew-dialog-btn--primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.pew-dialog-btn--primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.pew-dialog-btn--ghost {
+  border-color: transparent;
+  color: #6b7280;
+}
+
+.pew-dialog-btn--ghost:hover:not(:disabled) {
+  background: #f3f4f6;
+}

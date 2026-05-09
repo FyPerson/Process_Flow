@@ -60,6 +60,10 @@ export interface UseMultiCanvasOptions {
   canvasId?: number | null;
   // 兼容旧 caller：仅作 localStorage 回退键
   storageKey?: string;
+  /** 外部闸门：true 时禁止 autosave（不影响 dirty / 显式 save() 调用）。
+   *  用例：未 ack 的公共画布（usePublicEditAck.isPublicAndUnacked）防止试探编辑被 PUT。
+   *  默认 false。codex 取舍审 H1：复制流程期间 + 未 ack 公共画布期间都要锁。 */
+  autosaveLocked?: boolean;
 }
 
 /** save() 返回值 —— discriminated union
@@ -170,6 +174,10 @@ export interface UseMultiCanvasReturn {
   } | null;
   /** 冲突期间 / 致命错误期间，自动保存被禁用（红字提示用户手动处理） */
   autoSaveDisabled: boolean;
+  /** 外部 autosaveLocked 入参的回显（caller 可拿来 disable 手动 save 按钮）。
+   *  与 autoSaveDisabled 区别：autoSaveDisabled 是冲突/错误副作用；autosaveLocked 是 caller
+   *  主动闸门（如未 ack 公共画布）。两者并集决定"是否真的不该再写服务端"。 */
+  autosaveLocked: boolean;
   /** 最近一次成功保存的时间戳（用于显示"X 秒前已保存"） */
   lastSavedAt: number | null;
   /** 拉取服务端画布到内存（覆盖当前 project） */
@@ -480,6 +488,7 @@ export function useMultiCanvas(
 
   const canvasIdProp = opts.canvasId ?? null;
   const storageKey = opts.storageKey ?? 'saved-flow-data';
+  const autosaveLocked = opts.autosaveLocked ?? false;
 
   const [project, setProject] = useState<MultiCanvasProject | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -1301,6 +1310,9 @@ export function useMultiCanvas(
     if (canvasId == null) return; // 未挂接服务端 → 必须用户手动"另存到服务器"
     if (saving) return;
     if (autoSaveDisabled) return;
+    // codex 取舍审 H1：未 ack 公共画布 / 复制流程进行中等场景，外部传 autosaveLocked=true 锁 autosave，
+    // 防试探编辑被 PUT 到公共画布。dirty 保留 → 解锁后自然恢复。
+    if (autosaveLocked) return;
 
     const timer = setTimeout(() => {
       // catch 必须有：避免未挂接 promise 错误飞到 window.onerror
@@ -1312,7 +1324,7 @@ export function useMultiCanvas(
     return () => {
       clearTimeout(timer);
     };
-  }, [dirty, canvasId, saving, autoSaveDisabled, project]);
+  }, [dirty, canvasId, saving, autoSaveDisabled, autosaveLocked, project]);
 
   return {
     project,
@@ -1342,5 +1354,6 @@ export function useMultiCanvas(
     createOnServer,
     discardAndReload,
     clearConflictAndResumeAutosave,
+    autosaveLocked,
   };
 }

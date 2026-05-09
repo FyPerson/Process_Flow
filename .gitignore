@@ -91,3 +91,7 @@ tmp-codex/
 
 # 使用手册截图（仅本地，约 14 张 PNG / 体积大 / 业务用户可本地补图）
 docs/imgs/使用手册/
+
+# 设计稿 / 探索草稿（不应入仓库根目录）
+node-style-demo.html
+node-style-demo-*.html
