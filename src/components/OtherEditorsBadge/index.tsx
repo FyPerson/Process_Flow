@@ -5,9 +5,10 @@
 //
 // 显示规则：
 // - 0 人 → 不渲染
-// - 1-3 人 → chip 列出 username
+// - 1-3 人 → chip 列出 nickname（服务端已 fallback 到 username）
 // - >3 人 → 前 3 个 chip + "+N" 折叠
-// - hover/title → 列出全部 username + 最近活跃时间
+// - hover/title → 列出全部 nickname + 最近活跃时间（v1.18.x：username 是手机号时不友好，
+//   nickname 优先；服务端已做 trim 判空 fallback，前端直接读 editor.nickname）
 
 import './styles.css';
 import type { ActiveEditor } from '../../api/canvases';
@@ -26,7 +27,7 @@ export function OtherEditorsBadge({ editors }: Props) {
 
   const tooltipLines = editors.map((e) => {
     const seenSec = Math.max(0, Math.round((Date.now() - e.lastSeenAt) / 1000));
-    return `${e.username}（${seenSec}s 前活跃）`;
+    return `${e.nickname}（${seenSec}s 前活跃）`;
   });
 
   return (
@@ -41,7 +42,7 @@ export function OtherEditorsBadge({ editors }: Props) {
       </span>
       {visible.map((editor) => (
         <span key={editor.userId} className="other-editor-chip">
-          {editor.username}
+          {editor.nickname}
         </span>
       ))}
       {overflow > 0 && <span className="other-editor-overflow">+{overflow}</span>}

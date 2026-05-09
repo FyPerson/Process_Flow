@@ -308,7 +308,7 @@
 <li><strong>④ 右侧详情面板（抽屉式）</strong>：单击节点后从右侧滑入——显示节点的详情 / 批注；再次单击同一节点关闭</li>
 </ul>
 <blockquote>
-<p>此外，画布<strong>底部</strong>有 Sheet 标签栏（一个画布可有多个工作表，类似 Excel 的 sheet 切换）。</p>
+<p>此外，画布<strong>底部</strong>有 Sheet 标签栏（一个画布可有多个工作表，类似 Excel 的 sheet 切换）。<strong>在公共画布底部加新 sheet 分页 = 加在同一个公共画布里 = 对所有人可见</strong>（不是新建私有画布，详见 §3.7 场景 G）。</p>
 <p><strong>怎么打开右侧详情面板？</strong> 单击任何画布上的节点（流程节点 / 判断节点 / 审批节点 等），抽屉自动滑入。再次单击同一节点关闭。</p>
 </blockquote>
 <h3>1.4 第一次使用——按角色选路径</h3>
@@ -854,6 +854,17 @@
 <blockquote>
 <p>取消发布同款路径——【取消发布】按钮把 public 退回 private（仅作者 + admin 可见）。</p>
 </blockquote>
+<h4>场景 G：我在公共画布底部点了【+ 画布】加新 sheet 分页，这个分页归谁？</h4>
+<p><strong>仍然归这张公共画布</strong>，对所有人可见。</p>
+<p><strong>关键概念区分</strong>：</p>
+<ul>
+<li><strong>顶栏【📁 切换画布】= 切 canvas</strong>（数据库里独立的一张图，有自己的 public/private 属性）</li>
+<li><strong>底部【+ 画布】= 加 sheet 分页</strong>（同一个 canvas 内的多个工作表 tab，类似 Excel 的多 sheet；<strong>共享 canvas 的可见性</strong>）</li>
+</ul>
+<p>所以在公共画布底部加的&quot;画布 2 / 画布 3…&quot;分页，跟你加节点 / 改字段一样，<strong>自动保存且对所有人可见</strong>。如果你想做&quot;个人草稿不让别人看见&quot;的实验，请走<strong>场景 B</strong>（顶栏【📋 复制为我的私人画布】先复制到自己空间，再在副本上随便加 sheet）。</p>
+<blockquote>
+<p>想删自己加错的 sheet？右键该 sheet tab → 删除（仅 sheet 上无节点、或你是该 canvas 的 owner / admin 时可用）。</p>
+</blockquote>
 <hr>
 <h3>3.8 协作的几条纪律</h3>
 <ul>
@@ -920,11 +931,11 @@
 <tbody>
 <tr>
 <td><strong>画布</strong>（Canvas）</td>
-<td>一个完整的业务流程图（可以包含多个工作表）</td>
+<td>一个完整的业务流程图（可以包含多个工作表）；有 public/private 可见性属性</td>
 </tr>
 <tr>
 <td><strong>工作表</strong>（Sheet）</td>
-<td>画布里的一页（类似 Excel 的 sheet）</td>
+<td>画布里的一页（类似 Excel 的 sheet）；<strong>共享所属 canvas 的可见性</strong>——公共画布上的所有 sheet 都对所有人可见</td>
 </tr>
 <tr>
 <td><strong>节点</strong>（Node）</td>

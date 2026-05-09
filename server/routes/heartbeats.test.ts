@@ -189,10 +189,14 @@ describe('P4A heartbeat 路由契约', () => {
     await postHeartbeat(ADMIN, cid);
     const res = await postHeartbeat(ALICE, cid);
     assert.equal(res.status, 200);
-    const body = (await res.json()) as { otherEditors: { userId: number; username: string }[] };
+    const body = (await res.json()) as {
+      otherEditors: { userId: number; username: string; nickname: string }[];
+    };
     assert.equal(body.otherEditors.length, 1);
     assert.equal(body.otherEditors[0].userId, ADMIN.id);
     assert.equal(body.otherEditors[0].username, 'admin');
+    // v1.18.x：fixture 没写 nickname → service 层 fallback 到 username
+    assert.equal(body.otherEditors[0].nickname, 'admin');
 
     // BOB 心跳，应看到 ADMIN + ALICE
     const res2 = await postHeartbeat(BOB, cid);
@@ -200,6 +204,39 @@ describe('P4A heartbeat 路由契约', () => {
     assert.equal(body2.otherEditors.length, 2);
     const ids = body2.otherEditors.map((e) => e.userId).sort();
     assert.deepEqual(ids, [ADMIN.id, ALICE.id]);
+  });
+
+  it('7b. nickname 优先 fallback：DB 有 nickname → 用 nickname；空字符串 → fallback username', async () => {
+    // v1.18.x：OtherEditorsBadge 显示 nickname 优先（避免手机号 username 不友好）
+    // service 层与 toListItem 同口径：trim 判空才 fallback
+    const now = Date.now();
+    const insertCanvas = db.prepare(
+      `INSERT INTO canvases (id, name, visibility, is_public_to_guest, owner_id, data, version,
+        created_by, created_at, updated_by, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    );
+    const cid = 101;
+    insertCanvas.run(cid, 'shared7b', 'public', 0, ADMIN.id, JSON.stringify(makeMinProject()), 1,
+      ADMIN.id, now, ADMIN.id, now);
+
+    // ADMIN 设真 nickname；ALICE 设空字符串 nickname；BOB 留 NULL
+    db.prepare('UPDATE users SET nickname = ? WHERE id = ?').run('管理员小张', ADMIN.id);
+    db.prepare('UPDATE users SET nickname = ? WHERE id = ?').run('   ', ALICE.id); // 全空白
+    // BOB nickname 保持 NULL
+
+    await postHeartbeat(ADMIN, cid);
+    await postHeartbeat(ALICE, cid);
+    const res = await postHeartbeat(BOB, cid);
+    assert.equal(res.status, 200);
+    const body = (await res.json()) as {
+      otherEditors: { userId: number; username: string; nickname: string }[];
+    };
+    const byId = new Map(body.otherEditors.map((e) => [e.userId, e]));
+
+    // ADMIN：真 nickname 用 nickname
+    assert.equal(byId.get(ADMIN.id)?.nickname, '管理员小张');
+    // ALICE：空白 nickname → fallback username
+    assert.equal(byId.get(ALICE.id)?.nickname, 'alice');
   });
 
   it('8. 90s 过期：last_seen_at < now-90s 不出现在 otherEditors', async () => {

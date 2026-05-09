@@ -264,6 +264,8 @@ export async function unpublishCanvas(id: number): Promise<void> {
 export interface ActiveEditor {
   userId: number;
   username: string;
+  /** 显示名（v1.18.x）：服务端已 trim 判空 fallback 到 username，前端直接展示 */
+  nickname: string;
   lastSeenAt: number;
 }
 
