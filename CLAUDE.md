@@ -71,8 +71,9 @@ powershell -File scripts/deploy.ps1        # 主 PowerShell 跑（不能在 hook
 | [README.md](README.md) | 团队新人 | 5 分钟速览（是什么 / 怎么跑 / 怎么部署） |
 | **CLAUDE.md（本文件）** | Claude / Codex | 项目约定 + 红线 + 命令速查 |
 | [docs/规划/多人协作-方案.md](docs/规划/多人协作-方案.md) | 阶段决策 | 多人协作主方案（阶段 0-6 实施计划） |
+| [docs/规划/游客草稿能力/方案.md](docs/规划/游客草稿能力/方案.md) | 阶段决策 | 游客草稿能力方案 v0.1（已立项 / 待排期，嵌套式归档首例） |
 | [docs/规划/技术债务登记.md](docs/规划/技术债务登记.md) | 债务台账 | 主动归档 / 已偿还 / 未结项 |
-| [docs/规划/codex审查记录/阶段X/PXX/](docs/规划/codex审查记录/) | 历史归档 | 每阶段 codex 审查链 + 99-收尾 |
+| [docs/规划/codex审查记录/阶段X/PXX/](docs/规划/codex审查记录/) | 历史归档 | 每阶段 codex 审查链 + 99-收尾（2026-05-13 起新功能改用嵌套式归档，详见该目录 README） |
 | [.claude/skills/deploy/SKILL.md](.claude/skills/deploy/SKILL.md) | Claude | /deploy 流程定义 |
 | [.claude/skills/neat-freak/SKILL.md](.claude/skills/neat-freak/SKILL.md) | Claude | /neat 文档同步 + 阶段发版 |
 | [.claude/skills/codex-cli-bridge/SKILL.md](C:\Users\FY\.claude\skills\codex-cli-bridge\SKILL.md) | Claude | codex 调用桥（user 级） |
