@@ -8,10 +8,10 @@
 // - 裸 React Flow，不复用 FlowCanvas（避免污染主组件）
 //
 // D-1：路由骨架 + 顶栏 + 返回登录按钮 ✅
-// D-2（当前）：裸 React Flow + 4 节点类型 + 左侧工具栏
-// D-3：localStorage 持久化 + 顶栏红字警告（已占位）
-// D-4：html-to-image PNG 导出
-// D-5：撤销/重做 + 容量保护
+// D-2：裸 React Flow + 4 节点类型 + 左侧工具栏 ✅
+// D-3：localStorage 持久化 ✅
+// D-4：html-to-image PNG 导出 ✅
+// D-5（当前）：撤销/重做（Ctrl+Z / Ctrl+Y）+ 容量保护提示（节点 > 100 黄字）
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -34,8 +34,11 @@ import '@xyflow/react/dist/style.css';
 
 import { newNodeId, newEdgeId } from '../../utils/ids';
 import { exportCanvasAsPng } from '../../utils/export-image';
-import { DraftNode, DraftNodeType, DraftNodeData } from './DraftNode';
+import { DraftNode, DraftNodeType, DraftNodeData, DRAFT_NODE_LABEL_CHANGED_EVENT } from './DraftNode';
 import { loadDraft, saveDraft } from './persistence';
+import { useDraftHistory } from './useDraftHistory';
+
+const CAPACITY_WARNING_THRESHOLD = 100;
 
 // 首屏读 localStorage 一次（mount 前同步执行，避免空画布闪烁后再恢复）
 const INITIAL = loadDraft();
@@ -97,6 +100,71 @@ function DraftSandboxInner() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(INITIAL_EDGES);
   const [exporting, setExporting] = useState(false);
 
+  // D-5：撤销/重做历史栈（栈深 20）
+  // 推快照策略（caller 端集成）：
+  //   - 节点 add（handleAddNode）/ 节点删（onNodesChange remove）/ 节点改名（DraftNode 双击）
+  //     → 这些是"结构性变化"，立即推
+  //   - 节点拖动（onNodesChange position dragging=true）→ 不推（每帧触发，会爆栈）
+  //   - 拖动结束（onNodeDragStop）→ 推一次
+  //   - 边 add（onConnect）/ 边删（onEdgesChange remove）/ 边 label 改 → 推
+  // 但在 React Flow 函数式 setState 之后立即读 nodes/edges 闭包会拿旧值，
+  // 用 ref 持续追当前值，pushSnapshot 时读 ref
+  const history = useDraftHistory(INITIAL_NODES, INITIAL_EDGES);
+  const nodesRef = useRef(nodes);
+  const edgesRef = useRef(edges);
+  useEffect(() => {
+    nodesRef.current = nodes;
+  }, [nodes]);
+  useEffect(() => {
+    edgesRef.current = edges;
+  }, [edges]);
+
+  // Undo/Redo 应用 snapshot 回 React Flow state
+  const applySnapshot = useCallback(
+    (snap: { nodes: Node<DraftNodeData>[]; edges: Edge[] } | null) => {
+      if (!snap) return;
+      setNodes(snap.nodes);
+      setEdges(snap.edges);
+    },
+    [setNodes, setEdges],
+  );
+  const handleUndo = useCallback(() => applySnapshot(history.undo()), [history, applySnapshot]);
+  const handleRedo = useCallback(() => applySnapshot(history.redo()), [history, applySnapshot]);
+
+  // D-5：监听节点改名事件（DraftNode 双击 prompt 改名后派发）
+  // 等 1 微任务让 setNodes 落地，再用 nodesRef 拿到最新 label 推快照
+  useEffect(() => {
+    function onLabelChanged() {
+      queueMicrotask(() => {
+        history.pushSnapshot(nodesRef.current, edgesRef.current);
+      });
+    }
+    window.addEventListener(DRAFT_NODE_LABEL_CHANGED_EVENT, onLabelChanged);
+    return () => window.removeEventListener(DRAFT_NODE_LABEL_CHANGED_EVENT, onLabelChanged);
+  }, [history]);
+
+  // 键盘监听 Ctrl+Z / Ctrl+Y（Mac 兼容 Meta）+ Ctrl+Shift+Z（redo 别名）
+  // 跳过 input/textarea/contenteditable（避免抢用户编辑文字时的撤销）
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return;
+      const key = e.key.toLowerCase();
+      if (key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+        e.preventDefault();
+        handleRedo();
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [handleUndo, handleRedo]);
+
   // D-4：导出当前画布为 PNG（复用 src/utils/export-image.ts）
   // - fitView 框入全部节点 + 等 1 帧 viewport transform 落地
   // - 文件名 "需求草稿-YYYYMMDD-HHmm.png"
@@ -137,9 +205,15 @@ function DraftSandboxInner() {
   }, [nodes, edges]);
 
   const onConnect = useCallback(
-    (params: Connection) =>
-      setEdges((eds) => addEdge({ ...params, id: newEdgeId() }, eds)),
-    [setEdges],
+    (params: Connection) => {
+      setEdges((eds) => {
+        const next = addEdge({ ...params, id: newEdgeId() }, eds);
+        // 推快照：用即将生效的 next + 当前 nodesRef 拍快照（避开 setState 异步闭包）
+        history.pushSnapshot(nodesRef.current, next);
+        return next;
+      });
+    },
+    [setEdges, history],
   );
 
   // 双击边 → 弹 prompt 编辑 label（用于判断节点分支的"是/否"标注）
@@ -150,13 +224,15 @@ function DraftSandboxInner() {
       const next = window.prompt('编辑连接线文字（如"是" / "否"，留空则清除）：', current);
       if (next === null) return; // 用户取消
       const trimmed = next.trim();
-      setEdges((eds) =>
-        eds.map((e) =>
+      setEdges((eds) => {
+        const updated = eds.map((e) =>
           e.id === edge.id ? { ...e, label: trimmed || undefined } : e,
-        ),
-      );
+        );
+        history.pushSnapshot(nodesRef.current, updated);
+        return updated;
+      });
     },
-    [setEdges],
+    [setEdges, history],
   );
 
   // 点击工具栏按钮 → 在画布中央 add node
@@ -173,9 +249,51 @@ function DraftSandboxInner() {
         position,
         data: { label: NODE_TYPE_LABELS[type] },
       };
-      setNodes((nds) => nds.concat(newNode));
+      setNodes((nds) => {
+        const next = nds.concat(newNode);
+        history.pushSnapshot(next, edgesRef.current);
+        return next;
+      });
     },
-    [screenToFlowPosition, setNodes],
+    [screenToFlowPosition, setNodes, history],
+  );
+
+  // D-5：拖动结束推快照（拖动过程每帧 onNodesChange 不推，避免爆栈）
+  const onNodeDragStop = useCallback(() => {
+    history.pushSnapshot(nodesRef.current, edgesRef.current);
+  }, [history]);
+
+  // D-5：节点/边删除时推快照（onNodesChange / onEdgesChange remove 类型）
+  // React Flow useNodesState 提供的 onNodesChange 内部直接 setNodes，
+  // 我们包一层在它之后立即用 setTimeout(0) 读取最新 nodesRef 推快照
+  // —— ref 在 nodes useEffect 同步更新，但 useEffect 是异步的，所以用 microtask
+  const wrappedOnNodesChange = useCallback(
+    (changes: Parameters<typeof onNodesChange>[0]) => {
+      onNodesChange(changes);
+      const hasStructural = changes.some(
+        (c) => c.type === 'remove' || c.type === 'add',
+      );
+      if (hasStructural) {
+        queueMicrotask(() => {
+          history.pushSnapshot(nodesRef.current, edgesRef.current);
+        });
+      }
+    },
+    [onNodesChange, history],
+  );
+  const wrappedOnEdgesChange = useCallback(
+    (changes: Parameters<typeof onEdgesChange>[0]) => {
+      onEdgesChange(changes);
+      const hasStructural = changes.some(
+        (c) => c.type === 'remove' || c.type === 'add',
+      );
+      if (hasStructural) {
+        queueMicrotask(() => {
+          history.pushSnapshot(nodesRef.current, edgesRef.current);
+        });
+      }
+    },
+    [onEdgesChange, history],
   );
 
   // 用 useMemo 把 nodeTypes 稳定下来（React Flow 要求 nodeTypes 引用稳定）
@@ -209,6 +327,14 @@ function DraftSandboxInner() {
           <span style={{ fontSize: 12, color: '#fca5a5' }}>
             ⚠️ 仅本地保存，请及时导出
           </span>
+          {nodes.length > CAPACITY_WARNING_THRESHOLD && (
+            <span
+              style={{ fontSize: 12, color: '#fde047' }}
+              title={`当前节点数 ${nodes.length}，建议导出后清空再画`}
+            >
+              ⚠️ 节点较多（{nodes.length}），建议导出后清空
+            </span>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button
@@ -308,10 +434,11 @@ function DraftSandboxInner() {
           <ReactFlow
             nodes={nodes}
             edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
+            onNodesChange={wrappedOnNodesChange}
+            onEdgesChange={wrappedOnEdgesChange}
             onConnect={onConnect}
             onEdgeDoubleClick={onEdgeDoubleClick}
+            onNodeDragStop={onNodeDragStop}
             nodeTypes={stableNodeTypes}
             defaultEdgeOptions={defaultEdgeOptions}
             connectionMode={ConnectionMode.Loose}

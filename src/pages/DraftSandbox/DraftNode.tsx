@@ -16,6 +16,11 @@
 import { memo, useCallback } from 'react';
 import { Handle, Position, NodeProps, useReactFlow } from '@xyflow/react';
 
+// D-5：双击改名后通知父组件推历史快照
+// 不用 prop（NodeProps 由 React Flow 注入，扩展接口有点麻烦）
+// 改用 window CustomEvent 通信——简单可靠，DraftSandbox 监听即可
+export const DRAFT_NODE_LABEL_CHANGED_EVENT = 'draft-node-label-changed';
+
 export type DraftNodeType = 'start' | 'step' | 'decision' | 'end';
 
 export interface DraftNodeData {
@@ -51,6 +56,8 @@ function DraftNodeImpl({ id, data, type }: NodeProps) {
         n.id === id ? { ...n, data: { ...n.data, label: trimmed } } : n,
       ),
     );
+    // D-5：通知父组件推历史快照（让 Ctrl+Z 能撤销改名）
+    window.dispatchEvent(new CustomEvent(DRAFT_NODE_LABEL_CHANGED_EVENT));
   }, [id, nodeData.label, setNodes]);
 
   // 4 个 Handle 都设 source —— connectionMode="loose" 时 React Flow 允许 source<->source 互连
@@ -65,9 +72,10 @@ function DraftNodeImpl({ id, data, type }: NodeProps) {
   );
 
   if (nodeType === 'decision') {
-    // 决策节点：正方形容器 + clip-path 切菱形
+    // 决策节点：正方形容器 + SVG 画菱形（带 stroke 描边）
     // React Flow 按容器矩形定位 Handle（Top 中点 / Right 中点 / Bottom 中点 / Left 中点）
     // —— 这正好是菱形的 4 个顶点 ✅
+    // 用 SVG <polygon> 替代 clip-path 切矩形 —— clip-path 会把 border 一起裁掉
     return (
       <div
         onDoubleClick={handleDoubleClick}
@@ -80,18 +88,21 @@ function DraftNodeImpl({ id, data, type }: NodeProps) {
         }}
         title="双击编辑文字"
       >
-        {/* 菱形背景层（clip-path） */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: '#fef3c7',
-            border: '2px solid #d97706',
-            clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
-            boxSizing: 'border-box',
-          }}
-        />
-        {/* 文字层（不切，正常水平显示） */}
+        {/* SVG 菱形（fill + stroke 都可控） */}
+        <svg
+          width={DIAMOND_SIZE}
+          height={DIAMOND_SIZE}
+          style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+        >
+          <polygon
+            points={`${DIAMOND_SIZE / 2},2 ${DIAMOND_SIZE - 2},${DIAMOND_SIZE / 2} ${DIAMOND_SIZE / 2},${DIAMOND_SIZE - 2} 2,${DIAMOND_SIZE / 2}`}
+            fill="#fef3c7"
+            stroke="#d97706"
+            strokeWidth={2}
+            strokeLinejoin="round"
+          />
+        </svg>
+        {/* 文字层 */}
         <div
           style={{
             position: 'absolute',
