@@ -428,26 +428,6 @@ export function useFlowHandlers({
                             delete mergedStyle.backgroundColor;
                         }
 
-                        if (mergedData.type === 'terminator' && mergedStyle) {
-                            mergedStyle = { ...mergedStyle };
-                            if (mergedData.subType === 'start') {
-                                mergedStyle.background = '#dcfce7';
-                                mergedStyle.backgroundColor = '#dcfce7';
-                            } else if (mergedData.subType === 'end') {
-                                mergedStyle.background = '#fee2e2';
-                                mergedStyle.backgroundColor = '#fee2e2';
-                            } else {
-                                const name = mergedData.name || '';
-                                if (name === '开始' || name.toLowerCase().includes('start')) {
-                                    mergedStyle.background = '#dcfce7';
-                                    mergedStyle.backgroundColor = '#dcfce7';
-                                } else {
-                                    mergedStyle.background = '#fee2e2';
-                                    mergedStyle.backgroundColor = '#fee2e2';
-                                }
-                            }
-                        }
-
                         return {
                             ...node,
                             data: mergedData,
