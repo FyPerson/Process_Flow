@@ -128,9 +128,31 @@ powershell -File scripts/deploy.ps1        # 主 PowerShell 跑（不能在 hook
 - 单测 447 → **535**（+88）；canDeleteNodeData 16 + dispatcher 6 + canvases.delete 9 + isPublicCanvasReady 10 + ackKey 3 + ...
 - **关键经验沉淀**：feedback_real_path_before_done.md 升级 MEMORY.md（同日 4 次反复触发——动手前 reality check 反幻觉原则）
 
-**下次 next**（阶段 5 完工后下个阶段方向待用户拍板）：
-- 选项 A：阶段 6 多人协作 v2 / 演示 / 培训
-- 选项 B：代码质量子阶段（清 lint 74 项 + 偿还 #22-#27 安全债 + 偿还 #35/#36 Day 4 挂账）
+**v1.19.0 — 游客草稿能力 D-1~D-8 完整闭环 + #37/#38 修复**（2026-05-14，10 commits / 三端 HEAD `431b65a`）：
+- **#37**（🟡 偿还）起止节点（terminator）背景色调色不生效 — 删 `useFlowHandlers.ts:431-449` 19 行强写默认色分支
+- **#38**（🟡 偿还）登录用户 PNG 导出能力 — 新增 `src/utils/export-image.ts` + ExportDropdown 二级菜单（PNG + JSON）+ FlowCanvas `onFitViewReady` prop + BFV `handleExportImage` + 性能优化（skipFonts/cacheBust/pixelRatio 1.5：4 节点 5s→<1s）
+- **游客草稿能力**（2026-05-13 立项 / 2026-05-14 全闭环 / [docs/规划/游客草稿能力/](docs/规划/游客草稿能力/)）：
+  - `/draft` 独立路由（绕过 AuthProvider）+ LoginPage 入口
+  - 裸 React Flow + 4 节点类型（开始/步骤/决策/结束 / SVG `<polygon>` 真菱形 / clip-path 会裁 border 已踩坑）
+  - 4 Handle `connectionMode="loose"` + edge label SVG inline 样式（html-to-image 不继承 CSS 变量已踩坑）
+  - 撤销/重做（Ctrl+Z/Y 栈深 20）+ 容量提示 + 双击改名 + 双击边加"是/否"label
+  - localStorage 持久化（debounce 500ms / version=1 / SaveResult 失败 UI 黄字降级）
+  - PNG 导出（复用 `exportCanvasAsPng` < 1s）
+  - 反向断言守门（9 case + self-test）：禁导入入口 / 禁服务端通信（fetch /api / axios / ApiError）/ 禁实时通道（WebSocket / EventSource / socket.io）/ 禁 AuthProvider / 禁主应用画布组件
+  - Playwright e2e 11/12 PASS（拖拽连线 1 WARN 跳过，由单测兜底）
+- **codex 协作三件套两轮跑通**（[01-取舍审-D8](docs/规划/游客草稿能力/codex审查/01-取舍审-D8-末尾审.md) + [02-复审-D8](docs/规划/游客草稿能力/codex审查/02-复审-D8-修法验证.md) + [99-收尾](docs/规划/游客草稿能力/codex审查/99-收尾.md)）：
+  - 一轮取舍审 13 条（3 high + 5 medium + 5 low）→ 全采纳 / 挂账 → 单测 547/547 + e2e 11/12 表面闭环
+  - **二轮复审 7 条戳穿前轮修法不完整**：R-H1 H1 修法 dangling edge 漏洞（删节点后边没同步过滤）+ R-M3 推翻 H3 仅挂账决策（5 分钟最小修法成本，不应仅挂账）+ R-M2 漏 replace change 类型
+  - 关键修法：H1 用 setNodes updater 内 `applyNodeChanges` + 同步过滤悬空 edge + setEdges 一并推快照；H2+M5 删 window CustomEvent 改 React Context `DraftNodeRenameContext` 注入 callback；H3 删 `isUndoRedoRef` + setTimeout(100) 时间窗
+- **嵌套式归档约定首例完整实施**：`docs/规划/<功能名>/{方案.md, codex审查/{01-取舍审, 02-复审, 99-收尾}.md}` 走通（与阶段 2-5 旧风格 `阶段X/PXX/NN-审查-主题.md` 并行）
+- **neat-freak 模式 B 阶段发版三件套**：bump 1.18.4→1.19.0（package.json + lock）+ 偿还 #37/#38 + 部分偿还 #39（游客版偿还 / 主应用 useFlowHistory L173 + #28 同款仍挂）+ 新挂账 #40（aria-label）+ #41（卸载前 flush debounce）+ 写 99-收尾.md 嵌套式归档
+- 单测 535 → **576**（+41 但 [今日实际 +98 含 #38 11 / persistence 10 / useDraftHistory 9 / guards 11 / 其他]）/ tsc 三端 0 错 / 三端 HEAD 同步 `431b65a` / 生产 PM2 真重启 pid=14464 / dbWritable=True
+
+**下次 next**（v1.19.0 后下个阶段方向待用户拍板）：
+- 选项 A：游客草稿真实使用反馈观察 1-2 周（按方案 §7.1 风险已提示 / 未必有改动需求）
+- 选项 B：阶段 6 多人协作 v2 / 演示 / 培训
+- 选项 C：代码质量子阶段（清 lint 74 项 + 偿还 #22-#27 安全债 + 偿还 #35/#36 Day 4 挂账 + #39 主应用版 + #40/#41 "游客草稿打磨"）
+- 选项 D：其他新功能（5/13 时讨论过的方向 / 业务部门反馈）
 
 **Day 4 已沉淀的关键约束**（写入 02-拍板记录 + 99-收尾）：
 - B 方案不变量已升级为**类型不变量**：`mergeSavePlan` 纯函数 `DeferMergedPlan` 不携带"推进 ref/替换 project"字段；`saveErrorDispatcher` 的 `shouldDeleteDraft: false` 字面常量守门 (h)
