@@ -5,6 +5,7 @@ import { Navigation } from './components/Navigation';
 import { ToastProvider } from './components/Toast';
 import { AdminPage } from './pages/Admin';
 import { BusinessFlowVisualization } from './pages/BusinessFlowVisualization';
+import { DraftSandbox } from './pages/DraftSandbox';
 
 /** /admin 路由 guard：非 admin 重定向 / + alert（前端兜底，服务端 requireFreshAdmin 是真防护） */
 function AdminRoute() {
@@ -176,21 +177,33 @@ function AppShell() {
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        {/* Day 4 F-8 + H2：ToastProvider 挂应用根，所有页面 useToast() 可用 */}
-        <ToastProvider>
-          <div
-            style={{
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              background: '#0f172a',
-            }}
-          >
-            <AppShell />
-          </div>
-        </ToastProvider>
-      </AuthProvider>
+      {/* 顶层 Routes：把 /draft 提到 AuthProvider 外，完全独立的游客草稿沙箱
+       *  - /draft 不进 AuthProvider，未登录用户也能直接访问
+       *  - 详见 docs/规划/游客草稿能力/方案.md §3.1 路由与 Auth 隔离
+       */}
+      <Routes>
+        <Route path="/draft" element={<DraftSandbox />} />
+        <Route
+          path="/*"
+          element={
+            <AuthProvider>
+              {/* Day 4 F-8 + H2：ToastProvider 挂应用根，所有页面 useToast() 可用 */}
+              <ToastProvider>
+                <div
+                  style={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    background: '#0f172a',
+                  }}
+                >
+                  <AppShell />
+                </div>
+              </ToastProvider>
+            </AuthProvider>
+          }
+        />
+      </Routes>
     </BrowserRouter>
   );
 }

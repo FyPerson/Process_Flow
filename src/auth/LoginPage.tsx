@@ -5,11 +5,13 @@
 // - 错误提示来自 server 的纯 JSON，不直接拼 HTML
 
 import { useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { ApiError } from './api.ts';
 import { useAuth } from './AuthContext.tsx';
 
 export function LoginPage() {
   const { login, continueAsGuest } = useAuth();
+  const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -118,6 +120,25 @@ export function LoginPage() {
         <button type="button" onClick={continueAsGuest} style={secondaryBtnStyle}>
           以游客身份继续（只读）
         </button>
+
+        <button
+          type="button"
+          onClick={() => navigate('/draft')}
+          style={{ ...secondaryBtnStyle, marginTop: 8 }}
+          title="无账号也能画流程图，仅本地保存"
+        >
+          📝 我来画需求（无需登录）
+        </button>
+        <p
+          style={{
+            margin: '6px 0 0',
+            fontSize: 11,
+            color: '#64748b',
+            textAlign: 'center',
+          }}
+        >
+          无账号也能画流程图，仅本地保存
+        </p>
       </div>
     </div>
   );
