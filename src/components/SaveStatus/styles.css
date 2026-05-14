@@ -123,6 +123,46 @@
   color: #94a3b8;
 }
 
+/* v1.18.5 #38：「导出 ▾」二级菜单 */
+.save-status__dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.save-status__dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: #1e293b;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  min-width: 160px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.save-status__dropdown-item {
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #e2e8f0;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.save-status__dropdown-item:hover {
+  background: rgba(148, 163, 184, 0.2);
+}
+
 /* 阶段 4 P4D：草稿状态文案（与主版本 dirty 视觉拆开 — 判断点 4）*/
 .save-status__draft {
   display: inline-block;

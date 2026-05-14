@@ -8,9 +8,14 @@
 //   - dirty:                             ● 未保存 [保存]
 //   - 其他:                              ✓ 已保存 N 秒前
 //
+// 导出能力（v1.18.5 / 债务 #38）：
+//   「导出 ▾」二级菜单：📷 PNG + 📋 JSON（服务端版本，仅 canvasId != null）
+//   「导出本地副本 ▾」二级菜单：📷 PNG + 📋 JSON（内存版本，仅冲突 / canvasId=null）
+//   readOnly 态（游客 / 公共画布未 ack 等）：简化为单按钮「📷 导出 PNG」（产品红线 — 游客只能导出图片）
+//
 // 不依赖外部 UI 库；纯 React 文本节点渲染（XSS 安全）
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ApiError } from '../../api/canvases';
 import type { DraftStatus } from '../../hooks/useDraftAutosave';
 import './styles.css';
@@ -35,6 +40,10 @@ export interface SaveStatusProps {
   onExportServer?: () => void;
   /** 导出当前内存版本（冲突逃生口；用 hook 内的 project 序列化）*/
   onExportLocal?: () => void;
+  /** v1.18.5 #38：导出当前 React Flow 视图为 PNG。caller 负责 fitView */
+  onExportImage?: () => void;
+  /** v1.18.5 #38：导出图片是否进行中（loading 反馈，disable 按钮 + 文案改"正在生成..."） */
+  exportingImage?: boolean;
   // 阶段 4 P4D：草稿自动保存状态（由 useDraftAutosave 提供）
   /** 草稿状态；undefined 表示未启用（如游客 / 本地草稿模式）*/
   draftStatus?: DraftStatus;
@@ -106,6 +115,123 @@ function formatServerError(err: ApiError): string {
   }
 }
 
+/**
+ * 导出下拉菜单（v1.18.5 #38）
+ * 点击主按钮展开 → 内含 📷 PNG + 📋 JSON 两个子项 → 点子项触发回调 + 自动收起
+ * 点外面也自动收起（document mousedown listener）
+ *
+ * 单项时（如 readOnly 仅 PNG）退化为单按钮，不展开
+ */
+function ExportDropdown({
+  label,
+  title,
+  onExportImage,
+  onExportJson,
+  jsonLabel,
+  jsonTitle,
+  exportingImage,
+}: {
+  label: string;
+  title: string;
+  onExportImage?: () => void;
+  onExportJson?: () => void;
+  jsonLabel: string;
+  jsonTitle: string;
+  exportingImage?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // 点击外部关闭
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
+  // 单项退化：只有 image 没有 json → 直接当单按钮，不展开
+  if (onExportImage && !onExportJson) {
+    return (
+      <button
+        type="button"
+        className="save-status__btn"
+        onClick={onExportImage}
+        disabled={exportingImage}
+        title={exportingImage ? '正在生成图片，请稍候…' : '导出当前画布为 PNG 图片'}
+      >
+        {exportingImage ? '⏳ 正在生成…' : '📷 导出 PNG'}
+      </button>
+    );
+  }
+  // 单项退化：只有 json 没有 image → 直接当单按钮（保留旧行为兜底）
+  if (!onExportImage && onExportJson) {
+    return (
+      <button
+        type="button"
+        className="save-status__btn"
+        onClick={onExportJson}
+        title={jsonTitle}
+      >
+        {jsonLabel}
+      </button>
+    );
+  }
+  // 都没有 → 不渲染
+  if (!onExportImage && !onExportJson) return null;
+
+  return (
+    <div className="save-status__dropdown" ref={wrapperRef}>
+      <button
+        type="button"
+        className="save-status__btn"
+        onClick={() => setOpen((v) => !v)}
+        title={title}
+        aria-expanded={open}
+        aria-haspopup="menu"
+      >
+        {label} ▾
+      </button>
+      {open && (
+        <div className="save-status__dropdown-menu" role="menu">
+          {onExportImage && (
+            <button
+              type="button"
+              className="save-status__dropdown-item"
+              onClick={() => {
+                setOpen(false);
+                onExportImage();
+              }}
+              disabled={exportingImage}
+              role="menuitem"
+            >
+              {exportingImage ? '⏳ 正在生成图片…' : '📷 导出 PNG 图片'}
+            </button>
+          )}
+          {onExportJson && (
+            <button
+              type="button"
+              className="save-status__dropdown-item"
+              onClick={() => {
+                setOpen(false);
+                onExportJson();
+              }}
+              role="menuitem"
+              title={jsonTitle}
+            >
+              {jsonLabel}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function SaveStatus(props: SaveStatusProps) {
   const {
     canvasId,
@@ -122,6 +248,8 @@ export function SaveStatus(props: SaveStatusProps) {
     onDiscardAndReload,
     onExportServer,
     onExportLocal,
+    onExportImage,
+    exportingImage,
     draftStatus,
     draftSavedAt,
     canSaveAsPrivateCopy,
@@ -148,17 +276,35 @@ export function SaveStatus(props: SaveStatusProps) {
     </span>
   ) : null;
 
-  // 导出按钮：在所有状态都可见的复用片段（包括 readOnly）。
-  // 仅当已挂接服务端画布时显示（canvasId != null）—— 没挂接时没什么可"导出服务端版本"
-  const exportServerButton = canvasId != null && onExportServer ? (
-    <button
-      type="button"
-      className="save-status__btn"
-      onClick={onExportServer}
-      title="下载当前画布的服务端 JSON 副本"
-    >
-      导出
-    </button>
+  // 「导出 ▾」下拉：服务端 JSON + PNG 图片
+  // - canvasId != null 时显示（已挂接服务端 → JSON 可走 GET export endpoint）
+  // - readOnly 态下仅图片项（产品红线，游客不导出 JSON）
+  // - readOnly 单项退化为单按钮「📷 导出 PNG」（ExportDropdown 内部处理）
+  const exportServerDropdown = canvasId != null ? (
+    <ExportDropdown
+      label="导出"
+      title="导出当前画布"
+      onExportImage={onExportImage}
+      onExportJson={readOnly ? undefined : onExportServer}
+      jsonLabel="📋 导出 JSON"
+      jsonTitle="下载当前画布的服务端 JSON 副本"
+      exportingImage={exportingImage}
+    />
+  ) : null;
+
+  // 「导出本地副本 ▾」下拉：内存 JSON + PNG 图片
+  // - 用于冲突逃生口 + canvasId=null 草稿备份
+  // - 不考虑 readOnly 态（readOnly 时不会进入 conflict/canvasId=null 分支）
+  const exportLocalDropdown = onExportLocal ? (
+    <ExportDropdown
+      label="导出本地副本"
+      title="下载当前内存版本（含未保存改动）"
+      onExportImage={onExportImage}
+      onExportJson={onExportLocal}
+      jsonLabel="📋 导出本地 JSON"
+      jsonTitle="下载当前内存中的本地版本（含未保存改动）作为备份"
+      exportingImage={exportingImage}
+    />
   ) : null;
 
   // 主动复制入口（codex 取舍审 M2 + L2）：独立于 readOnly/saved/dirty 状态。
@@ -189,11 +335,12 @@ export function SaveStatus(props: SaveStatusProps) {
     // P3D-2 step 2 codex 二审建议：原文案"游客只读模式"已不准确——
     // 只读现在可能源自 游客 / 归档画布 / 私有画布非 owner / 加载中 / 未 ack 公共画布 等多种原因
     // codex 取舍审 M2：未 ack 公共画布触发 readOnly，主动复制入口必须出现在这里
+    // v1.18.5 #38：readOnly 下「导出」退化为单按钮「📷 导出 PNG」（游客不导出 JSON 产品红线）
     return (
       <div className="save-status save-status--readonly" title="当前画布只读">
         <span>只读</span>
         {saveAsPrivateCopyButton}
-        {exportServerButton}
+        {exportServerDropdown}
       </div>
     );
   }
@@ -209,15 +356,15 @@ export function SaveStatus(props: SaveStatusProps) {
       <div className="save-status save-status--saving">
         <span className="save-status__dot save-status__dot--saving" />
         <span className="save-status__text">保存中…</span>
-        {exportServerButton}
+        {exportServerDropdown}
       </div>
     );
   }
 
   // 优先级 2：冲突
-  // 这里两个导出按钮都给：
-  //   - "导出本地副本"用内存数据（用户改动还没保存的版本，要保的就是这份）
-  //   - "导出服务端版本"才是 server 当前 JSON（用户也可能想存一份做对比）
+  // 这里两个导出下拉都给：
+  //   - 「导出本地副本」用内存数据（用户改动还没保存的版本，要保的就是这份）
+  //   - 「导出」服务端版本才是 server 当前 JSON（用户也可能想存一份做对比）
   if (autoSaveDisabled && conflict) {
     return (
       <div className="save-status save-status--conflict">
@@ -225,18 +372,9 @@ export function SaveStatus(props: SaveStatusProps) {
         <span className="save-status__text">
           有人改过了（服务端 v{conflict.currentVersion}）；本地改动暂未保存
         </span>
-        {onExportLocal && (
-          <button
-            type="button"
-            className="save-status__btn"
-            onClick={onExportLocal}
-            title="下载当前内存中的本地版本（含未保存改动）作为备份"
-          >
-            导出本地副本
-          </button>
-        )}
+        {exportLocalDropdown}
         {saveAsPrivateCopyButton}
-        {exportServerButton}
+        {exportServerDropdown}
         <button
           type="button"
           className="save-status__btn save-status__btn--danger"
@@ -270,7 +408,7 @@ export function SaveStatus(props: SaveStatusProps) {
           重试
         </button>
         {saveAsPrivateCopyButton}
-        {exportServerButton}
+        {exportServerDropdown}
       </div>
     );
   }
@@ -282,16 +420,7 @@ export function SaveStatus(props: SaveStatusProps) {
       <div className="save-status save-status--unsaved">
         <span className="save-status__dot save-status__dot--dirty" />
         <span className="save-status__text">未保存到服务器</span>
-        {onExportLocal && (
-          <button
-            type="button"
-            className="save-status__btn"
-            onClick={onExportLocal}
-            title="下载当前内存中的画布副本"
-          >
-            导出本地副本
-          </button>
-        )}
+        {exportLocalDropdown}
         <button
           type="button"
           className="save-status__btn save-status__btn--primary"
@@ -320,7 +449,7 @@ export function SaveStatus(props: SaveStatusProps) {
           保存
         </button>
         {saveAsPrivateCopyButton}
-        {exportServerButton}
+        {exportServerDropdown}
       </div>
     );
   }
@@ -334,7 +463,7 @@ export function SaveStatus(props: SaveStatusProps) {
       </span>
       {draftStatusElement}
       {saveAsPrivateCopyButton}
-      {exportServerButton}
+      {exportServerDropdown}
     </div>
   );
 }

@@ -88,6 +88,9 @@ interface FlowCanvasProps {
   onImport?: () => void;
   /** P3E-3 批注 bundle（透传给 NodeDetailPanel） */
   annotationsBundle?: AnnotationsBundle | null;
+  /** v1.18.5：mount 时回传 fitView 函数给 caller，用于导出图片前框入全部节点。
+   *  仅暴露 fitView（最小面），不暴露整个 ReactFlowInstance 以避免 caller 滥用内部 state。 */
+  onFitViewReady?: (fitView: () => void) => void;
 }
 
 import { OffscreenIndicators } from './OffscreenIndicators';
@@ -116,6 +119,7 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   onForbiddenRemove,
   onImport,
   annotationsBundle,
+  onFitViewReady,
 }: {
   sheetId?: string;
   initialNodes: Node<FlowNodeData>[];
@@ -139,6 +143,8 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   onImport?: () => void;
   /** P3E-3 批注 bundle（由 BFV 接 useAnnotations + 派生）；不传 = 不显示批注 tab/徽章 */
   annotationsBundle?: AnnotationsBundle | null;
+  /** v1.18.5：导出图片前框入全部节点用，仅暴露 fitView */
+  onFitViewReady?: (fitView: () => void) => void;
 }) {
   // 迁移旧的 edge handle ID
   const migratedEdges = initialEdges.map((edge) => {
@@ -180,6 +186,15 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
   const [selectedElement, setSelectedElement] = useState<SelectedElement | null>(null);
   const [showPanel, setShowPanel] = useState(false);
   const { fitView, screenToFlowPosition, getNodes, getEdges, deleteElements } = useReactFlow<Node<FlowNodeData>, Edge>();
+
+  // v1.18.5：把 fitView 提到 caller（BFV 顶栏导出图片用，截图前框入全部节点）
+  // 仅 emit 一次（mount），fitView 引用在 React Flow 内部稳定
+  useEffect(() => {
+    if (onFitViewReady) {
+      onFitViewReady(() => fitView({ padding: 0.2, duration: 0 }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 使用自定义 Hooks
   const {
@@ -1245,6 +1260,7 @@ export function FlowCanvas({
   onForbiddenRemove,
   onImport,
   annotationsBundle,
+  onFitViewReady,
 }: FlowCanvasProps) {
   // 使用 sheetId 作为 key 确保 ReactFlowProvider 和 FlowCanvasContent 都重新挂载
   return (
@@ -1268,6 +1284,7 @@ export function FlowCanvas({
         onForbiddenRemove={onForbiddenRemove}
         onImport={onImport}
         annotationsBundle={annotationsBundle}
+        onFitViewReady={onFitViewReady}
       />
     </ReactFlowProvider>
   );

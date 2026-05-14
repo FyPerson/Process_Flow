@@ -9,6 +9,7 @@ import { BaseVersionExpiredDialog } from '../../components/BaseVersionExpiredDia
 import { PublicEditWarningDialog } from '../../components/PublicEditWarningDialog';
 import { useToast } from '../../components/Toast';
 import { downloadCanvasFromServer, downloadProjectAsLocal } from '../../utils/canvas-export';
+import { exportCanvasAsPng } from '../../utils/export-image';
 import { importCanvas, putDraft as apiPutDraft } from '../../api/canvases';
 import { canonicalizeProject } from '../../hooks/useDraftAutosave';
 import type { MergeReport, MergeWarning } from '../../api/canvases.types';
@@ -590,6 +591,33 @@ export function BusinessFlowVisualization() {
     });
   }, [getProjectData, canvasId, conflict]);
 
+  // v1.18.5 #38：导出当前 React Flow 视图为 PNG
+  // FlowCanvas 通过 onFitViewReady 把 fitView 函数提到这里（仅 mount 时 emit 一次）
+  // 截图前先 fitView 让全部节点入框，等 1 帧让 viewport transform 落地后再截
+  const fitViewRef = useRef<(() => void) | null>(null);
+  const handleFitViewReady = useCallback((fitView: () => void) => {
+    fitViewRef.current = fitView;
+  }, []);
+  const [exportingImage, setExportingImage] = useState(false);
+  const handleExportImage = useCallback(async () => {
+    if (exportingImage) return; // 防重复点击
+    const canvasName = project?.name || '画布';
+    setExportingImage(true);
+    try {
+      await exportCanvasAsPng(canvasName, {
+        beforeCapture: async () => {
+          if (fitViewRef.current) fitViewRef.current();
+          // 等 1 帧让 fitView 的 viewport transform 在 DOM 落地
+          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+        },
+      });
+    } catch (err) {
+      window.alert(`导出图片失败：${err instanceof Error ? err.message : '未知错误'}`);
+    } finally {
+      setExportingImage(false);
+    }
+  }, [project?.name, exportingImage]);
+
   // 导入：用户选 JSON 文件 → 上传到 /api/canvases/import → URL 跳到新 canvasId
   //
   // 关键边界（codex 八审 P2I 必修）：
@@ -1129,6 +1157,8 @@ export function BusinessFlowVisualization() {
             onDiscardAndReload={handleDiscardAndReload}
             onExportServer={handleExportServer}
             onExportLocal={handleExportLocal}
+            onExportImage={handleExportImage}
+            exportingImage={exportingImage}
             // 主动复制入口（codex 取舍审 L2 候选 A'）：仅普通用户 + 公共画布 + 已挂接服务端时显示
             // 末尾审 L1：archived public 画布也允许复制——归档画布是只读历史，
             // 复制为私人副本作为参考资料是合理逃生口（不补 !archived 条件）
@@ -1209,6 +1239,7 @@ export function BusinessFlowVisualization() {
             onRenameSheet={readOnly ? () => undefined : renameSheet}
             onDuplicateSheet={readOnly ? undefined : duplicateSheet}
             annotationsBundle={annotationsBundle}
+            onFitViewReady={handleFitViewReady}
           />
         )}
       </div>
