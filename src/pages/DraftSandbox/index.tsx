@@ -13,7 +13,7 @@
 // D-4：html-to-image PNG 导出
 // D-5：撤销/重做 + 容量保护
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ReactFlow,
@@ -33,6 +33,7 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { newNodeId, newEdgeId } from '../../utils/ids';
+import { exportCanvasAsPng } from '../../utils/export-image';
 import { DraftNode, DraftNodeType, DraftNodeData } from './DraftNode';
 import { loadDraft, saveDraft } from './persistence';
 
@@ -57,6 +58,22 @@ const defaultEdgeOptions: Partial<Edge> = {
     width: 18,
     height: 18,
   },
+  // 显式设置 edge label SVG 样式（不依赖 React Flow CSS 变量）
+  // 原因：html-to-image 截图时 CSS 变量可能解析不到，导致 label 渲染异常
+  // labelStyle 控制 <text fill>；labelBgStyle 控制 <rect fill>；labelBgPadding 给 padding
+  labelStyle: {
+    fill: '#0f172a',
+    fontSize: 12,
+    fontWeight: 500,
+  },
+  labelBgStyle: {
+    fill: '#ffffff',
+    fillOpacity: 0.95,
+    stroke: '#cbd5e1',
+    strokeWidth: 1,
+  },
+  labelBgPadding: [6, 4] as [number, number],
+  labelBgBorderRadius: 4,
 };
 
 const NODE_TYPE_LABELS: Record<DraftNodeType, string> = {
@@ -75,9 +92,35 @@ const NODE_TYPE_TOOLBAR: { type: DraftNodeType; icon: string; text: string }[] =
 
 function DraftSandboxInner() {
   const navigate = useNavigate();
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, fitView } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<DraftNodeData>>(INITIAL_NODES);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(INITIAL_EDGES);
+  const [exporting, setExporting] = useState(false);
+
+  // D-4：导出当前画布为 PNG（复用 src/utils/export-image.ts）
+  // - fitView 框入全部节点 + 等 1 帧 viewport transform 落地
+  // - 文件名 "需求草稿-YYYYMMDD-HHmm.png"
+  // - 防重复点击 + loading 反馈
+  const handleExport = useCallback(async () => {
+    if (exporting) return;
+    if (nodes.length === 0) {
+      window.alert('画布为空，请先添加节点');
+      return;
+    }
+    setExporting(true);
+    try {
+      await exportCanvasAsPng('需求草稿', {
+        beforeCapture: async () => {
+          fitView({ padding: 0.2, duration: 0 });
+          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+        },
+      });
+    } catch (err) {
+      window.alert(`导出失败：${err instanceof Error ? err.message : '未知错误'}`);
+    } finally {
+      setExporting(false);
+    }
+  }, [exporting, nodes.length, fitView]);
 
   // localStorage 持久化：nodes/edges 变化 → debounce 500ms 写入
   // 方案 §3.3：避免拖动节点时频繁写 localStorage
@@ -168,6 +211,24 @@ function DraftSandboxInner() {
           </span>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exporting}
+            style={{
+              padding: '6px 12px',
+              background: exporting ? '#1e40af55' : '#2563eb',
+              border: '1px solid transparent',
+              borderRadius: 4,
+              color: '#ffffff',
+              fontSize: 12,
+              cursor: exporting ? 'not-allowed' : 'pointer',
+              fontWeight: 500,
+            }}
+            title={exporting ? '正在生成图片，请稍候…' : '导出当前画布为 PNG 图片'}
+          >
+            {exporting ? '⏳ 正在生成…' : '📷 导出 PNG'}
+          </button>
           <button
             type="button"
             onClick={() => navigate('/')}
