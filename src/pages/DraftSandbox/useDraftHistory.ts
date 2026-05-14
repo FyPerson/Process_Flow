@@ -8,8 +8,15 @@
 //   - 用 JSON.stringify 做快照（节点 + 边都是 plain object，无循环引用）
 //
 // 同款保护（从 P3D-2 step 9 + P5 Day 1 踩坑沉淀）：
-//   - isUndoRedoRef flag 防 undo/redo 触发的状态变化又推快照（避免无限循环）
 //   - snapshotsEqual 幂等防 StrictMode 双调用导致同 snapshot 重复入栈
+//
+// D-8 R-M3：删除原 isUndoRedoRef + setTimeout(100) 时间窗机制
+//   原因：固定 100ms 时间窗假设让用户 undo 后 100ms 内立即添加节点/连线/改名被
+//   静默跳过；低端机器/并发渲染下相反竞态。
+//   替代：applySnapshot 路径（DraftSandbox.handleUndo/handleRedo → setNodes/setEdges）
+//   不会触发 wrappedOnNodesChange（React Flow useNodesState 的 setter 直接更新
+//   state 不走 onNodesChange）—— 因此 history 不会被反向递推。
+//   万一未来 React Flow 行为变化触发，由 snapshotsEqual 兜底拒重复入栈。
 //
 // 拖动场景边界（caller 在 onNodeDragStop 推快照，onNodesChange position+dragging=true 时不推）
 // 详见 DraftSandbox/index.tsx caller 端集成。
@@ -46,15 +53,13 @@ export function useDraftHistory(initialNodes: Node<DraftNodeData>[], initialEdge
     { nodes: deepClone(initialNodes), edges: deepClone(initialEdges) },
   ]);
   const currentIndexRef = useRef(0);
-  const isUndoRedoRef = useRef(false);
 
   // push 新快照（caller 在节点/边的"结构性变化"时调用——见 caller 端 push 策略）
-  // - undo/redo 触发的变化不推（isUndoRedoRef.current）
-  // - 与栈顶实质相等不推（snapshotsEqual）
+  // - 与栈顶实质相等不推（snapshotsEqual 兜底防 StrictMode 双调用 + applySnapshot
+  //   后若意外触发 push 也会被拦下）
   // - 栈深超 20 截掉最早一条
   const pushSnapshot = useCallback(
     (nodes: Node<DraftNodeData>[], edges: Edge[]) => {
-      if (isUndoRedoRef.current) return;
       const next: HistoryState = { nodes: deepClone(nodes), edges: deepClone(edges) };
       const branch = historyRef.current.slice(0, currentIndexRef.current + 1);
       const top = branch[branch.length - 1];
@@ -77,24 +82,15 @@ export function useDraftHistory(initialNodes: Node<DraftNodeData>[], initialEdge
   // caller 拿到 snapshot 后 setNodes/setEdges
   const undo = useCallback((): HistoryState | null => {
     if (currentIndexRef.current <= 0) return null;
-    isUndoRedoRef.current = true;
     currentIndexRef.current--;
     const state = historyRef.current[currentIndexRef.current];
-    // 100ms 后重置 flag，避免异步竞态把当次 setState 又推快照（同主应用经验值）
-    setTimeout(() => {
-      isUndoRedoRef.current = false;
-    }, 100);
     return { nodes: deepClone(state.nodes), edges: deepClone(state.edges) };
   }, []);
 
   const redo = useCallback((): HistoryState | null => {
     if (currentIndexRef.current >= historyRef.current.length - 1) return null;
-    isUndoRedoRef.current = true;
     currentIndexRef.current++;
     const state = historyRef.current[currentIndexRef.current];
-    setTimeout(() => {
-      isUndoRedoRef.current = false;
-    }, 100);
     return { nodes: deepClone(state.nodes), edges: deepClone(state.edges) };
   }, []);
 

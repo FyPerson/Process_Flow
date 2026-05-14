@@ -13,13 +13,14 @@
 //   - 配合 ReactFlow connectionMode="loose"，任意 handle 都能作为 source 或 target
 //   - 决策节点 Handle 落在菱形 4 个顶点
 
-import { memo, useCallback } from 'react';
-import { Handle, Position, NodeProps, useReactFlow } from '@xyflow/react';
+import { memo, useCallback, useContext, createContext } from 'react';
+import { Handle, Position, NodeProps } from '@xyflow/react';
 
-// D-5：双击改名后通知父组件推历史快照
-// 不用 prop（NodeProps 由 React Flow 注入，扩展接口有点麻烦）
-// 改用 window CustomEvent 通信——简单可靠，DraftSandbox 监听即可
-export const DRAFT_NODE_LABEL_CHANGED_EVENT = 'draft-node-label-changed';
+// D-8 H2+M5 修法：用 React Context 显式注入改名回调
+// 旧实现走 window CustomEvent，存在数据流隐式 + 多实例串扰 + queueMicrotask 异步竞态
+// 新实现：DraftSandbox 通过 DraftNodeRenameContext 提供 onRename，DraftNode 直接调
+// —— 改名走同步路径（DraftSandbox setNodes updater 内同步推快照），无竞态
+export const DraftNodeRenameContext = createContext<(id: string, label: string) => void>(() => {});
 
 export type DraftNodeType = 'start' | 'step' | 'decision' | 'end';
 
@@ -44,21 +45,17 @@ const HANDLE_STYLE: React.CSSProperties = {
 function DraftNodeImpl({ id, data, type }: NodeProps) {
   const nodeType = (type ?? 'step') as DraftNodeType;
   const nodeData = data as DraftNodeData;
-  const { setNodes } = useReactFlow();
+  // D-8 H2+M5：用 Context 注入的回调改名，由 DraftSandbox 在 setNodes updater 内
+  // 同步合成 next + 推快照 —— 替代旧 window CustomEvent + queueMicrotask 异步路径
+  const onRename = useContext(DraftNodeRenameContext);
 
   const handleDoubleClick = useCallback(() => {
     const next = window.prompt('编辑节点文字：', nodeData.label);
     if (next === null) return; // 用户取消
     const trimmed = next.trim();
     if (!trimmed) return; // 空文字不接受
-    setNodes((nodes) =>
-      nodes.map((n) =>
-        n.id === id ? { ...n, data: { ...n.data, label: trimmed } } : n,
-      ),
-    );
-    // D-5：通知父组件推历史快照（让 Ctrl+Z 能撤销改名）
-    window.dispatchEvent(new CustomEvent(DRAFT_NODE_LABEL_CHANGED_EVENT));
-  }, [id, nodeData.label, setNodes]);
+    onRename(id, trimmed);
+  }, [id, nodeData.label, onRename]);
 
   // 4 个 Handle 都设 source —— connectionMode="loose" 时 React Flow 允许 source<->source 互连
   // id 给 't/r/b/l' 让 edge 持久化能记住具体哪个端点

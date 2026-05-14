@@ -24,6 +24,8 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
+  applyNodeChanges,
+  applyEdgeChanges,
   Connection,
   Edge,
   Node,
@@ -34,7 +36,7 @@ import '@xyflow/react/dist/style.css';
 
 import { newNodeId, newEdgeId } from '../../utils/ids';
 import { exportCanvasAsPng } from '../../utils/export-image';
-import { DraftNode, DraftNodeType, DraftNodeData, DRAFT_NODE_LABEL_CHANGED_EVENT } from './DraftNode';
+import { DraftNode, DraftNodeType, DraftNodeData, DraftNodeRenameContext } from './DraftNode';
 import { loadDraft, saveDraft } from './persistence';
 import { useDraftHistory } from './useDraftHistory';
 
@@ -99,6 +101,11 @@ function DraftSandboxInner() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<DraftNodeData>>(INITIAL_NODES);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(INITIAL_EDGES);
   const [exporting, setExporting] = useState(false);
+  // D-8 M3：localStorage 写入失败时的降级提示状态
+  // null = 正常 / 'quota_exceeded' = 配额满 / 'storage_disabled' = 隐身/禁用 / 'unknown' = 其他
+  const [storageError, setStorageError] = useState<
+    null | 'quota_exceeded' | 'storage_disabled' | 'unknown'
+  >(null);
 
   // D-5：撤销/重做历史栈（栈深 20）
   // 推快照策略（caller 端集成）：
@@ -131,17 +138,18 @@ function DraftSandboxInner() {
   const handleUndo = useCallback(() => applySnapshot(history.undo()), [history, applySnapshot]);
   const handleRedo = useCallback(() => applySnapshot(history.redo()), [history, applySnapshot]);
 
-  // D-5：监听节点改名事件（DraftNode 双击 prompt 改名后派发）
-  // 等 1 微任务让 setNodes 落地，再用 nodesRef 拿到最新 label 推快照
-  useEffect(() => {
-    function onLabelChanged() {
-      queueMicrotask(() => {
-        history.pushSnapshot(nodesRef.current, edgesRef.current);
-      });
-    }
-    window.addEventListener(DRAFT_NODE_LABEL_CHANGED_EVENT, onLabelChanged);
-    return () => window.removeEventListener(DRAFT_NODE_LABEL_CHANGED_EVENT, onLabelChanged);
-  }, [history]);
+  // D-8 H2+M5：改名走 setNodes updater 同步合成 next + 推快照
+  // 旧实现走 CustomEvent + queueMicrotask 读 nodesRef，存在异步竞态（H2）+ 全局事件
+  // 隐式数据流（M5）。新实现通过 DraftNodeRenameContext 直接注入 callback。
+  const handleRename = useCallback((nodeId: string, nextLabel: string) => {
+    setNodes((prev) => {
+      const next = prev.map((n) =>
+        n.id === nodeId ? { ...n, data: { ...n.data, label: nextLabel } } : n,
+      );
+      history.pushSnapshot(next, edgesRef.current);
+      return next;
+    });
+  }, [setNodes, history]);
 
   // 键盘监听 Ctrl+Z / Ctrl+Y（Mac 兼容 Meta）+ Ctrl+Shift+Z（redo 别名）
   // 跳过 input/textarea/contenteditable（避免抢用户编辑文字时的撤销）
@@ -197,7 +205,10 @@ function DraftSandboxInner() {
   useEffect(() => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      saveDraft(nodes, edges);
+      const result = saveDraft(nodes, edges);
+      // D-8 M3：写入失败 → setStorageError 触发顶栏黄字降级提示
+      // 成功后清掉 error（之前失败可能恢复，例如 quota 释放或浏览器恢复访问）
+      setStorageError(result.ok ? null : result.reason);
     }, 500);
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -263,43 +274,71 @@ function DraftSandboxInner() {
     history.pushSnapshot(nodesRef.current, edgesRef.current);
   }, [history]);
 
-  // D-5：节点/边删除时推快照（onNodesChange / onEdgesChange remove 类型）
-  // React Flow useNodesState 提供的 onNodesChange 内部直接 setNodes，
-  // 我们包一层在它之后立即用 setTimeout(0) 读取最新 nodesRef 推快照
-  // —— ref 在 nodes useEffect 同步更新，但 useEffect 是异步的，所以用 microtask
+  // D-5 + D-8 H1/R-H1/R-M2 修法：节点/边结构性变化时推快照
+  // H1 修法：用 React Flow 的 applyNodeChanges/applyEdgeChanges 在 setNodes/setEdges
+  //   函数式 updater 内同步计算 next，**同一 updater 内**推 snapshot —— 删除快照与
+  //   实际状态原子一致。
+  // R-H1 修法：节点 remove 时**同步过滤悬空 edge**（source/target 指向已删节点的
+  //   边一起删 + 一起推快照），避免中间快照出现 dangling edge → undo 复活悬空边。
+  // R-M2 修法：结构性判断扩展为 add/remove/replace（@xyflow/react NodeChange 三类
+  //   都视为结构性，position/dimensions/select 仍走默认路径不推历史）。
   const wrappedOnNodesChange = useCallback(
     (changes: Parameters<typeof onNodesChange>[0]) => {
-      onNodesChange(changes);
       const hasStructural = changes.some(
-        (c) => c.type === 'remove' || c.type === 'add',
+        (c) => c.type === 'remove' || c.type === 'add' || c.type === 'replace',
       );
       if (hasStructural) {
-        queueMicrotask(() => {
-          history.pushSnapshot(nodesRef.current, edgesRef.current);
+        // R-H1：节点 remove → 提取 removedIds → 同步过滤悬空 edge → 一并推完整快照
+        const removedIds = new Set(
+          changes.filter((c) => c.type === 'remove').map((c) => c.id),
+        );
+        setNodes((prevNodes) => {
+          const nextNodes = applyNodeChanges(changes, prevNodes);
+          if (removedIds.size > 0) {
+            // 有节点被删 → 同步过滤悬空 edge
+            setEdges((prevEdges) => {
+              const nextEdges = prevEdges.filter(
+                (e) => !removedIds.has(e.source) && !removedIds.has(e.target),
+              );
+              history.pushSnapshot(nextNodes, nextEdges);
+              return nextEdges;
+            });
+          } else {
+            // 纯 add/replace 无悬空 edge 风险，edges 不变
+            history.pushSnapshot(nextNodes, edgesRef.current);
+          }
+          return nextNodes;
         });
+      } else {
+        // 非结构性变化（select/position/dimensions 等）走 React Flow 默认路径
+        onNodesChange(changes);
       }
     },
-    [onNodesChange, history],
+    [onNodesChange, setNodes, setEdges, history],
   );
   const wrappedOnEdgesChange = useCallback(
     (changes: Parameters<typeof onEdgesChange>[0]) => {
-      onEdgesChange(changes);
       const hasStructural = changes.some(
-        (c) => c.type === 'remove' || c.type === 'add',
+        (c) => c.type === 'remove' || c.type === 'add' || c.type === 'replace',
       );
       if (hasStructural) {
-        queueMicrotask(() => {
-          history.pushSnapshot(nodesRef.current, edgesRef.current);
+        setEdges((prev) => {
+          const next = applyEdgeChanges(changes, prev);
+          history.pushSnapshot(nodesRef.current, next);
+          return next;
         });
+      } else {
+        onEdgesChange(changes);
       }
     },
-    [onEdgesChange, history],
+    [onEdgesChange, setEdges, history],
   );
 
   // 用 useMemo 把 nodeTypes 稳定下来（React Flow 要求 nodeTypes 引用稳定）
   const stableNodeTypes = useMemo(() => nodeTypes, []);
 
   return (
+    <DraftNodeRenameContext.Provider value={handleRename}>
     <div
       style={{
         height: '100vh',
@@ -335,6 +374,21 @@ function DraftSandboxInner() {
               ⚠️ 节点较多（{nodes.length}），建议导出后清空
             </span>
           )}
+          {/* D-8 M3：localStorage 写入失败降级提示 */}
+          {storageError && (
+            <span
+              style={{ fontSize: 12, color: '#fde047', fontWeight: 600 }}
+              title={
+                storageError === 'quota_exceeded'
+                  ? '本地存储已满 / 浏览器配额超限 — 当前改动可能在刷新后丢失，请立即点「📷 导出 PNG」'
+                  : storageError === 'storage_disabled'
+                    ? '浏览器禁用了 localStorage（如隐身模式 / 第三方 cookie 限制）— 当前画布不会自动保存，请立即点「📷 导出 PNG」'
+                    : '本地保存失败 — 当前改动可能在刷新后丢失，请立即点「📷 导出 PNG」'
+              }
+            >
+              ⚠️ 本地保存失败，请立即导出
+            </span>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button
@@ -367,7 +421,7 @@ function DraftSandboxInner() {
               fontSize: 12,
               cursor: 'pointer',
             }}
-            title="返回登录页"
+            title="返回登录页（不会清空本机草稿，刷新或下次回 /draft 仍能恢复）"
           >
             🔙 返回登录
           </button>
@@ -454,6 +508,7 @@ function DraftSandboxInner() {
         </div>
       </div>
     </div>
+    </DraftNodeRenameContext.Provider>
   );
 }
 
