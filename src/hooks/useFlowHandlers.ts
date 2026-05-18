@@ -259,11 +259,20 @@ export function useFlowHandlers({
     const onNodeClick: NodeMouseHandler<Node<FlowNodeData>> = useCallback(
         (_event, node) => {
             const nodeData = node.data;
-            // 分组节点 / 文本框节点 / 可展开节点都可以选中
-            // 文本框节点（v1.20.0）expandable=false 但必须能选中以打开精简详情面板
-            const isGroupNode = node.type === 'group';
-            const isTextNode = node.type === 'text' || nodeData.type === 'text';
-            const canSelect = nodeData.expandable || isGroupNode || isTextNode;
+            // v1.20.3：canSelect 改为"按 node.type 白名单"，不再依赖 nodeData.expandable
+            // 原因：历史上 expandable=true 是 UI 创建节点的隐式约定，但 API 创建 / 老数据 /
+            //   脚本造的节点常忘传 → 命中 expandable=false 让节点点击无反应。
+            // 修法：所有"业务语义节点"（process/decision/data/terminator/subprocess + group + text）
+            //   都应能选中开面板，而不是依赖 expandable 字段。
+            // 兼容：保留 nodeData.expandable 兜底 → 旧代码或未来新增节点 type 不在白名单
+            //   但传了 expandable=true，仍能选中。
+            const SELECTABLE_TYPES = new Set([
+                'process', 'decision', 'data', 'terminator', 'subprocess', 'group', 'text',
+            ]);
+            const nodeType = node.type;
+            const canSelect = SELECTABLE_TYPES.has(nodeType ?? '')
+                || SELECTABLE_TYPES.has(nodeData.type ?? '')
+                || nodeData.expandable === true;
 
             if (canSelect) {
                 // 如果点击的是已选中的节点，则关闭面板
