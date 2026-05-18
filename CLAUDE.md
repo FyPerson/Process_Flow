@@ -148,11 +148,22 @@ powershell -File scripts/deploy.ps1        # 主 PowerShell 跑（不能在 hook
 - **neat-freak 模式 B 阶段发版三件套**：bump 1.18.4→1.19.0（package.json + lock）+ 偿还 #37/#38 + 部分偿还 #39（游客版偿还 / 主应用 useFlowHistory L173 + #28 同款仍挂）+ 新挂账 #40（aria-label）+ #41（卸载前 flush debounce）+ 写 99-收尾.md 嵌套式归档
 - 单测 535 → **576**（+41 但 [今日实际 +98 含 #38 11 / persistence 10 / useDraftHistory 9 / guards 11 / 其他]）/ tsc 三端 0 错 / 三端 HEAD 同步 `431b65a` / 生产 PM2 真重启 pid=14464 / dbWritable=True
 
-**下次 next**（v1.19.0 后下个阶段方向待用户拍板）：
-- 选项 A：游客草稿真实使用反馈观察 1-2 周（按方案 §7.1 风险已提示 / 未必有改动需求）
+**v1.20.0 — 文本框节点 MVP**（2026-05-18，[docs/规划/文本框节点/](docs/规划/文本框节点/)）：
+- **业务诉求**：导出 PNG 后图片上能显示流程说明文字（例如"XXXX流程"）
+- **范围**：第 7 种节点类型 `'text'` / 纯展示无 Handle / 三可调（字体 5 选 1 / 字号 5 档 / 颜色 10 色板 + 自定义）/ 默认透明背景 + 黑字 + 24px + 黑体（方案 §6 决策 A 最普适）
+- **非范围（先不做）**：背景色 / 边框 / 描边 / 富文本 / 对齐 / 预设模板 / 行内编辑 — 等业务实测反馈再加
+- **改造面**：新增 [TextNode](src/components/TextNode/index.tsx)（80 行）+ [TextNodePropertiesPanel](src/components/NodeDetailPanel/TextNodePropertiesPanel.tsx)（170 行）+ NodeType enum 加 `'text'`（client + server schema 同步）+ FlowCanvas nodeTypes 注册 + useFlowOperations onAddNode 加 'text' 独立分支 + NodeDetailPanel 加 `isTextNode` 分支隐废弃 + 隐批注 tab
+- **自审 4 条门禁通过 → 跳 codex**：纯展示组件 + 无 mutation 副作用 + 依赖底层已审 + 边界 ≤ 10（节点类型/schema/nodeTypes 注册/onAddNode/详情面板/权限/PNG 导出/拷贝粘贴/撤销重做/自动布局）
+- **neat-freak 模式 B 阶段发版三件套**：bump 1.19.0→1.20.0（package.json + lock）+ 无新挂账 + 写 [99-收尾.md](docs/规划/文本框节点/codex审查/99-收尾.md) 嵌套式归档
+- 单测 576 → **583**（+7，schema 文本框节点 7 case：type=text / 3 字段 / 非法 key / size 边界 / parent 校验）/ tsc 三端 0 错 / 跳过本地 Playwright 直接生产实测（用户决策 C / 内网回滚成本低）
+- **R1 已知风险**：html-to-image 字体可能不嵌入 PNG（5/14 D-4 同款）— 待用户生产实测 5 种字体；如丢失改 SVG `<text>` 直出
+
+**下次 next**（v1.20.0 后下个阶段方向待用户拍板）：
+- 选项 A：游客草稿 + 文本框真实使用反馈观察 1-2 周
 - 选项 B：阶段 6 多人协作 v2 / 演示 / 培训
 - 选项 C：代码质量子阶段（清 lint 74 项 + 偿还 #22-#27 安全债 + 偿还 #35/#36 Day 4 挂账 + #39 主应用版 + #40/#41 "游客草稿打磨"）
-- 选项 D：其他新功能（5/13 时讨论过的方向 / 业务部门反馈）
+- 选项 D：其他新功能（含文本框迭代方向 — 方案 §12：背景色/边框/预设模板/对齐/行内编辑/工具栏快捷按钮）
+- 选项 E：招标推送功能调研后排期（5/18 业务一句话需求 / 当前画布 16 是功能描述层 v0.1）
 
 **Day 4 已沉淀的关键约束**（写入 02-拍板记录 + 99-收尾）：
 - B 方案不变量已升级为**类型不变量**：`mergeSavePlan` 纯函数 `DeferMergedPlan` 不携带"推进 ref/替换 project"字段；`saveErrorDispatcher` 的 `shouldDeleteDraft: false` 字面常量守门 (h)
