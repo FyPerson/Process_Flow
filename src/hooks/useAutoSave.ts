@@ -101,6 +101,11 @@ export function useAutoSave(
         backgroundColor: node.data.backgroundColor,
         parentId: node.parentId, // 保存父节点 ID
         relatedNodeIds: node.data.relatedNodeIds,
+        // 文本框节点专用字段（v1.20.0）—— 其他 type 节点 data 上无此字段，保留 undefined
+        // 不持久化的话，刷新后字体/字号/颜色 fallback 到默认值
+        textFontFamily: node.data.textFontFamily,
+        textFontSize: node.data.textFontSize,
+        textColor: node.data.textColor,
       };
     });
 

@@ -259,9 +259,11 @@ export function useFlowHandlers({
     const onNodeClick: NodeMouseHandler<Node<FlowNodeData>> = useCallback(
         (_event, node) => {
             const nodeData = node.data;
-            // 分组节点或可展开节点都可以选中
+            // 分组节点 / 文本框节点 / 可展开节点都可以选中
+            // 文本框节点（v1.20.0）expandable=false 但必须能选中以打开精简详情面板
             const isGroupNode = node.type === 'group';
-            const canSelect = nodeData.expandable || isGroupNode;
+            const isTextNode = node.type === 'text' || nodeData.type === 'text';
+            const canSelect = nodeData.expandable || isGroupNode || isTextNode;
 
             if (canSelect) {
                 // 如果点击的是已选中的节点，则关闭面板
