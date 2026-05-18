@@ -10,6 +10,7 @@ import { PageSelector, PageOption } from '../PageSelector';
 import { NodePropertiesPanel } from './NodePropertiesPanel';
 import { EdgePropertiesPanel } from './EdgePropertiesPanel';
 import { GroupPropertiesPanel, GroupUpdateParams } from './GroupPropertiesPanel';
+import { TextNodePropertiesPanel } from './TextNodePropertiesPanel';
 import { DeprecateNodeSection } from './DeprecateNodeSection';
 import { AnnotationPanel } from './AnnotationPanel';
 import './styles.css?v=2.0';
@@ -261,6 +262,10 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
 
   const isNode = selectedElement.type === 'node';
   const isGroupNode = isNode && selectedElement.node?.type === 'group';
+  // 文本框节点（MVP v1.20.0）：纯展示，仅显示精简面板，不显示废弃/批注
+  const isTextNode =
+    isNode &&
+    (selectedElement.node?.type === 'text' || selectedElement.data.type === 'text');
 
   // 获取分组的子节点
   const childNodes = isGroupNode
@@ -270,6 +275,7 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
   // 获取面板标题
   const getPanelTitle = () => {
     if (isGroupNode) return '分组属性';
+    if (isTextNode) return '文本框';
     if (isNode) return '节点属性';
     return '连线属性';
   };
@@ -355,8 +361,9 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
             </div>
           )}
 
-          {/* P3E-3：顶层 tab 切换（仅节点；edge 不显示 tab，保持原渲染流） */}
-          {isNode && selectedElement.type === 'node' && annotationsBundle && (() => {
+          {/* P3E-3：顶层 tab 切换（仅节点；edge 不显示 tab，保持原渲染流）
+              文本框节点不显示批注 tab——纯展示元素，无批注语义 */}
+          {isNode && !isTextNode && selectedElement.type === 'node' && annotationsBundle && (() => {
             const sheetIdForTab = annotationsBundle.sheetId;
             const annotationsForTabBadge = sheetIdForTab
               ? annotationsBundle.getAnnotationsForNode(sheetIdForTab, selectedElement.data.id)
@@ -429,8 +436,17 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
                 />
               )}
 
+              {/* 文本框节点（MVP v1.20.0）：精简面板 / 不显示废弃 */}
+              {isTextNode && selectedElement.type === 'node' && (
+                <TextNodePropertiesPanel
+                  selectedElement={selectedElement}
+                  onNodeChange={safeOnNodeChange}
+                  canEdit={canEdit}
+                />
+              )}
+
               {/* Regular Node Content */}
-              {isNode && !isGroupNode && selectedElement.type === 'node' && (
+              {isNode && !isGroupNode && !isTextNode && selectedElement.type === 'node' && (
                 <NodePropertiesPanel
                   selectedElement={selectedElement}
                   onNodeChange={safeOnNodeChange}
@@ -445,8 +461,9 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
 
               {/* P3C 标废弃区块（节点专属；details tab 内显示）
                   一审 H1：必须走 safeOnDeprecateChange（仅 canvasWritable gate），不走 safeOnNodeChange（canEdit gate）
-                  M1: 此区块在 NodeDetailPanel 顶层，不在 NodePropertiesPanel 的 fieldset 内部，所以浏览器原生 disabled 不影响 */}
-              {isNode && selectedElement.type === 'node' && (
+                  M1: 此区块在 NodeDetailPanel 顶层，不在 NodePropertiesPanel 的 fieldset 内部，所以浏览器原生 disabled 不影响
+                  文本框（isTextNode）不显示废弃区块——纯展示元素，无废弃语义 */}
+              {isNode && !isTextNode && selectedElement.type === 'node' && (
                 <DeprecateNodeSection
                   nodeData={selectedElement.data}
                   allNodes={allNodes}
@@ -458,9 +475,10 @@ export const NodeDetailPanel = memo(function NodeDetailPanel({
             </>
           )}
 
-          {/* === 批注 tab === */}
+          {/* === 批注 tab === （文本框不渲染） */}
           {panelTab === 'annotations'
             && isNode
+            && !isTextNode
             && selectedElement.type === 'node'
             && annotationsBundle
             && annotationsBundle.sheetId && (

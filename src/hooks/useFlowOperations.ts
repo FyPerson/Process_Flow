@@ -48,7 +48,7 @@ export function useFlowOperations({
 
     // 添加节点
     const onAddNode = useCallback(
-        (type: 'process' | 'decision' | 'terminator' | 'data') => {
+        (type: 'process' | 'decision' | 'terminator' | 'data' | 'text') => {
             const id = newNodeId();
             const name =
                 type === 'process'
@@ -57,9 +57,11 @@ export function useFlowOperations({
                         ? '新判断节点'
                         : type === 'data'
                             ? '新审批节点'
-                            : '新起止节点';
+                            : type === 'text'
+                                ? '请输入说明文字'
+                                : '新起止节点';
 
-            // 确保名称唯一
+            // 确保名称唯一（text 类型不去重——多个文本框同名很正常）
             const existingNames = nodes.map((n) => {
                 if (n.type === 'group') {
                     return (n.data as any).label || (n.data as any).name;
@@ -67,17 +69,53 @@ export function useFlowOperations({
                 return (n.data as any).name;
             }).filter(Boolean);
 
-            const uniqueName = getUniqueName(name, existingNames);
-
-            const defaultDetailConfig = {
-                description: '请点击此处编辑描述...',
-                databaseTables: [],
-            };
+            const uniqueName = type === 'text' ? name : getUniqueName(name, existingNames);
 
             const position = screenToFlowPosition({
                 x: window.innerWidth / 2 + Math.random() * 50,
                 y: window.innerHeight / 2 + Math.random() * 50,
             });
+
+            // text 类型走独立分支：用 RF 'text' 注册组件 / 默认尺寸 280x40 适合 24px 字号 /
+            // 无 detailConfig / 无 background / 默认黑体 24px 黑色（方案 §6 决策 2）
+            if (type === 'text') {
+                const newTextNode: Node<FlowNodeData> = {
+                    id,
+                    type: 'text',
+                    position,
+                    style: {
+                        width: 280,
+                        height: 40,
+                    },
+                    data: {
+                        id,
+                        name: uniqueName,
+                        type: 'text',
+                        expandable: false,
+                        textFontFamily: 'heiti',
+                        textFontSize: 24,
+                        textColor: '#000000',
+                        __localNew: true,
+                    },
+                };
+
+                setNodes((nds) => {
+                    const newNodes = nds.concat(newTextNode);
+                    setTimeout(() => {
+                        saveHistory(newNodes, edges);
+                    }, 0);
+                    setTimeout(() => {
+                        triggerAutoSave();
+                    }, 0);
+                    return newNodes;
+                });
+                return;
+            }
+
+            const defaultDetailConfig = {
+                description: '请点击此处编辑描述...',
+                databaseTables: [],
+            };
 
             const defaultSize = { width: 120, height: 60 };
 
@@ -131,7 +169,7 @@ export function useFlowOperations({
                 return newNodes;
             });
         },
-        [setNodes, screenToFlowPosition, edges, saveHistory, triggerAutoSave],
+        [nodes, setNodes, screenToFlowPosition, edges, saveHistory, triggerAutoSave],
     );
 
     // 自动布局

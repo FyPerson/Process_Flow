@@ -26,6 +26,7 @@ import type { UserPublic } from '../../auth/api';
 import { canEditNodeData, canDeleteNodeData } from '../../auth/canEditNode';
 import { CustomNode } from '../CustomNode';
 import { GroupNode } from '../GroupNode';
+import { TextNode } from '../TextNode';
 import DraggableEdge from '../DraggableEdge';
 import { NodeDetailPanel, SelectedElement, type AnnotationsBundle } from '../NodeDetailPanel';
 import { AnnotationBadgeContext } from '../NodeDetailPanel/annotationBadgeContext';
@@ -43,6 +44,7 @@ import './styles.css';
 const nodeTypes = {
   custom: CustomNode,
   group: GroupNode,
+  text: TextNode,
 };
 
 // 自定义边类型
@@ -1115,6 +1117,21 @@ const FlowCanvasContent = memo(function FlowCanvasContent({
                     </svg>
                   </span>
                   {!isSidebarCollapsed && <span className="btn-text">起止节点</span>}
+                </button>
+                <button
+                  className="control-btn btn-node"
+                  onClick={() => onAddNode('text')}
+                  title="添加文本框（说明文字 / 标题）"
+                >
+                  <span className="btn-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M4 7V5h16v2" />
+                      <path d="M9 5v14" />
+                      <path d="M15 5v14" />
+                      <path d="M7 19h10" />
+                    </svg>
+                  </span>
+                  {!isSidebarCollapsed && <span className="btn-text">文本框</span>}
                 </button>
               </div>
 

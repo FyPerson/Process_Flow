@@ -14,11 +14,14 @@ import { MultiCanvasProjectSchema } from './canvas.ts';
 type Node = {
   id: string;
   name: string;
-  type: 'process' | 'group' | 'terminator' | 'decision' | 'data' | 'subprocess';
+  type: 'process' | 'group' | 'terminator' | 'decision' | 'data' | 'subprocess' | 'text';
   position: { x: number; y: number };
   size: { width: number; height: number };
   expandable: boolean;
   parentId?: string;
+  textFontFamily?: 'heiti' | 'yahei' | 'kaiti' | 'songti' | 'fangsong';
+  textFontSize?: number;
+  textColor?: string;
 };
 
 function makeNode(id: string, type: Node['type'] = 'process', overrides: Partial<Node> = {}): Node {
@@ -121,6 +124,85 @@ describe('MultiCanvasProjectSchema parentId 校验（codex 六审 L2）', () => 
       makeProject([
         makeNode('child', 'process', { parentId: 'grp' }),
         makeNode('grp', 'group'),
+      ])
+    );
+    assert.equal(result.success, true);
+  });
+});
+
+// ============================================================
+// 文本框节点（MVP v1.20.0，方案 docs/规划/文本框节点/方案.md §3-§5）
+// ============================================================
+
+describe('MultiCanvasProjectSchema text 节点（MVP v1.20.0）', () => {
+  it('1. type=text 单节点 → schema 通过', () => {
+    const result = MultiCanvasProjectSchema.safeParse(
+      makeProject([makeNode('t1', 'text')])
+    );
+    assert.equal(result.success, true);
+  });
+
+  it('2. text 节点带 textFontFamily/textFontSize/textColor 三字段 → schema 通过', () => {
+    const result = MultiCanvasProjectSchema.safeParse(
+      makeProject([
+        makeNode('t1', 'text', {
+          textFontFamily: 'kaiti',
+          textFontSize: 32,
+          textColor: '#dc2626',
+        }),
+      ])
+    );
+    assert.equal(result.success, true);
+  });
+
+  it('3. text 节点 textFontFamily 非法 key → schema 拒绝', () => {
+    const result = MultiCanvasProjectSchema.safeParse(
+      makeProject([
+        makeNode('t1', 'text', {
+          textFontFamily: 'comic-sans' as any,
+        }),
+      ])
+    );
+    assert.equal(result.success, false);
+  });
+
+  it('4. text 节点 textFontSize 超 200 → schema 拒绝', () => {
+    const result = MultiCanvasProjectSchema.safeParse(
+      makeProject([
+        makeNode('t1', 'text', {
+          textFontSize: 300,
+        }),
+      ])
+    );
+    assert.equal(result.success, false);
+  });
+
+  it('5. text 节点 textFontSize 非正整数 → schema 拒绝', () => {
+    const result = MultiCanvasProjectSchema.safeParse(
+      makeProject([
+        makeNode('t1', 'text', {
+          textFontSize: 0,
+        }),
+      ])
+    );
+    assert.equal(result.success, false);
+  });
+
+  it('6. text 节点不能作为 group 的 parent（非 group 类型）→ schema 拒绝', () => {
+    const result = MultiCanvasProjectSchema.safeParse(
+      makeProject([
+        makeNode('t1', 'text'),
+        makeNode('child', 'process', { parentId: 't1' }),
+      ])
+    );
+    assert.equal(result.success, false);
+  });
+
+  it('7. text 节点也可以作为 group 子节点（与其他节点同权）', () => {
+    const result = MultiCanvasProjectSchema.safeParse(
+      makeProject([
+        makeNode('grp', 'group'),
+        makeNode('t1', 'text', { parentId: 'grp' }),
       ])
     );
     assert.equal(result.success, true);

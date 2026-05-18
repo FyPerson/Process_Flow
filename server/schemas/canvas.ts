@@ -28,7 +28,11 @@ const NodeTypeSchema = z.enum([
   'data',
   'subprocess',
   'group',
+  'text', // MVP v1.20.0：文本框节点，纯展示元素，无 Handle 不参与连线
 ]);
+
+// 文本框节点字体 key（与 src/types/flow.ts TextFontKey 对齐）
+const TextFontKeySchema = z.enum(['heiti', 'yahei', 'kaiti', 'songti', 'fangsong']);
 
 // 数据库表字段（DatabaseField）
 const DatabaseFieldSchema = z
@@ -136,6 +140,12 @@ const NodeSchema = z
     deprecated_by: z.number().int().nullable().optional(),
     deprecated_at: z.number().int().nullable().optional(),
     deprecated_by_username: z.string().max(64).nullable().optional(),
+    // 文本框节点专用字段（type='text'，MVP v1.20.0）
+    // schema 不强制 type='text' 才允许传（避免跨字段校验复杂度）；
+    // 其他 type 传了也不影响渲染（CustomNode 不读这些字段）
+    textFontFamily: TextFontKeySchema.optional(),
+    textFontSize: z.number().int().positive().max(200).optional(),
+    textColor: z.string().max(32).optional(),
   })
   .strict();
 

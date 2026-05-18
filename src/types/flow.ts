@@ -1,5 +1,8 @@
 // 节点类型枚举
-export type NodeType = 'terminator' | 'process' | 'decision' | 'data' | 'subprocess' | 'group';
+export type NodeType = 'terminator' | 'process' | 'decision' | 'data' | 'subprocess' | 'group' | 'text';
+
+// 文本框节点字体 key（5 种系统字体）
+export type TextFontKey = 'heiti' | 'yahei' | 'kaiti' | 'songti' | 'fangsong';
 
 // 数据库字段
 export interface DatabaseField {
@@ -65,6 +68,11 @@ export interface FlowNodeData {
   // P3D-1 运行时标记：本地新增节点（拖出/粘贴/创建分组），canEditNodeData() 据此放行
   // 不进 storage（autoSaveFilter 排除 __ 前缀 + 服务端 schema .strict() 拒绝）
   __localNew?: boolean;
+  // 文本框节点专用字段（type='text'，MVP v0.1）
+  // 仅 text 类型节点使用；其他节点 type 忽略这些字段
+  textFontFamily?: TextFontKey;  // 默认 'heiti'
+  textFontSize?: number;          // 默认 24，候选 14/18/24/32/48
+  textColor?: string;             // 默认 '#000000'
   // P3D-2 step 3 派生标志：当前用户能否编辑此节点（BFV 一次算好，下游节点组件直接读）
   // 与 __localNew 同模式：__ 前缀 → autoSaveFilter 排除 → 不入 storage
   // 给 NodeResizer 显隐 / GroupNode 双击改名/折叠 / 双击改节点名 等"在节点组件内部不方便拿 user/canvas 上下文"的路径用。
@@ -152,6 +160,10 @@ export interface FlowDefinition {
     deprecated_by?: number;
     deprecated_at?: number;
     deprecated_by_username?: string; // 用户已删除时为 undefined（前端 fallback "用户 #N"）
+    // 文本框节点专用字段（type='text'，MVP v0.1）
+    textFontFamily?: TextFontKey;
+    textFontSize?: number;
+    textColor?: string;
   }[];
   connectors: FlowConnector[];
 }
