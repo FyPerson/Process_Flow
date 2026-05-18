@@ -49,50 +49,25 @@ export const TextNodePropertiesPanel = memo(
     const color = data.textColor ?? '#000000';
 
     return (
-      <fieldset
-        disabled={!canEdit}
-        style={{ border: 'none', padding: '12px 16px', margin: 0 }}
-      >
+      <fieldset disabled={!canEdit} style={{ border: 'none', padding: 0, margin: 0 }}>
         <div className="section">
-          <div className="section-title" style={{ marginBottom: 8 }}>
-            文字内容
-          </div>
+          <div className="section-title">文字内容</div>
           <textarea
+            className="info-textarea"
             value={data.name}
             onChange={(e) => update({ name: e.target.value })}
             rows={3}
-            style={{
-              width: '100%',
-              padding: '8px 10px',
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.15)',
-              borderRadius: 4,
-              color: '#e2e8f0',
-              fontSize: 13,
-              fontFamily: 'inherit',
-              resize: 'vertical',
-              boxSizing: 'border-box',
-            }}
+            style={{ minHeight: 60, resize: 'vertical' }}
             placeholder="请输入说明文字"
           />
         </div>
 
-        <div className="section" style={{ marginTop: 16 }}>
-          <div className="section-title" style={{ marginBottom: 8 }}>
-            字体
-          </div>
+        <div className="section">
+          <div className="section-title">字体</div>
           <select
+            className="info-input"
             value={fontFamily}
             onChange={(e) => update({ textFontFamily: e.target.value as TextFontKey })}
-            style={{
-              width: '100%',
-              padding: '6px 10px',
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.15)',
-              borderRadius: 4,
-              color: '#e2e8f0',
-              fontSize: 13,
-            }}
           >
             {FONT_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -102,10 +77,8 @@ export const TextNodePropertiesPanel = memo(
           </select>
         </div>
 
-        <div className="section" style={{ marginTop: 16 }}>
-          <div className="section-title" style={{ marginBottom: 8 }}>
-            字号
-          </div>
+        <div className="section">
+          <div className="section-title">字号</div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {FONT_SIZE_OPTIONS.map((size) => (
               <button
@@ -113,19 +86,16 @@ export const TextNodePropertiesPanel = memo(
                 type="button"
                 onClick={() => update({ textFontSize: size })}
                 style={{
-                  padding: '4px 12px',
-                  background:
-                    fontSize === size
-                      ? 'rgba(99, 102, 241, 0.3)'
-                      : 'rgba(255,255,255,0.05)',
+                  padding: '6px 14px',
+                  background: fontSize === size ? '#eef2ff' : '#ffffff',
                   border:
-                    fontSize === size
-                      ? '1px solid #6366f1'
-                      : '1px solid rgba(255,255,255,0.15)',
-                  borderRadius: 4,
-                  color: '#e2e8f0',
+                    fontSize === size ? '1px solid #6366f1' : '1px solid #e0e0e0',
+                  borderRadius: 6,
+                  color: fontSize === size ? '#4f46e5' : '#333',
                   fontSize: 13,
+                  fontWeight: fontSize === size ? 600 : 400,
                   cursor: 'pointer',
+                  transition: 'all 0.15s ease',
                 }}
               >
                 {size}px
@@ -134,11 +104,9 @@ export const TextNodePropertiesPanel = memo(
           </div>
         </div>
 
-        <div className="section" style={{ marginTop: 16 }}>
-          <div className="section-title" style={{ marginBottom: 8 }}>
-            文字颜色
-          </div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <div className="section">
+          <div className="section-title">文字颜色</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
             {COLOR_OPTIONS.map((c) => (
               <button
                 key={c}
@@ -150,12 +118,12 @@ export const TextNodePropertiesPanel = memo(
                   height: 28,
                   background: c,
                   border:
-                    color === c
-                      ? '2px solid #6366f1'
-                      : '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: 4,
+                    color === c ? '2px solid #6366f1' : '1px solid #d1d5db',
+                  borderRadius: 6,
                   cursor: 'pointer',
                   padding: 0,
+                  boxShadow:
+                    color === c ? '0 0 0 2px rgba(99,102,241,0.2)' : 'none',
                 }}
               />
             ))}
@@ -168,8 +136,8 @@ export const TextNodePropertiesPanel = memo(
                 width: 28,
                 height: 28,
                 padding: 0,
-                border: '1px solid rgba(255,255,255,0.2)',
-                borderRadius: 4,
+                border: '1px solid #d1d5db',
+                borderRadius: 6,
                 cursor: 'pointer',
                 background: 'transparent',
               }}
